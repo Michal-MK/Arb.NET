@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <IsPackable>True</IsPackable>
+    <DefineConstants>$(DefineConstants);RESHARPER</DefineConstants>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.ReSharper.SDK" Version="$(SdkVersion)" PrivateAssets="all" />
+    <PackageReference Include="Wave" Version="$(WaveVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\dependencies.json" PackagePath="" Pack="true" Visible="false" />
+    <Content Include="bin\$(AssemblyName)\$(Configuration)\$(AssemblyName).dll" PackagePath="dotFiles" Pack="true" Visible="false" />
+    <Content Include="bin\$(AssemblyName)\$(Configuration)\$(AssemblyName).pdb" PackagePath="dotFiles" Pack="true" Visible="false" />
+
+    <!-- Bundle Arb.NET core library so the plugin is self-contained -->
+    <Content Include="bin\$(AssemblyName)\$(Configuration)\Arb.NET.dll" PackagePath="dotFiles" Pack="true" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference output DLL directly to prevent Arb.NET's transitive NuGet deps from conflicting with the ReSharper SDK -->
+    <Reference Include="Arb.NET">
+      <HintPath>..\..\Arb.NET\bin\Debug\netstandard2.0\Arb.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Arb.NET.IDE.Jetbrains.Common.csproj" />
+  </ItemGroup>
+</Project>

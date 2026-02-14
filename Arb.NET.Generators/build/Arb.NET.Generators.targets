@@ -1,0 +1,53 @@
+<Project>
+
+  <!--
+    Default metadata for ArbSource items, applied when the item itself doesn't override them.
+    This must be in .targets (not .props) so that $(ArbDefault*) properties are already set
+    by the consumer's PropertyGroup before this is evaluated.
+  -->
+  <ItemDefinitionGroup>
+    <ArbSource>
+      <DefaultClass>$(ArbDefaultClass)</DefaultClass>
+      <DefaultNamespace>$(ArbDefaultNamespace)</DefaultNamespace>
+      <DefaultLangCode>$(ArbDefaultLangCode)</DefaultLangCode>
+      <UseContextForSubclasses>$(ArbUseContextForSubclasses)</UseContextForSubclasses>
+    </ArbSource>
+  </ItemDefinitionGroup>
+
+  <!--
+    Promote ArbSource items to AdditionalFiles so Roslyn passes them to the generator.
+    This static ItemGroup is evaluated after the consumer's own ItemGroups (because
+    Directory.Build.targets is imported after the project file), so @(ArbSource) is
+    already populated here.
+  -->
+  <ItemGroup>
+    <AdditionalFiles Include="@(ArbSource)" />
+  </ItemGroup>
+
+  <!--
+    Make per-file ArbSource metadata visible to the Roslyn generator via AnalyzerConfigOptions.
+    The generator reads these as: build_metadata.AdditionalFiles.<Key>
+  -->
+  <ItemGroup>
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultClass" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultNamespace" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultLangCode" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="UseContextForSubclasses" />
+    <!-- Legacy per-file overrides (direct metadata on ArbSource items) -->
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="LangCode" />
+  </ItemGroup>
+
+  <!--
+    Make project-level ArbDefault* properties visible to the generator via GlobalOptions.
+    The generator reads these as: build_property.<Name>
+  -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="ArbDefaultClass" />
+    <CompilerVisibleProperty Include="ArbDefaultNamespace" />
+    <CompilerVisibleProperty Include="ArbDefaultLangCode" />
+    <CompilerVisibleProperty Include="ArbUseContextForSubclasses" />
+  </ItemGroup>
+
+</Project>

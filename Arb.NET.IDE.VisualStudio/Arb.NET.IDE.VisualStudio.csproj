@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <RootNamespace>Arb.NET.IDE.VisualStudio</RootNamespace>
+    <AssemblyName>Arb.NET.IDE.VisualStudio</AssemblyName>
+    <OutputType>Library</OutputType>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <UseCodebase>true</UseCodebase>
+    <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
+    <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
+    <IncludeDebugSymbolsInLocalVSIXDeployment>false</IncludeDebugSymbolsInLocalVSIXDeployment>
+    <CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
+    <CopyOutputSymbolsToOutputDirectory>true</CopyOutputSymbolsToOutputDirectory>
+    <StartAction>Program</StartAction>
+    <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
+    <!-- Fallback for Rider: DevEnvDir is not set outside of Visual Studio -->
+    <StartProgram Condition="'$(DevEnvDir)' == ''">C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix Exp</StartArguments>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Design" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime" NoWarn="NU1604" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120" NoWarn="NU1604" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <VSCTCompile Include="ArbNETPackage.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\GetAssemblyInfo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="source.extension.vsixmanifest">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+
+  <!-- Resolve DevEnvDir via vswhere when building outside of Visual Studio (e.g. Rider) -->
+  <Target Name="ResolveDevEnvDir" BeforeTargets="Build" Condition="'$(DevEnvDir)' == ''">
+    <Exec Command="&quot;C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe&quot; -latest -property installationPath" ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="VSInstallPath" />
+    </Exec>
+    <PropertyGroup>
+      <DevEnvDir>$(VSInstallPath)\Common7\IDE\</DevEnvDir>
+      <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    </PropertyGroup>
+  </Target>
+
+</Project>

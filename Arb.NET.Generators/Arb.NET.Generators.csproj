@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <!-- Tell shared source files that they are being compiled inside the generator,
+             so they can #if out file-I/O methods that are banned in analyzer assemblies. -->
+        <DefineConstants>$(DefineConstants);ARB_GENERATOR</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
+<PackageReference Include="System.Text.Json" Version="10.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+            Include Arb.NET source files directly into the generator assembly so that
+            the compiler host can find them without needing to load a separate DLL.
+            This is the standard pattern for generator-private helper libraries.
+        -->
+        <Compile Include="..\Arb.NET\ArbParser.cs"/>
+        <Compile Include="..\Arb.NET\ArbCodeGenerator.cs"/>
+        <Compile Include="..\Arb.NET\Helpers\StringHelper.cs"/>
+        <Compile Include="..\Arb.NET\Models\ArbDocument.cs"/>
+        <Compile Include="..\Arb.NET\Models\ArbEntry.cs"/>
+        <Compile Include="..\Arb.NET\Models\ArbMetadata.cs"/>
+        <Compile Include="..\Arb.NET\Models\ArbPlaceholder.cs"/>
+        <Compile Include="..\Arb.NET\Models\ArbParseResult.cs"/>
+    </ItemGroup>
+
+</Project>

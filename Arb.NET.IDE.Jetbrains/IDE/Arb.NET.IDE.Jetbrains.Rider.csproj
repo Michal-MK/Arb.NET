@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>Arb.NET.IDE.Jetbrains.Rider</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <DefineConstants>$(DefineConstants);RIDER</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Rider.SDK" Version="$(SdkVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference Arb.NET.dll directly to avoid transitive NuGet dep conflicts.
+         The DLL is built by the packager project and copied here at build time. -->
+    <Reference Include="Arb.NET">
+      <HintPath>..\..\Arb.NET\bin\Debug\netstandard2.0\Arb.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Arb.NET.IDE.Jetbrains.Common.csproj" />
+  </ItemGroup>
+</Project>

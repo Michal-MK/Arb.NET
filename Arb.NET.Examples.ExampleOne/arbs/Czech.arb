@@ -1,0 +1,25 @@
+{
+  "@@locale": "en",
+  "appTitle": "Moje aplikace",
+  "@appTitle": {
+    "description": "Moje lokalizovaná stringa :D - Popis"
+  },
+  "welcomeMessage": "Ahoj, {username}!",
+  "@welcomeMessage": {
+    "description": "Uvítací zpráva s placeholderem pro uživatelské jméno",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "itemCount": "{count, plural, =0{Žádné položky} =1{Jedna položka} =2{Dvě položky} =3{Tři položky} =4{Čtyři položky} other{{count} položek}}",
+  "@itemCount": {
+    "description": "Počet položek s podporou plurálu",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

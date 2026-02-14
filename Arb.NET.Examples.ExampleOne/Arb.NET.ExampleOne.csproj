@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Arb.NET.Example</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- ARB -->
+        <ArbDefaultClass>AppLocale</ArbDefaultClass>
+        <ArbDefaultNamespace>Arb.NET.Example.Localizations</ArbDefaultNamespace>
+        <ArbDefaultLangCode>en</ArbDefaultLangCode>
+        <ArbUseContextForSubclasses>true</ArbUseContextForSubclasses>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Arb.NET\Arb.NET.csproj"/>
+
+
+        <ProjectReference Include="..\Arb.NET.Generators\Arb.NET.Generators.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false"/>
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <!-- Lang code inferred from file name if not specified -->
+        <ArbSource Include="arbs\app_en.arb" />
+
+        <!-- Explicitly specify lang code for non-standard file names -->
+        <ArbSource Include="arbs\Czech.arb" LangCode="cs"/>
+
+        <!-- Language mutation syntax is supported — LangCode inferred from filename -->
+        <ArbSource Include="arbs\app_en_US.arb"/>
+        <ArbSource Include="arbs\app_en_CS.arb"/>
+
+        <!-- * includes are supported for default naming conventions (<common_name>_<lang_code>.arb) -->
+        <!-- commented out to not include duplicates -->
+        <!-- <ArbSource Include="arbs\*" /> -->
+
+        <!-- ArbSource also accepts the properties defined in the PropertyGroup above directly. -->
+        <!-- <ArbSource Include="arbs\**\*.arb"
+                   DefaultClass="AppLocale"
+                   DefaultNamespace="Arb.NET.Example.Localizations"
+                   DefaultLangCode="en" 
+                   UseContextForSubclasses="true"/> -->
+    </ItemGroup>
+</Project>

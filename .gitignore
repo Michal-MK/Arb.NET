@@ -1,0 +1,29 @@
+# .NET stuff
+bin/
+obj/
+
+# Visual Studio stuff
+.vs/
+
+# JetBrains stuff
+.idea/
+
+# vscode stuff
+.vscode/
+
+# IDEs builds
+Arb.NET.IDE.Jetbrains/build
+Arb.NET.IDE.Jetbrains/.intellijPlatform
+Arb.NET.IDE.Jetbrains/.kotlin
+Arb.NET.IDE.Jetbrains/.gradle
+
+# .user files
+Arb.NET.sln.DotSettings.user
+
+# Executables
+Arb.NET.IDE.Jetbrains/tools/nuget.exe
+
+# AI files
+.claude
+
+
