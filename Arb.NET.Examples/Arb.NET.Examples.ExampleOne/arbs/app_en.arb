@@ -13,7 +13,7 @@
       }
     }
   },
-  "itemCount": "{count, plural, =0{No items} =1{One item} other{{count} items}}",
+  "itemCount": "{count, plural, =0{No items} =1{{count} item} other{{count} items}}",
   "@itemCount": {
     "description": "Number of items with plural handling",
     "placeholders": {

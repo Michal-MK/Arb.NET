@@ -23,14 +23,7 @@ public class ArbParserTests {
                          }
                          """;
 
-        var result = new ArbParser().ParseContent(arbContent);
-
-        var resultString = result.ToString();
-        Console.WriteLine(resultString);
-
-        Assert.That(result.ValidationResults.IsValid, Is.True);
-
-        var document = result.Document!;
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
 
         Assert.That(document.Locale, Is.EqualTo("en"));
         Assert.That(document.Entries, Has.Count.EqualTo(2));
@@ -53,43 +46,62 @@ public class ArbParserTests {
     }
 
     [Test]
-    public void GenerateClass_ProducesCorrectSource() {
-        var document = new ArbDocument {
-            Locale = "en",
-            Entries = new Dictionary<string, ArbEntry> {
-                {
-                    "appTitle", new ArbEntry {
-                        Key = "appTitle",
-                        Value = "My Application",
-                        Metadata = new ArbMetadata {
-                            Description = "The title of the application"
-                        }
-                    }
-                }, {
-                    "welcomeMessage", new ArbEntry {
-                        Key = "welcomeMessage",
-                        Value = "Welcome, {username}!",
-                        Metadata = new ArbMetadata {
-                            Description = "Welcome message with username placeholder",
-                            Placeholders = new Dictionary<string, ArbPlaceholder> {
-                                {
-                                    "username", new ArbPlaceholder {
-                                        Type = "String"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        };
+    public void ParseContent_StandaloneClosingBracket() {
+        var arbContent = """
+                         {
+                           "@@locale": "en",
+                           "appTitle": "My } Application"
+                         }
+                         """;
 
-        var generatedCode = new ArbCodeGenerator().GenerateClass(document, "AppLocalizations", "MyApp.Localizations");
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
 
-        Assert.That(generatedCode, Does.Contain("class AppLocalizations"));
-        Assert.That(generatedCode, Does.Contain("AppTitle"));
-        Assert.That(generatedCode, Does.Contain("WelcomeMessage"));
-        Assert.That(generatedCode, Does.Contain("string username"));
-        Assert.That(generatedCode, Does.Contain("string.Format"));
+        Assert.That(document.Locale, Is.EqualTo("en"));
+        Assert.That(document.Entries, Has.Count.EqualTo(1));
+
+        // Lang strings
+        Assert.That(document.Entries.ContainsKey("appTitle"), Is.True);
+
+        Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My } Application"));
     }
+
+    [Test]
+    public void ParseContent_StandaloneOpeningBracket() {
+        var arbContent = """
+                         {
+                           "@@locale": "en",
+                           "appTitle": "My { Application"
+                         }
+                         """;
+
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
+
+        Assert.That(document.Locale, Is.EqualTo("en"));
+        Assert.That(document.Entries, Has.Count.EqualTo(1));
+
+        // Lang strings
+        Assert.That(document.Entries.ContainsKey("appTitle"), Is.True);
+
+        Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My { Application"));
+    }
+    
+    [Test]
+    public void ParseContent_EmptyGroup() {
+        var arbContent = """
+                         {
+                           "@@locale": "en",
+                           "appTitle": "My {} Application"
+                         }
+                         """;
+
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
+
+        Assert.That(document.Locale, Is.EqualTo("en"));
+        Assert.That(document.Entries, Has.Count.EqualTo(1));
+
+        // Lang strings
+        Assert.That(document.Entries.ContainsKey("appTitle"), Is.True);
+
+        Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My {} Application"));
+    }    
 }

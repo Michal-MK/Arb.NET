@@ -10,6 +10,16 @@ namespace Arb.NET;
 /// </summary>
 public class ArbParser {
 #if !ARB_GENERATOR
+    private static readonly JsonSchema _schema = LoadSchema();
+
+    private static JsonSchema LoadSchema() {
+        var assembly = typeof(ArbParser).Assembly;
+        var specStream = assembly.GetManifestResourceStream("Arb.NET.Specification.arb_spec.json");
+        if (specStream == null) throw new InvalidOperationException("Could not find ARB specification resource.");
+        var specString = new StreamReader(specStream).ReadToEnd();
+        return JsonSchema.FromText(specString);
+    }
+
     /// <summary>
     /// Parses an .arb file and returns the localization data
     /// </summary>
@@ -23,15 +33,9 @@ public class ArbParser {
     public ArbParseResult ParseContent(string content) {
 #if !ARB_GENERATOR
 
-        // Read the spec from Arb.NET assembly resources
-        var assembly = typeof(ArbParser).Assembly;
-        var specStream = assembly.GetManifestResourceStream("Arb.NET.Specification.arb_spec.json");
-        if (specStream == null) throw new InvalidOperationException("Could not find ARB specification resource.");
-        var specString = new StreamReader(specStream).ReadToEnd();
-        
         var options = new EvaluationOptions { OutputFormat = OutputFormat.List };
 
-        var schema = JsonSchema.FromText(specString);
+        var schema = _schema;
         using var jsonForValidation = JsonDocument.Parse(content);
         var evalResult = schema.Evaluate(jsonForValidation.RootElement, options);
 
@@ -51,6 +55,8 @@ public class ArbParser {
             if (property.Name.StartsWith("@@")) {
                 if (property.Name == "@@locale" && property.Value.ValueKind == JsonValueKind.String)
                     document.Locale = property.Value.GetString() ?? string.Empty;
+                if (property.Name == "@@context" && property.Value.ValueKind == JsonValueKind.String)
+                    document.Context = property.Value.GetString() ?? string.Empty;
             }
             else if (property.Name.StartsWith("@")) {
                 metadataMap[property.Name.Substring(1)] = property.Value;

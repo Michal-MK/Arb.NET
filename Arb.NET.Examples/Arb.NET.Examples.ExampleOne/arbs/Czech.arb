@@ -1,5 +1,5 @@
 {
-  "@@locale": "en",
+  "@@locale": "cs",
   "appTitle": "Moje aplikace",
   "@appTitle": {
     "description": "Moje lokalizovaná stringa :D - Popis"
@@ -13,7 +13,7 @@
       }
     }
   },
-  "itemCount": "{count, plural, =0{Žádné položky} =1{Jedna položka} =2{Dvě položky} =3{Tři položky} =4{Čtyři položky} other{{count} položek}}",
+  "itemCount": "{count, plural, =0{Žádné položky} =1{{count} položka} =2{Dvě položky} =3{Tři položky} =4{Čtyři položky} other{{count} položek}}",
   "@itemCount": {
     "description": "Počet položek s podporou plurálu",
     "placeholders": {

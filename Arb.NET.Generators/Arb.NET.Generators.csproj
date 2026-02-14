@@ -30,6 +30,7 @@
         <Compile Include="..\Arb.NET\Models\ArbEntry.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbMetadata.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbPlaceholder.cs"/>
+        <Compile Include="..\Arb.NET\Models\ArbParameterDefinition.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbParseResult.cs"/>
     </ItemGroup>
 

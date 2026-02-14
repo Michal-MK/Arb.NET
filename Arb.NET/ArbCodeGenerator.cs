@@ -2,7 +2,6 @@
 using System.IO;
 #endif
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Arb.NET;
 
@@ -10,9 +9,6 @@ namespace Arb.NET;
 /// Generates C# code from parsed .arb documents
 /// </summary>
 public class ArbCodeGenerator {
-    // Matches ARB placeholder tokens like {username} or {count}
-    private static readonly Regex PlaceholderPattern = new(@"\{(\w+)\}", RegexOptions.Compiled);
-
     /// <summary>
     /// Generates a C# class from an ARB document
     /// </summary>
@@ -24,7 +20,7 @@ public class ArbCodeGenerator {
         sb.AppendLine();
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
-        sb.AppendLine($"public partial class {className} {{");
+        sb.AppendLine($"public static class {className} {{");
 
         foreach (var entry in document.Entries.Values) {
             GenerateEntry(sb, entry);
@@ -50,71 +46,113 @@ public class ArbCodeGenerator {
         File.WriteAllText(outputPath, source);
     }
 #endif
-    
+
     private static void GenerateEntry(StringBuilder sb, ArbEntry entry) {
-        var placeholders = entry.Metadata?.Placeholders;
-
-        if (placeholders is { Count: > 0 }) {
-            // Build parameter list: ordered by their appearance in the value string
-            var paramNames = OrderedPlaceholderNames(entry.Value, placeholders);
-            var paramList = BuildParamList(paramNames, placeholders);
-
-            // Replace {name} tokens with {0}, {1}, ... positional args
-            var formatString = BuildFormatString(entry.Value, paramNames);
+        if (entry.IsParametric(out var defs)) {
+            var paramList = BuildParamList(defs);
 
             sb.AppendLine();
-            sb.AppendLine($"    /// <summary>{entry.Metadata?.Description ?? entry.Key}</summary>");
-            sb.AppendLine($"    public string {StringHelper.ToPascalCase(entry.Key)}({paramList})");
-            sb.AppendLine($"        => string.Format(\"{StringHelper.EscapeString(formatString)}\", {string.Join(", ", paramNames)});");
+            BuildSummaryTag(sb, entry);
+            sb.AppendLine($"    public static string {StringHelper.ToPascalCase(entry.Key)}({paramList}) {{");
+            BuildPluralizationDefs(sb, defs);
+            sb.AppendLine($"        return {BuildFormattedString(entry, defs)};");
+            sb.AppendLine($"    }}");
         }
         else {
             sb.AppendLine();
-            sb.AppendLine($"    /// <summary>{entry.Metadata?.Description ?? entry.Key}</summary>");
-            sb.AppendLine($"    public string {StringHelper.ToPascalCase(entry.Key)} => \"{StringHelper.EscapeString(entry.Value)}\";");
+            BuildSummaryTag(sb, entry);
+            sb.AppendLine($"    public static string {StringHelper.ToPascalCase(entry.Key)}\n" +
+                          $"        => \"{StringHelper.EscapeString(entry.Value)}\";");
         }
     }
 
-    // Returns placeholder names ordered by first occurrence in the value string,
-    // falling back to dictionary order for any not found in the string.
-    private static List<string> OrderedPlaceholderNames(string value, Dictionary<string, ArbPlaceholder> placeholders) {
-        var seen = new HashSet<string>();
-        var ordered = new List<string>();
-        foreach (Match m in PlaceholderPattern.Matches(value)) {
-            var name = m.Groups[1].Value;
-            if (placeholders.ContainsKey(name) && seen.Add(name))
-                ordered.Add(name);
+    private static string BuildParamList(List<ArbParameterDefinition> names) {
+        return string.Join(", ", names.Select(s => {
+            if (s is not ArbPluralizationParameterDefinition) {
+                return "object " + s.Name;
+            }
+            else {
+                return "int " + s.Name;
+            }
+        }));
+    }
+
+    private static string BuildFormattedString(ArbEntry entry, List<ArbParameterDefinition> defs) {
+        StringBuilder sb = new();
+        int index = 0;
+
+        sb.Append('$');
+        sb.Append('"');
+
+        while (index < entry.Value.Length) {
+            char current = entry.Value[index];
+            
+            if (current == '\\') {
+                // Handle escaped characters
+                if (index + 1 < entry.Value.Length) {
+                    if (entry.Value[index + 1] == '\\') {
+                        // Append the escape char itself
+                        sb.Append(current);
+                    }
+                    sb.Append(entry.Value[index + 1]);
+                    index += 2;
+                    continue;
+                }
+            }
+
+            if (defs.Find(f => f.StartIndex == index) is { } def) {
+                if (def is not ArbPluralizationParameterDefinition) {
+                    sb.Append("\"");
+                    sb.Append(" + ");
+                    sb.Append(def.Name);
+                    sb.Append("?.ToString()");
+                    sb.Append(" + ");
+                    sb.Append("\"");
+                    index = def.EndIndex;
+                    continue;
+                }
+                else {
+                    sb.Append("\"");
+                    sb.Append(" + ");
+                    sb.Append($"@selectedContent_{def.Name}");
+                    sb.Append(" + ");
+                    sb.Append("\"");
+                    index = def.EndIndex;
+                    continue;
+                }
+            }
+            
+            sb.Append(current);
+
+            index++;
         }
-
-        // Add any placeholders declared in metadata but not found in the string
-        foreach (var key in placeholders.Keys)
-            if (seen.Add(key))
-                ordered.Add(key);
-        return ordered;
+        
+        sb.Append('"');
+        return sb.ToString();
     }
-
-    private static string BuildParamList(List<string> names, Dictionary<string, ArbPlaceholder> placeholders) {
-        var parts = new List<string>();
-        foreach (var name in names) {
-            var dotNetType = MapType(placeholders.TryGetValue(name, out var ph) ? ph.Type : string.Empty);
-            parts.Add($"{dotNetType} {name}");
+    
+    private static void BuildPluralizationDefs(StringBuilder sb, List<ArbParameterDefinition> defs) {
+        foreach (var def in defs) {
+            if (def is ArbPluralizationParameterDefinition pluralDef) {
+                sb.AppendLine($"        // Pluralization parameter: {pluralDef.Name}");
+                sb.AppendLine($"        // Plural forms: {string.Join(", ", pluralDef.CountableParameters)}");
+                
+                sb.AppendLine($"        var @selectedContent_{pluralDef.Name} = ({pluralDef.Name}) switch {{");
+                foreach (var form in pluralDef.CountableParameters) {
+                    string escapeString = StringHelper.EscapeString(form.Value);
+                    escapeString = escapeString.Replace($"{{{def.Name}}}", $"\" + {def.Name}?.ToString() + \"");
+                    sb.AppendLine($"            {form.Key} => \"{escapeString}\",");
+                }
+                string escapeOtherString = StringHelper.EscapeString(pluralDef.OtherParameter);
+                escapeOtherString = escapeOtherString.Replace($"{{{def.Name}}}", $"\" + {def.Name}?.ToString() + \"");
+                sb.AppendLine($"            _ => \"{escapeOtherString}\"");
+                sb.AppendLine("        };");
+            }
         }
-        return string.Join(", ", parts);
     }
 
-    private static string BuildFormatString(string value, List<string> orderedNames) {
-        var indexMap = new Dictionary<string, int>();
-        for (var i = 0; i < orderedNames.Count; i++)
-            indexMap[orderedNames[i]] = i;
-
-        return PlaceholderPattern.Replace(value, m => {
-            var name = m.Groups[1].Value;
-            return indexMap.TryGetValue(name, out var idx) ? $"{{{idx}}}" : m.Value;
-        });
+    private static void BuildSummaryTag(StringBuilder sb, ArbEntry entry) {
+        sb.AppendLine($"    /// <summary>{entry.Metadata?.Description ?? entry.Key}</summary>");
+        sb.AppendLine($"    /// <returns>Localized string: {entry.Value}</returns>");
     }
-
-    private static string MapType(string arbType) => arbType.ToLowerInvariant() switch {
-        "int" or "integer" or "num" or "number" => "int",
-        "double" or "float"                     => "double",
-        _                                       => "string"
-    };
 }

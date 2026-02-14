@@ -12,7 +12,7 @@
         <ArbDefaultClass>AppLocale</ArbDefaultClass>
         <ArbDefaultNamespace>Arb.NET.Example.Localizations</ArbDefaultNamespace>
         <ArbDefaultLangCode>en</ArbDefaultLangCode>
-        <ArbUseContextForSubclasses>true</ArbUseContextForSubclasses>
+        <ArbUseContextForSubclasses>false</ArbUseContextForSubclasses>
     </PropertyGroup>
 
     <ItemGroup>
