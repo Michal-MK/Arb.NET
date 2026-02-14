@@ -16,10 +16,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Arb.NET\Arb.NET.csproj"/>
+        <ProjectReference Include="..\..\Arb.NET\Arb.NET.csproj"/>
 
 
-        <ProjectReference Include="..\Arb.NET.Generators\Arb.NET.Generators.csproj"
+        <ProjectReference Include="..\..\Arb.NET.Generators\Arb.NET.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false"/>
     </ItemGroup>

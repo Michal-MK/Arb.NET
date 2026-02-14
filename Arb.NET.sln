@@ -19,11 +19,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SLN", "SLN", "{D2E83F2C-2E7
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
 		global.json = global.json
+		README.MD = README.MD
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{E7FEA805-0A7D-4127-996A-F1BA536EA675}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arb.NET.ExampleOne", "Arb.NET.Examples.ExampleOne\Arb.NET.ExampleOne.csproj", "{D9A3E27B-7431-44BE-B36F-7F98DA4C466B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arb.NET.ExampleOne", "Arb.NET.Examples\Arb.NET.Examples.ExampleOne\Arb.NET.ExampleOne.csproj", "{D9A3E27B-7431-44BE-B36F-7F98DA4C466B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IDE", "IDE", "{6CFD202A-9BC2-42C0-83FA-E8656A3F2490}"
 EndProject
