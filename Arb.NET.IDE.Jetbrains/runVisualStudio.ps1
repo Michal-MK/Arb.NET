@@ -10,11 +10,11 @@ Set-Location $PSScriptRoot
 
 . ".\settings.ps1"
 
-$UserProjectXmlFile = "$SourceBasePath\$PluginId\$PluginId.csproj.user"
+$UserProjectXmlFile = "$SourceBasePath\$ResharperProjectName.csproj.user"
 
 if (!(Test-Path "$UserProjectXmlFile")) {
     # Get versions from Plugin.props file
-    $PluginPropsFile = "$SourceBasePath\Plugin.props"
+    $PluginPropsFile = "$PSScriptRoot\Plugin.props"
     $PluginPropsXml = [xml] (Get-Content "$PluginPropsFile")
     $SdkVersionNode = $PluginPropsXml.SelectSingleNode(".//SdkVersion")
     $VersionSplit = $SdkVersionNode.InnerText.Split(".")

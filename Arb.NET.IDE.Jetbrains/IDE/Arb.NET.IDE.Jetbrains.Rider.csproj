@@ -12,10 +12,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Reference Arb.NET.dll directly to avoid transitive NuGet dep conflicts.
-         The DLL is built by the packager project and copied here at build time. -->
+    <!-- Arb.NET and its JsonSchema.Net deps, all copied to bin/IDE by the Arb.NET IDE build. -->
     <Reference Include="Arb.NET">
-      <HintPath>..\..\Arb.NET\bin\Debug\netstandard2.0\Arb.NET.dll</HintPath>
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\Arb.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="JsonSchema.Net">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\JsonSchema.Net.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="JsonPointer.Net">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\JsonPointer.Net.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Json.More">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\Json.More.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Humanizer">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\Humanizer.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>
@@ -23,4 +38,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Common\Arb.NET.IDE.Jetbrains.Common.csproj" />
   </ItemGroup>
+
+  <!-- RDGen-generated protocol files (produced by `gradle :protocol:generateRiderModel`) -->
+  <ItemGroup>
+    <Compile Include="..\src\dotnet\Arb.NET.IDE.Jetbrains.Rider\**\*.cs" />
+  </ItemGroup>
+
 </Project>

@@ -22,9 +22,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Reference output DLL directly to prevent Arb.NET's transitive NuGet deps from conflicting with the ReSharper SDK -->
+    <!-- Arb.NET and its JsonSchema.Net deps, all copied to bin/IDE by the Arb.NET IDE build. -->
     <Reference Include="Arb.NET">
-      <HintPath>..\..\Arb.NET\bin\Debug\netstandard2.0\Arb.NET.dll</HintPath>
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\Arb.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="JsonSchema.Net">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\JsonSchema.Net.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="JsonPointer.Net">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\JsonPointer.Net.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Json.More">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\Json.More.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Humanizer">
+      <HintPath>..\..\Arb.NET\bin\IDE\netstandard2.0\Humanizer.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>
@@ -32,4 +48,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Common\Arb.NET.IDE.Jetbrains.Common.csproj" />
   </ItemGroup>
+
+  <!-- Rider-only files: these reference Rider protocol types not present in the ReSharper SDK -->
+  <ItemGroup>
+    <Compile Remove="ArbModelHost.cs" />
+  </ItemGroup>
+
 </Project>

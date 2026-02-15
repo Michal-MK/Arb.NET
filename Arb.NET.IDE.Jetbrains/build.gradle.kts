@@ -176,6 +176,11 @@ tasks.prepareSandbox {
             "$outputFolder/${DotnetPluginId}.Rider.pdb",
             "$outputFolder/Arb.NET.dll",
             "$outputFolder/Arb.NET.pdb",
+            // JsonSchema + its dependencies
+            "$outputFolder/JsonSchema.Net.dll",
+            "$outputFolder/JsonPointer.Net.dll",
+            "$outputFolder/Json.More.dll",
+            "$outputFolder/Humanizer.dll",
     )
 
     dllFiles.forEach({ f ->

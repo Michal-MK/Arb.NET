@@ -23,5 +23,6 @@
     }
   },
   "itemCountWithExtras": "Count (počet): {count, plural, =0{No items} =1{{count} item} other{{count} items}} is available.",
+  "simpleParam": "This (toto) is a simple parameter: {param}",
   "longText": "Souhlasím s <a href=\"https://finance.patria.cz/otevrit-ucet/patria-finance/podminky-pouzivani\">podmínkami uživání stránek</a> finance.patria.cz a potvrzuji, že jsem se seznámil s <a href=\"https://www.csob.cz/cs/csob/ochrana-osobnich-udaju\">informacemi o zpracování osobních údajů a účelem jejich zpracování</a>. Potvrzuji, že jsem starší 16 let."
 }

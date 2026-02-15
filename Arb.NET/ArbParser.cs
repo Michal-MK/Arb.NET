@@ -32,7 +32,6 @@ public class ArbParser {
     /// </summary>
     public ArbParseResult ParseContent(string content) {
 #if !ARB_GENERATOR
-
         var options = new EvaluationOptions { OutputFormat = OutputFormat.List };
 
         var schema = _schema;

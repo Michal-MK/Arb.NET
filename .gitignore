@@ -12,6 +12,7 @@ obj/
 .vscode/
 
 # IDEs builds
+Arb.NET.IDE.Jetbrains/protocol/build
 Arb.NET.IDE.Jetbrains/build
 Arb.NET.IDE.Jetbrains/.intellijPlatform
 Arb.NET.IDE.Jetbrains/.kotlin

@@ -24,3 +24,6 @@
 ### Jetbrains specifics
 - You are dealing with Rider/Resharper which is using both C# code and Kotlin code. Jetbrains IDEs are using the shared JVM runtime.
 - The C# specific things live in a separate process. Communication between the two is done via the Rider Protocol.
+
+To run the protocol generator:
+`cd "./Arb.NET/Arb.NET.IDE.Jetbrains" && ./gradlew :protocol:rdgen 2>&1`

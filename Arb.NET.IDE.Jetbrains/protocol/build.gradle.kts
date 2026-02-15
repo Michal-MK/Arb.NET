@@ -23,7 +23,7 @@ val RiderPluginId: String by rootProject
 
 rdgen {
     val csOutput = File(rootDir, "src/dotnet/${DotnetPluginId}.Rider")
-    val ktOutput = File(rootDir, "src/rider/main/kotlin/com/jetbrains/rider/plugins/${RiderPluginId.replace('.','/').toLowerCase()}.Rider")
+    val ktOutput = File(rootDir, "src/rider/main/kotlin")
 
     verbose = true
     packages = "model.rider"
@@ -49,4 +49,13 @@ tasks.withType<RdGenTask> {
     val classPath = sourceSets["main"].runtimeClasspath
     dependsOn(classPath)
     classpath(classPath)
+    // rider-model.jar requires Java 21+. Declare the toolchain requirement here;
+    // Gradle resolves the actual JDK location from the machine's toolchain
+    // configuration (auto-detection or org.gradle.java.installations.paths in
+    // ~/.gradle/gradle.properties).
+    javaLauncher.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    )
 }

@@ -11,7 +11,16 @@
         <PackageReference Include="JsonSchema.Net" Version="9.1.0" />
         <PackageReference Include="System.Text.Json" Version="10.0.3" />
     </ItemGroup>
-    
+
+    <!-- IDE build: copy transitive NuGet dep DLLs next to Arb.NET.dll so IDE projects
+         can reference them all via HintPath without touching the NuGet cache directly. -->
+    <Target Name="CopyNuGetDepsForIde" AfterTargets="Build" Condition="'$(Configuration)' == 'IDE'">
+        <ItemGroup>
+            <_NuGetDeps Include="@(RuntimeCopyLocalItems)" Condition="'%(RuntimeCopyLocalItems.NuGetPackageId)' != 'System.Text.Json'" />
+        </ItemGroup>
+        <Copy SourceFiles="@(_NuGetDeps)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    </Target>
+
     <ItemGroup>
         <EmbeddedResource Include="Specification\arb_spec.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

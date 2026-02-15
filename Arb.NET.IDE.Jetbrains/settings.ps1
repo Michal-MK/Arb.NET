@@ -1,6 +1,7 @@
-$PluginId = "ReSharperPlugin.ArbNET"
-$SolutionPath = "$PSScriptRoot\ReSharperPlugin.ArbNET.sln"
-$SourceBasePath = "$PSScriptRoot\src\dotnet"
+$PluginId = "Arb.NET.IDE.Jetbrains"
+$ResharperProjectName = "Arb.NET.IDE.Jetbrains.Resharper"
+$SolutionPath = "$PSScriptRoot\..\Arb.NET.sln"
+$SourceBasePath = "$PSScriptRoot\IDE"
 
 $VsWhereOutput = [xml] (& "$PSScriptRoot\tools\vswhere.exe" -format xml -products *)
 $VisualStudio = $VsWhereOutput.instances.instance |

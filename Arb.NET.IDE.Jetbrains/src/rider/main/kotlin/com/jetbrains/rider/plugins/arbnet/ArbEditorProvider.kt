@@ -14,7 +14,7 @@ class ArbEditorProvider : FileEditorProvider, DumbAware {
         file is LightVirtualFile && file.name == ArbEditor.FILE_NAME
 
     override fun createEditor(project: Project, file: VirtualFile): FileEditor =
-        ArbEditor(file)
+        ArbEditor(project, file)
 
     override fun getEditorTypeId(): String = "arb-net-editor"
 
