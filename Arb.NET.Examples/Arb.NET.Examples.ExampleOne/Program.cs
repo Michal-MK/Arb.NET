@@ -1,4 +1,6 @@
-﻿namespace Arb.NET.Example;
+﻿using Arb.NET.Example.Localizations;
+
+namespace Arb.NET.Example;
 
 internal static class Program {
     private static void Main() {
@@ -40,7 +42,27 @@ internal static class Program {
         // from Examples/app_en.arb.  No runtime loading needed.
         Console.WriteLine("\n=== Source-generated class ===");
 
-        Console.WriteLine($"AppTitle       : {Localizations.AppLocale_cs.AppTitle}");
-        Console.WriteLine($"WelcomeMessage : {Localizations.AppLocale_cs.WelcomeMessage("Alice")}");
+        Console.WriteLine($"AppTitle       : {AppLocale_cs.AppTitle}");
+        Console.WriteLine($"WelcomeMessage : {AppLocale_cs.WelcomeMessage("Alice")}");
+
+        // ── 4. Dispatcher: route by CultureInfo ───────────────────────────────
+        Console.WriteLine("\n=== Dispatcher class ===");
+
+        AppLocale csLocale = new(System.Globalization.CultureInfo.GetCultureInfo("cs"));
+        Console.WriteLine($"[cs] AppTitle       : {csLocale.AppTitle}");
+        Console.WriteLine($"[cs] WelcomeMessage : {csLocale.WelcomeMessage("Alice")}");
+        Console.WriteLine($"[cs] ItemCount(0)   : {csLocale.ItemCount(0)}");
+
+        AppLocale enLocale = new(System.Globalization.CultureInfo.GetCultureInfo("en"));
+        Console.WriteLine($"[en] AppTitle       : {enLocale.AppTitle}");
+        Console.WriteLine($"[en] WelcomeMessage : {enLocale.WelcomeMessage("Alice")}");
+        Console.WriteLine($"[en] ItemCount(5)   : {enLocale.ItemCount(5)}");
+
+        // en-US falls back to en (sub-culture → parent fallback)
+        AppLocale enUsLocale = new(System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        Console.WriteLine($"[en-US] AppTitle       : {enUsLocale.AppTitle}");
+        Console.WriteLine($"[en-US] WelcomeMessage : {enUsLocale.WelcomeMessage("Alice")}");
+        
+        Console.WriteLine($"[en-US] LongText       : {enUsLocale.LongText}");
     }
 }

@@ -62,7 +62,7 @@ public record ArbEntry {
                     continue;
                 }
                 if (current == ',') {
-                    if (HandlePluralizationParameter(value, latestOpenBraceIndex, ref index, out var pluralDef)) {
+                    if (HandlePluralizationParameter(value, latestOpenBraceIndex, ref index, out ArbPluralizationParameterDefinition? pluralDef)) {
                         defs.Add(pluralDef);
                         index++;
                         continue;
@@ -96,9 +96,9 @@ public record ArbEntry {
     // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
     //       ^
     // Here we are
-    private bool HandlePluralizationParameter(string value, int start, ref int index, out ArbPluralizationParameterDefinition? def) {
+    private bool HandlePluralizationParameter(string value, int start, ref int index, out ArbPluralizationParameterDefinition def) {
         const string PLURAL_INDICATOR = ", plural, ";
-        def = new() {
+        def = new ArbPluralizationParameterDefinition {
             StartIndex = start,
             Name = value.Substring(start + 1, index - 1 - start),
         };
@@ -134,7 +134,7 @@ public record ArbEntry {
                 //                   ^
                 // Here we are
 
-                bool success2 = ReadContent(value, ref index, number, out string content);
+                bool success2 = ReadContent(value, ref index, out string content);
 
                 // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
                 //                             ^                ^
@@ -160,7 +160,7 @@ public record ArbEntry {
                     return false;
                 }
                 index += OTHER_INDICATOR.Length;
-                bool success = ReadContent(value, ref index, null, out string content);
+                bool success = ReadContent(value, ref index, out string content);
                 if (!success) {
                     return false;
                 }
@@ -193,7 +193,7 @@ public record ArbEntry {
         return true;
     }
 
-    private static bool ReadContent(string value, ref int index, int? pluralCaseNumber, out string content) {
+    private static bool ReadContent(string value, ref int index, out string content) {
         content = string.Empty;
         if (value[index] != '{') {
             return false;

@@ -7,6 +7,11 @@ namespace Arb.NET.Generators;
 /// Roslyn incremental source generator that turns .arb files (listed as AdditionalFiles
 /// via &lt;ArbSource&gt; items) into strongly-typed C# localization classes.
 ///
+/// When <c>ArbUseContextForSubclasses</c> is <c>false</c> and a base class name is
+/// configured, a dispatcher class (e.g. <c>AppLocale</c>) is also generated.  The
+/// dispatcher is a non-static class that accepts a <see cref="System.Globalization.CultureInfo"/>
+/// in its constructor and routes every call to the correct locale-specific static class.
+///
 /// Consumer setup in their .csproj (all optional — driven by build props):
 /// <code>
 ///   &lt;PropertyGroup&gt;
@@ -32,149 +37,187 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
         isEnabledByDefault: true);
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
-        // Filter AdditionalFiles to only .arb files
         var arbFiles = context.AdditionalTextsProvider
             .Where(file => file.Path.EndsWith(".arb", StringComparison.OrdinalIgnoreCase));
 
-        // Combine each arb file with the global analyzer config options
         var combined = arbFiles.Combine(context.AnalyzerConfigOptionsProvider);
 
-        context.RegisterSourceOutput(combined, static (ctx, pair) => {
-            var (file, optionsProvider) = pair;
+        var allFiles = combined.Collect();
 
-            var content = file.GetText(ctx.CancellationToken)?.ToString();
-            if (string.IsNullOrWhiteSpace(content))
-                return;
+        context.RegisterSourceOutput(allFiles, (ctx, pairs) => {
+            // ── Per-file pass: parse + emit locale-specific classes ──
+            // We also accumulate enough information to later emit the dispatcher.
 
-            ArbParseResult result = new ArbParser().ParseContent(content!);
+            // Key: baseClassName
+            Dictionary<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>> groups = new();
 
-            if (!result.ValidationResults.IsValid) {
-                foreach (var error in result.ValidationResults.Errors)
-                    ctx.ReportDiagnostic(Diagnostic.Create(ParseError, Location.None, file.Path, error.Keyword, error.Message, error.InstanceLocation, error.SchemaPath));
-                return;
-            }
-            
-            var document = result.Document!;
+            foreach ((AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider) in pairs) {
+                string? content = file.GetText(ctx.CancellationToken)?.ToString();
+                if (string.IsNullOrWhiteSpace(content))
+                    continue;
 
-            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(file.Path);
-            var fileOptions = optionsProvider.GetOptions(file);
-            var globalOptions = optionsProvider.GlobalOptions;
+                ArbParseResult result = new ArbParser().ParseContent(content!);
 
-            // ── Namespace ─────────────────────────────────────────────────────────────
-            // Priority: per-file Namespace > per-file DefaultNamespace > build_property.ArbDefaultNamespace > RootNamespace > fallback
-            var namespaceName = FirstNonEmpty(
-                GetFileMeta(fileOptions, "Namespace"),
-                GetFileMeta(fileOptions, "DefaultNamespace"),
-                GetGlobalProp(globalOptions, "ArbDefaultNamespace"),
-                GetGlobalProp(globalOptions, "RootNamespace"),
-                "Arb.Generated");
+                if (!result.ValidationResults.IsValid) {
+                    foreach (var error in result.ValidationResults.Errors)
+                        ctx.ReportDiagnostic(Diagnostic.Create(ParseError, Location.None, file.Path, error.Keyword, error.Message, error.InstanceLocation, error.SchemaPath));
+                    continue;
+                }
 
-            // ── Lang code ─────────────────────────────────────────────────────────────
-            // Priority: per-file LangCode > inferred from filename > @@locale in file > ArbDefaultLangCode
-            // Note: DefaultLangCode is the *project* default used for class-naming decisions only —
-            // it must NOT override the locale inferred from the filename.
-            var langCode = FirstNonEmpty(
-                GetFileMeta(fileOptions, "LangCode"),
-                InferLangCodeFromFilename(fileNameWithoutExt),
-                document.Locale,
-                GetGlobalProp(globalOptions, "ArbDefaultLangCode"));
+                ArbDocument document = result.Document!;
 
-            if (!string.IsNullOrWhiteSpace(langCode))
-                document.Locale = langCode!;
+                string? fileNameWithoutExt = Path.GetFileNameWithoutExtension(file.Path);
+                AnalyzerConfigOptions fileOptions = optionsProvider.GetOptions(file);
+                AnalyzerConfigOptions globalOptions = optionsProvider.GlobalOptions;
 
-            // ── Class name ────────────────────────────────────────────────────────────
-            // Priority: per-file ClassName (legacy explicit override) > DefaultClass logic > auto-derive from filename
+                // ── Resolve namespace ──
+                string namespaceName = FirstNonEmpty(
+                    GetFileMeta(fileOptions, "Namespace"),
+                    GetFileMeta(fileOptions, "DefaultNamespace"),
+                    GetGlobalProp(globalOptions, "ArbDefaultNamespace"),
+                    GetGlobalProp(globalOptions, "RootNamespace"),
+                    "Arb.Generated")!;
 
-            var explicitClassName = GetFileMeta(fileOptions, "ClassName");
+                // ── Resolve language code ──
+                string? langCode = FirstNonEmpty(
+                    GetFileMeta(fileOptions, "LangCode"),
+                    InferLangCodeFromFilename(fileNameWithoutExt),
+                    document.Locale,
+                    GetGlobalProp(globalOptions, "ArbDefaultLangCode"));
 
-            string className;
-            if (!string.IsNullOrWhiteSpace(explicitClassName)) {
-                // Legacy: caller gave a full explicit class name; append locale suffix to disambiguate.
-                var localeSuffix = NormalizeLocale(document.Locale);
-                className = string.IsNullOrWhiteSpace(localeSuffix)
-                    ? explicitClassName!
-                    : explicitClassName + "_" + localeSuffix;
-            }
-            else {
-                // Resolve base class name: per-file DefaultClass > build_property.ArbDefaultClass
-                var baseClass = FirstNonEmpty(
-                    GetFileMeta(fileOptions, "DefaultClass"),
-                    GetGlobalProp(globalOptions, "ArbDefaultClass"));
+                if (!string.IsNullOrWhiteSpace(langCode))
+                    document.Locale = langCode!;
 
-                if (!string.IsNullOrWhiteSpace(baseClass)) {
-                    // ArbUseContextForSubclasses: when true, the file whose locale matches the
-                    // project default lang code gets the plain base class name; all others get
-                    // a locale suffix.  When false (or unset), all files always get a suffix.
-                    var useContext = IsTrue(FirstNonEmpty(
-                                                GetFileMeta(fileOptions, "UseContextForSubclasses"),
-                                                GetGlobalProp(globalOptions, "ArbUseContextForSubclasses")));
+                // ── Resolve class name ──
+                string? explicitClassName = GetFileMeta(fileOptions, "ClassName");
 
-                    var defaultLangCode = FirstNonEmpty(
-                        GetFileMeta(fileOptions, "DefaultLangCode"),
-                        GetGlobalProp(globalOptions, "ArbDefaultLangCode"));
+                string className;
+                string? baseClass = null;
 
-                    var localeSuffix = NormalizeLocale(document.Locale);
-
-                    bool isDefaultLocale = useContext
-                                           && !string.IsNullOrWhiteSpace(defaultLangCode)
-                                           && NormalizeLocale(defaultLangCode) == localeSuffix;
-
-                    className = isDefaultLocale || string.IsNullOrWhiteSpace(localeSuffix)
-                        ? baseClass!
-                        : baseClass + "_" + localeSuffix;
+                if (!string.IsNullOrWhiteSpace(explicitClassName)) {
+                    string localeSuffix = StringHelper.NormalizeLocale(document.Locale);
+                    className = string.IsNullOrWhiteSpace(localeSuffix)
+                        ? explicitClassName!
+                        : explicitClassName + "_" + localeSuffix;
                 }
                 else {
-                    // No base class configured — derive from all filename segments.
-                    className = string.Concat(System.Array.ConvertAll(fileNameWithoutExt.Split('_'), ToPascalCase))
-                                + "Localizations";
+                    baseClass = FirstNonEmpty(
+                        GetFileMeta(fileOptions, "DefaultClass"),
+                        GetGlobalProp(globalOptions, "ArbDefaultClass"));
+
+                    if (!string.IsNullOrWhiteSpace(baseClass)) {
+                        bool useContext = StringHelper.IsTrue(
+                            FirstNonEmpty(
+                                GetFileMeta(fileOptions, "UseContextForSubclasses"),
+                                GetGlobalProp(globalOptions, "ArbUseContextForSubclasses")
+                            )
+                        );
+
+                        string? defaultLangCode = FirstNonEmpty(
+                            GetFileMeta(fileOptions, "DefaultLangCode"),
+                            GetGlobalProp(globalOptions, "ArbDefaultLangCode")
+                        );
+
+                        string localeSuffix = StringHelper.NormalizeLocale(document.Locale);
+
+                        bool isDefaultLocale = useContext
+                                               && !string.IsNullOrWhiteSpace(defaultLangCode)
+                                               && StringHelper.NormalizeLocale(defaultLangCode) == localeSuffix;
+
+                        className = isDefaultLocale || string.IsNullOrWhiteSpace(localeSuffix)
+                            ? baseClass!
+                            : baseClass + "_" + localeSuffix;
+                    }
+                    else {
+                        className = string.Concat(Array.ConvertAll(fileNameWithoutExt.Split('_'), StringHelper.ToPascalCase))
+                                    + "Localizations";
+                    }
+                }
+
+                // Emit the locale-specific class
+                string source = new ArbCodeGenerator().GenerateClass(document, className, namespaceName);
+                ctx.AddSource($"{fileNameWithoutExt}.g.cs", source);
+
+                // Accumulate for dispatcher generation
+                if (!string.IsNullOrWhiteSpace(baseClass)) {
+                    bool useContextForGroup = StringHelper.IsTrue(
+                        FirstNonEmpty(
+                            GetFileMeta(fileOptions, "UseContextForSubclasses"),
+                            GetGlobalProp(globalOptions, "ArbUseContextForSubclasses")
+                        )
+                    );
+
+                    string defaultLangCodeForGroup = FirstNonEmpty(
+                        GetFileMeta(fileOptions, "DefaultLangCode"),
+                        GetGlobalProp(globalOptions, "ArbDefaultLangCode")) ?? string.Empty;
+
+                    if (!groups.TryGetValue(baseClass!, out List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>? list)) {
+                        list = [];
+                        groups[baseClass!] = list;
+                    }
+                    list.Add((document, className, namespaceName, defaultLangCodeForGroup, useContextForGroup));
                 }
             }
 
-            var source = new ArbCodeGenerator().GenerateClass(document, className, namespaceName!);
-            ctx.AddSource($"{fileNameWithoutExt}_localizations.g.cs", source);
+            // ── Dispatcher pass ──
+            foreach (var groupPair in groups) {
+                string? baseClassName = groupPair.Key;
+                List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>? entries = groupPair.Value;
+
+                // Only emit dispatcher when ArbUseContextForSubclasses is false
+                // (if any entry in the group has it true, skip — mixed config is unsupported)
+                if (entries.Any(e => e.UseContext))
+                    continue;
+
+                string? defaultLangCode = entries.FirstOrDefault(e => !string.IsNullOrEmpty(e.DefaultLangCode)).DefaultLangCode;
+                string? namespaceName = entries[0].NamespaceName;
+
+                // Find the default-locale document (authoritative for entry signatures)
+                ArbDocument? defaultDocument = null;
+                if (!string.IsNullOrWhiteSpace(defaultLangCode)) {
+                    string normalizedDefault = StringHelper.NormalizeLocale(defaultLangCode);
+                    defaultDocument = entries
+                        .FirstOrDefault(e => StringHelper.NormalizeLocale(e.Document.Locale) == normalizedDefault)
+                        .Document;
+                }
+                defaultDocument ??= entries[0].Document;
+
+                List<(ArbDocument Document, string ClassName)> locales = entries
+                    .Select(e => (e.Document, e.ClassName))
+                    .ToList();
+
+                string dispatcher = new ArbCodeGenerator().GenerateDispatcherClass(
+                    locales,
+                    defaultDocument,
+                    baseClassName,
+                    namespaceName
+                );
+
+                ctx.AddSource($"{baseClassName}Dispatcher.g.cs", dispatcher);
+            }
         });
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────────
 
     private static string? GetFileMeta(AnalyzerConfigOptions options, string key) {
-        options.TryGetValue($"build_metadata.AdditionalFiles.{key}", out var value);
+        options.TryGetValue($"build_metadata.AdditionalFiles.{key}", out string? value);
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     private static string? GetGlobalProp(AnalyzerConfigOptions options, string key) {
-        options.TryGetValue($"build_property.{key}", out var value);
+        options.TryGetValue($"build_property.{key}", out string? value);
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     private static string? FirstNonEmpty(params string?[] values) {
-        foreach (var v in values)
-            if (!string.IsNullOrWhiteSpace(v))
-                return v;
-        return null;
+        return values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
     }
 
-    /// <summary>
-    /// Infers a locale string from the filename segments after the first underscore.
-    /// "app_en" → "en", "app_en_US" → "en_US", "Czech" → null (no underscore).
-    /// </summary>
     private static string? InferLangCodeFromFilename(string fileNameWithoutExt) {
-        var segments = fileNameWithoutExt.Split('_');
-        if (segments.Length <= 1) return null;
-        return string.Join("_", segments, 1, segments.Length - 1);
-    }
-
-    /// <summary>Normalises a locale string for use as a class name suffix.</summary>
-    private static string NormalizeLocale(string? locale) {
-        if (string.IsNullOrWhiteSpace(locale)) return string.Empty;
-        return locale!.Replace("-", "_").Replace(" ", string.Empty);
-    }
-
-    private static bool IsTrue(string? value) =>
-        string.Equals(value, "true", System.StringComparison.OrdinalIgnoreCase);
-
-    private static string ToPascalCase(string value) {
-        if (string.IsNullOrEmpty(value)) return value;
-        return char.ToUpperInvariant(value[0]) + value.Substring(1);
+        string[] segments = fileNameWithoutExt.Split('_');
+        return segments.Length <= 1
+            ? null
+            : string.Join("_", segments, 1, segments.Length - 1);
     }
 }
