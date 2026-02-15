@@ -19,6 +19,7 @@ Arb.NET.IDE.Jetbrains/.gradle
 
 # .user files
 Arb.NET.sln.DotSettings.user
+local.properties
 
 # Executables
 Arb.NET.IDE.Jetbrains/tools/nuget.exe

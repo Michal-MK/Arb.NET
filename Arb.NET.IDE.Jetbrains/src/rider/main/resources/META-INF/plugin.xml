@@ -12,12 +12,22 @@
 ]]>
   </description>
 
+  <extensions defaultExtensionNs="com.intellij">
+    <fileEditorProvider implementation="com.jetbrains.rider.plugins.arbnet.ArbEditorProvider"/>
+  </extensions>
+
   <actions>
     <action id="GetAssemblyInfo"
             class="com.jetbrains.rider.plugins.arbnet.GetAssemblyInfoAction"
             text="Arb.NET: Assembly Info"
             description="Show information about the Arb.NET assembly loaded in this plugin">
       <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+    <action id="OpenArbEditor"
+            class="com.jetbrains.rider.plugins.arbnet.OpenArbEditorAction"
+            text="Arb.NET: Open Editor"
+            description="Open the Arb.NET editor window">
+      <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="GetAssemblyInfo"/>
     </action>
   </actions>
     

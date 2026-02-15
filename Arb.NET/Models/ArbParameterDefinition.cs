@@ -19,5 +19,5 @@ public record ArbParameterDefinition {
 
 public record ArbPluralizationParameterDefinition : ArbParameterDefinition {
     public Dictionary<int, string> CountableParameters { get; set; } = [];
-    public string OtherParameter { get; set; } = null!;
+    public string OtherParameter { get; set; } = "";
 }

@@ -40,7 +40,7 @@ internal static class Program {
         // from Examples/app_en.arb.  No runtime loading needed.
         Console.WriteLine("\n=== Source-generated class ===");
 
-        Console.WriteLine($"AppTitle       : {Localizations.AppLocale.AppTitle}");
-        Console.WriteLine($"WelcomeMessage : {Localizations.AppLocale.WelcomeMessage("Alice")}");
+        Console.WriteLine($"AppTitle       : {Localizations.AppLocale_cs.AppTitle}");
+        Console.WriteLine($"WelcomeMessage : {Localizations.AppLocale_cs.WelcomeMessage("Alice")}");
     }
 }

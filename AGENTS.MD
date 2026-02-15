@@ -20,3 +20,7 @@
 
 - `ArbCodeGenerator.cs` - the main source generator that generates code from .arb files at design time.
 - `ArbParser.cs` - the main parser that parses .arb files and returns a model that can be used to generate code from it.
+
+### Jetbrains specifics
+- You are dealing with Rider/Resharper which is using both C# code and Kotlin code. Jetbrains IDEs are using the shared JVM runtime.
+- The C# specific things live in a separate process. Communication between the two is done via the Rider Protocol.

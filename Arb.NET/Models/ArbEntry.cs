@@ -39,6 +39,8 @@ public record ArbEntry {
                     continue;
                 }
                 latestOpenBraceIndex = index;
+                index++;
+                continue;
             }
 
             if (latestOpenBraceIndex != -1) {
@@ -49,7 +51,6 @@ public record ArbEntry {
                         latestOpenBraceIndex = -1;
                         isParameterNumeric = null;
                         index++;
-
                     }
                     else if (!StringHelper.IsValidParameterLetter(current) && isParameterNumeric.Value) {
                         // Mixed parameter name, not valid
@@ -58,18 +59,17 @@ public record ArbEntry {
                         index++;
                     }
                     index++;
-
                     continue;
                 }
                 if (current == ',') {
                     if (HandlePluralizationParameter(value, latestOpenBraceIndex, ref index, out var pluralDef)) {
                         defs.Add(pluralDef);
-                    }
-                    else {
-                        latestOpenBraceIndex = -1;
-                        isParameterNumeric = null;
                         index++;
+                        continue;
                     }
+                    latestOpenBraceIndex = -1;
+                    index++;
+                    continue;
                 }
                 if (current == '}') {
                     string paramName = value.Substring(latestOpenBraceIndex + 1, index - latestOpenBraceIndex - 1);
@@ -80,7 +80,12 @@ public record ArbEntry {
                     });
                     latestOpenBraceIndex = -1;
                     isParameterNumeric = null;
+                    continue;
                 }
+                
+                // Something unexpected, reset state
+                latestOpenBraceIndex = -1;
+                isParameterNumeric = null;
             }
 
             index++;

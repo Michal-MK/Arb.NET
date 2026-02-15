@@ -16,6 +16,6 @@ internal static class StringHelper {
     }
 
     public static bool IsValidParameterLetter(char c) {
-        return c is > 'a' and <= 'z' || c is >= 'A' and <= 'Z' || c == '_';
+        return c is >= 'a' and <= 'z' || c is >= 'A' and <= 'Z' || c == '_';
     }
 }

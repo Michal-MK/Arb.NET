@@ -140,11 +140,11 @@ public class ArbCodeGenerator {
                 sb.AppendLine($"        var @selectedContent_{pluralDef.Name} = ({pluralDef.Name}) switch {{");
                 foreach (var form in pluralDef.CountableParameters) {
                     string escapeString = StringHelper.EscapeString(form.Value);
-                    escapeString = escapeString.Replace($"{{{def.Name}}}", $"\" + {def.Name}?.ToString() + \"");
+                    escapeString = escapeString.Replace($"{{{def.Name}}}", $"\" + {def.Name}.ToString() + \"");
                     sb.AppendLine($"            {form.Key} => \"{escapeString}\",");
                 }
                 string escapeOtherString = StringHelper.EscapeString(pluralDef.OtherParameter);
-                escapeOtherString = escapeOtherString.Replace($"{{{def.Name}}}", $"\" + {def.Name}?.ToString() + \"");
+                escapeOtherString = escapeOtherString.Replace($"{{{def.Name}}}", $"\" + {def.Name}.ToString() + \"");
                 sb.AppendLine($"            _ => \"{escapeOtherString}\"");
                 sb.AppendLine("        };");
             }
