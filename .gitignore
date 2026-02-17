@@ -17,6 +17,7 @@ Arb.NET.IDE.Jetbrains/build
 Arb.NET.IDE.Jetbrains/.intellijPlatform
 Arb.NET.IDE.Jetbrains/.kotlin
 Arb.NET.IDE.Jetbrains/.gradle
+Arb.NET.IDE.Jetbrains/output/*
 
 # .user files
 Arb.NET.sln.DotSettings.user
@@ -27,5 +28,6 @@ Arb.NET.IDE.Jetbrains/tools/nuget.exe
 
 # AI files
 .claude
+ai-ref/
 
 

@@ -43,24 +43,38 @@ namespace JetBrains.Rider.Model
     //fields
     //public fields
     [NotNull] public IRdEndpoint<Unit, List<ArbLocaleData>> GetArbData => _GetArbData;
+    [NotNull] public IRdEndpoint<ArbEntryUpdate, bool> SaveArbEntry => _SaveArbEntry;
+    [NotNull] public IRdEndpoint<ArbKeyRename, bool> RenameArbKey => _RenameArbKey;
     
     //private fields
     [NotNull] private readonly RdCall<Unit, List<ArbLocaleData>> _GetArbData;
+    [NotNull] private readonly RdCall<ArbEntryUpdate, bool> _SaveArbEntry;
+    [NotNull] private readonly RdCall<ArbKeyRename, bool> _RenameArbKey;
     
     //primary constructor
     private ArbModel(
-      [NotNull] RdCall<Unit, List<ArbLocaleData>> getArbData
+      [NotNull] RdCall<Unit, List<ArbLocaleData>> getArbData,
+      [NotNull] RdCall<ArbEntryUpdate, bool> saveArbEntry,
+      [NotNull] RdCall<ArbKeyRename, bool> renameArbKey
     )
     {
       if (getArbData == null) throw new ArgumentNullException("getArbData");
+      if (saveArbEntry == null) throw new ArgumentNullException("saveArbEntry");
+      if (renameArbKey == null) throw new ArgumentNullException("renameArbKey");
       
       _GetArbData = getArbData;
+      _SaveArbEntry = saveArbEntry;
+      _RenameArbKey = renameArbKey;
       BindableChildren.Add(new KeyValuePair<string, object>("getArbData", _GetArbData));
+      BindableChildren.Add(new KeyValuePair<string, object>("saveArbEntry", _SaveArbEntry));
+      BindableChildren.Add(new KeyValuePair<string, object>("renameArbKey", _RenameArbKey));
     }
     //secondary constructor
     internal ArbModel (
     ) : this (
-      new RdCall<Unit, List<ArbLocaleData>>(JetBrains.Rd.Impl.Serializers.ReadVoid, JetBrains.Rd.Impl.Serializers.WriteVoid, ReadArbLocaleDataList, WriteArbLocaleDataList)
+      new RdCall<Unit, List<ArbLocaleData>>(JetBrains.Rd.Impl.Serializers.ReadVoid, JetBrains.Rd.Impl.Serializers.WriteVoid, ReadArbLocaleDataList, WriteArbLocaleDataList),
+      new RdCall<ArbEntryUpdate, bool>(ArbEntryUpdate.Read, ArbEntryUpdate.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
+      new RdCall<ArbKeyRename, bool>(ArbKeyRename.Read, ArbKeyRename.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool)
     ) {}
     //deconstruct trait
     //statics
@@ -69,7 +83,7 @@ namespace JetBrains.Rider.Model
     
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     
-    protected override long SerializationHash => -1039800800516086927L;
+    protected override long SerializationHash => -9024756280827998291L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -91,6 +105,8 @@ namespace JetBrains.Rider.Model
       printer.Println("ArbModel (");
       using (printer.IndentCookie()) {
         printer.Print("getArbData = "); _GetArbData.PrintEx(printer); printer.Println();
+        printer.Print("saveArbEntry = "); _SaveArbEntry.PrintEx(printer); printer.Println();
+        printer.Print("renameArbKey = "); _RenameArbKey.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }
@@ -206,33 +222,258 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:18</p>
+  /// <p>Generated from: ArbModel.kt:28</p>
+  /// </summary>
+  public sealed class ArbEntryUpdate : IPrintable, IEquatable<ArbEntryUpdate>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Directory {get; private set;}
+    [NotNull] public string Locale {get; private set;}
+    [NotNull] public string Key {get; private set;}
+    [NotNull] public string Value {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbEntryUpdate(
+      [NotNull] string directory,
+      [NotNull] string locale,
+      [NotNull] string key,
+      [NotNull] string value
+    )
+    {
+      if (directory == null) throw new ArgumentNullException("directory");
+      if (locale == null) throw new ArgumentNullException("locale");
+      if (key == null) throw new ArgumentNullException("key");
+      if (value == null) throw new ArgumentNullException("value");
+      
+      Directory = directory;
+      Locale = locale;
+      Key = key;
+      Value = value;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string directory, [NotNull] out string locale, [NotNull] out string key, [NotNull] out string value)
+    {
+      directory = Directory;
+      locale = Locale;
+      key = Key;
+      value = Value;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbEntryUpdate> Read = (ctx, reader) => 
+    {
+      var directory = reader.ReadString();
+      var locale = reader.ReadString();
+      var key = reader.ReadString();
+      var value = reader.ReadString();
+      var _result = new ArbEntryUpdate(directory, locale, key, value);
+      return _result;
+    };
+    
+    public static CtxWriteDelegate<ArbEntryUpdate> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Directory);
+      writer.Write(value.Locale);
+      writer.Write(value.Key);
+      writer.Write(value.Value);
+    };
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbEntryUpdate) obj);
+    }
+    public bool Equals(ArbEntryUpdate other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Directory == other.Directory && Locale == other.Locale && Key == other.Key && Value == other.Value;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Directory.GetHashCode();
+        hash = hash * 31 + Locale.GetHashCode();
+        hash = hash * 31 + Key.GetHashCode();
+        hash = hash * 31 + Value.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbEntryUpdate (");
+      using (printer.IndentCookie()) {
+        printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
+        printer.Print("locale = "); Locale.PrintEx(printer); printer.Println();
+        printer.Print("key = "); Key.PrintEx(printer); printer.Println();
+        printer.Print("value = "); Value.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:36</p>
+  /// </summary>
+  public sealed class ArbKeyRename : IPrintable, IEquatable<ArbKeyRename>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Directory {get; private set;}
+    [NotNull] public string OldKey {get; private set;}
+    [NotNull] public string NewKey {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbKeyRename(
+      [NotNull] string directory,
+      [NotNull] string oldKey,
+      [NotNull] string newKey
+    )
+    {
+      if (directory == null) throw new ArgumentNullException("directory");
+      if (oldKey == null) throw new ArgumentNullException("oldKey");
+      if (newKey == null) throw new ArgumentNullException("newKey");
+      
+      Directory = directory;
+      OldKey = oldKey;
+      NewKey = newKey;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string directory, [NotNull] out string oldKey, [NotNull] out string newKey)
+    {
+      directory = Directory;
+      oldKey = OldKey;
+      newKey = NewKey;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbKeyRename> Read = (ctx, reader) => 
+    {
+      var directory = reader.ReadString();
+      var oldKey = reader.ReadString();
+      var newKey = reader.ReadString();
+      var _result = new ArbKeyRename(directory, oldKey, newKey);
+      return _result;
+    };
+    
+    public static CtxWriteDelegate<ArbKeyRename> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Directory);
+      writer.Write(value.OldKey);
+      writer.Write(value.NewKey);
+    };
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbKeyRename) obj);
+    }
+    public bool Equals(ArbKeyRename other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Directory == other.Directory && OldKey == other.OldKey && NewKey == other.NewKey;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Directory.GetHashCode();
+        hash = hash * 31 + OldKey.GetHashCode();
+        hash = hash * 31 + NewKey.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbKeyRename (");
+      using (printer.IndentCookie()) {
+        printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
+        printer.Print("oldKey = "); OldKey.PrintEx(printer); printer.Println();
+        printer.Print("newKey = "); NewKey.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:20</p>
   /// </summary>
   public sealed class ArbLocaleData : IPrintable, IEquatable<ArbLocaleData>
   {
     //fields
     //public fields
     [NotNull] public string Locale {get; private set;}
+    [NotNull] public string Directory {get; private set;}
+    [NotNull] public string FilePath {get; private set;}
     [NotNull] public List<ArbEntry> Entries {get; private set;}
     
     //private fields
     //primary constructor
     public ArbLocaleData(
       [NotNull] string locale,
+      [NotNull] string directory,
+      [NotNull] string filePath,
       [NotNull] List<ArbEntry> entries
     )
     {
       if (locale == null) throw new ArgumentNullException("locale");
+      if (directory == null) throw new ArgumentNullException("directory");
+      if (filePath == null) throw new ArgumentNullException("filePath");
       if (entries == null) throw new ArgumentNullException("entries");
       
       Locale = locale;
+      Directory = directory;
+      FilePath = filePath;
       Entries = entries;
     }
     //secondary constructor
     //deconstruct trait
-    public void Deconstruct([NotNull] out string locale, [NotNull] out List<ArbEntry> entries)
+    public void Deconstruct([NotNull] out string locale, [NotNull] out string directory, [NotNull] out string filePath, [NotNull] out List<ArbEntry> entries)
     {
       locale = Locale;
+      directory = Directory;
+      filePath = FilePath;
       entries = Entries;
     }
     //statics
@@ -240,8 +481,10 @@ namespace JetBrains.Rider.Model
     public static CtxReadDelegate<ArbLocaleData> Read = (ctx, reader) => 
     {
       var locale = reader.ReadString();
+      var directory = reader.ReadString();
+      var filePath = reader.ReadString();
       var entries = ReadArbEntryList(ctx, reader);
-      var _result = new ArbLocaleData(locale, entries);
+      var _result = new ArbLocaleData(locale, directory, filePath, entries);
       return _result;
     };
     public static CtxReadDelegate<List<ArbEntry>> ReadArbEntryList = ArbEntry.Read.List();
@@ -249,6 +492,8 @@ namespace JetBrains.Rider.Model
     public static CtxWriteDelegate<ArbLocaleData> Write = (ctx, writer, value) => 
     {
       writer.Write(value.Locale);
+      writer.Write(value.Directory);
+      writer.Write(value.FilePath);
       WriteArbEntryList(ctx, writer, value.Entries);
     };
     public static  CtxWriteDelegate<List<ArbEntry>> WriteArbEntryList = ArbEntry.Write.List();
@@ -269,7 +514,7 @@ namespace JetBrains.Rider.Model
     {
       if (ReferenceEquals(null, other)) return false;
       if (ReferenceEquals(this, other)) return true;
-      return Locale == other.Locale && Entries.SequenceEqual(other.Entries);
+      return Locale == other.Locale && Directory == other.Directory && FilePath == other.FilePath && Entries.SequenceEqual(other.Entries);
     }
     //hash code trait
     public override int GetHashCode()
@@ -277,6 +522,8 @@ namespace JetBrains.Rider.Model
       unchecked {
         var hash = 0;
         hash = hash * 31 + Locale.GetHashCode();
+        hash = hash * 31 + Directory.GetHashCode();
+        hash = hash * 31 + FilePath.GetHashCode();
         hash = hash * 31 + Entries.ContentHashCode();
         return hash;
       }
@@ -287,6 +534,8 @@ namespace JetBrains.Rider.Model
       printer.Println("ArbLocaleData (");
       using (printer.IndentCookie()) {
         printer.Print("locale = "); Locale.PrintEx(printer); printer.Println();
+        printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
+        printer.Print("filePath = "); FilePath.PrintEx(printer); printer.Println();
         printer.Print("entries = "); Entries.PrintEx(printer); printer.Println();
       }
       printer.Print(")");

@@ -4,15 +4,6 @@
   "@appTitle": {
     "description": "The title of the application"
   },
-  "welcomeMessage": "Welcome, {username}!",
-  "@welcomeMessage": {
-    "description": "Welcome message with username placeholder",
-    "placeholders": {
-      "username": {
-        "type": "String"
-      }
-    }
-  },
   "itemCount": "{count, plural, =0{No items} =1{{count} item} other{{count} items}}",
   "@itemCount": {
     "description": "Number of items with plural handling",
@@ -23,6 +14,15 @@
     }
   },
   "itemCountWithExtras": "Count: {count, plural, =0{No items} =1{{count} item} other{{count} items}} are available.",
+  "longText": "I agree with <a href=\"https://finance.patria.cz/en/open-an-account/patria-finance/usage-conditions\">terms of use of the site</a> finance.patria.cz and confirm that I have become acquainted with <a href=\"https://www.csob.cz/en/csob/protection-of-personal-data\">information on the processing of personal data and the purpose of their processing</a>. I confirm that I am over 16 years old.",
   "simpleParam": "This is a simple parameter: {param}",
-  "longText": "I agree with <a href=\"https://finance.patria.cz/en/open-an-account/patria-finance/usage-conditions\">terms of use of the site</a> finance.patria.cz and confirm that I have become acquainted with <a href=\"https://www.csob.cz/en/csob/protection-of-personal-data\">information on the processing of personal data and the purpose of their processing</a>. I confirm that I am over 16 years old."
+  "welcomeMessage": "Welcome, {username} - OMG!",
+  "@welcomeMessage": {
+    "description": "Welcome message with username placeholder",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  }
 }
