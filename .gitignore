@@ -19,6 +19,8 @@ Arb.NET.IDE.Jetbrains/.kotlin
 Arb.NET.IDE.Jetbrains/.gradle
 Arb.NET.IDE.Jetbrains/output/*
 
+Arb.NET.Examples/ExampleFour/Resources/arbs
+
 # .user files
 Arb.NET.sln.DotSettings.user
 local.properties

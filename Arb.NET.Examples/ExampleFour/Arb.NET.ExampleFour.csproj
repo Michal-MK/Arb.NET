@@ -32,8 +32,4 @@
       </Compile>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Resources\arbs\" />
-    </ItemGroup>
-
 </Project>
