@@ -12,7 +12,6 @@
         <ArbDefaultClass>L</ArbDefaultClass>
         <ArbDefaultNamespace>ExampleTwo.Localizations</ArbDefaultNamespace>
         <ArbDefaultLangCode>en</ArbDefaultLangCode>
-        <ArbUseContextForSubclasses>false</ArbUseContextForSubclasses>
     </PropertyGroup>
 
     <ItemGroup>

@@ -31,26 +31,28 @@ public class ArbParser {
     /// Parses ARB content from a JSON string
     /// </summary>
     public ArbParseResult ParseContent(string content) {
+        JsonDocumentOptions parseOptions = new() { AllowTrailingCommas = true };
 #if !ARB_GENERATOR
-        var options = new EvaluationOptions { OutputFormat = OutputFormat.List };
+        EvaluationOptions options = new() { OutputFormat = OutputFormat.List };
 
-        var schema = _schema;
-        using var jsonForValidation = JsonDocument.Parse(content);
-        var evalResult = schema.Evaluate(jsonForValidation.RootElement, options);
+        JsonSchema schema = _schema;
+        using JsonDocument jsonForValidation = JsonDocument.Parse(content, parseOptions);
+        EvaluationResults evalResult = schema.Evaluate(jsonForValidation.RootElement, options);
 
-        if (!evalResult.IsValid)
+        if (!evalResult.IsValid) {
             return new ArbParseResult {
                 ValidationResults = ArbValidationResults.FromEvaluationResults(evalResult)
             };
+        }
 #endif
 
-        using var json = JsonDocument.Parse(content);
-        var root = json.RootElement;
-        var document = new ArbDocument();
+        using JsonDocument json = JsonDocument.Parse(content, parseOptions);
+        JsonElement root = json.RootElement;
+        ArbDocument document = new();
 
         // First pass: collect metadata keyed by their entry name
-        var metadataMap = new Dictionary<string, JsonElement>();
-        foreach (var property in root.EnumerateObject()) {
+        Dictionary<string, JsonElement> metadataMap = new();
+        foreach (JsonProperty property in root.EnumerateObject()) {
             if (property.Name.StartsWith("@@")) {
                 if (property.Name == "@@locale" && property.Value.ValueKind == JsonValueKind.String)
                     document.Locale = property.Value.GetString() ?? string.Empty;
@@ -63,20 +65,21 @@ public class ArbParser {
         }
 
         // Second pass: collect actual translation entries
-        foreach (var property in root.EnumerateObject()) {
+        foreach (JsonProperty property in root.EnumerateObject()) {
             if (property.Name.StartsWith("@"))
                 continue;
 
             if (property.Value.ValueKind != JsonValueKind.String)
                 continue;
 
-            var entry = new ArbEntry {
+            ArbEntry entry = new() {
                 Key = property.Name,
                 Value = property.Value.GetString() ?? string.Empty
             };
 
-            if (metadataMap.TryGetValue(property.Name, out var metaElement))
+            if (metadataMap.TryGetValue(property.Name, out JsonElement metaElement)) {
                 entry.Metadata = ParseMetadata(metaElement);
+            }
 
             document.Entries[property.Name] = entry;
         }
@@ -88,18 +91,20 @@ public class ArbParser {
     }
 
     private static ArbMetadata ParseMetadata(JsonElement element) {
-        var metadata = new ArbMetadata();
+        ArbMetadata metadata = new();
 
-        if (element.TryGetProperty("description", out var desc) && desc.ValueKind == JsonValueKind.String)
+        if (element.TryGetProperty("description", out JsonElement desc) && desc.ValueKind == JsonValueKind.String) {
             metadata.Description = desc.GetString();
+        }
 
-        if (element.TryGetProperty("placeholders", out var placeholders) &&
+        if (element.TryGetProperty("placeholders", out JsonElement placeholders) &&
             placeholders.ValueKind == JsonValueKind.Object) {
             metadata.Placeholders = [];
-            foreach (var ph in placeholders.EnumerateObject()) {
-                var placeholder = new ArbPlaceholder();
-                if (ph.Value.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String)
+            foreach (JsonProperty ph in placeholders.EnumerateObject()) {
+                ArbPlaceholder placeholder = new();
+                if (ph.Value.TryGetProperty("type", out JsonElement type) && type.ValueKind == JsonValueKind.String) {
                     placeholder.Type = type.GetString() ?? string.Empty;
+                }
                 metadata.Placeholders[ph.Name] = placeholder;
             }
         }

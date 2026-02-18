@@ -20,15 +20,30 @@
 
 - `ArbCodeGenerator.cs` - the main source generator that generates code from .arb files at design time.
 - `ArbParser.cs` - the main parser that parses .arb files and returns a model that can be used to generate code from it.
+- `ArbSerializer.cs` - the main serializer that can serialize the model back to .arb files.
 
 ### Jetbrains specifics
 - You are dealing with Rider/Resharper which is using both C# code and Kotlin code. Jetbrains IDEs are using the shared JVM runtime.
 - The C# specific things live in a separate process. Communication between the two is done via the Rider Protocol.
 - Not much documentation exists online, but there are examples in the ai-ref/ folder. (ignored by git, if empty the user did not provide any)
-~~~~
-To run the protocol generator:
+
+- To run the protocol generator:
 `cd "./Arb.NET/Arb.NET.IDE.Jetbrains" && ./gradlew :protocol:rdgen 2>&1`
+
+## Shell environment detection
+- Run `uname` to detect the shell environment:
+  - **Success** → bash/zsh/sh — the comands you write will execute in a Unix-like environment, and you can use Unix tools.
+  - **Failure (not recognized)** → PowerShell — Unix tools are not available, any unix commands will fail, and you should use PowerShell syntax for commands.
 
 ## Logging
 
 When adding logging code, determine if the log will be useful to keep or only used for debugging in the current session. Prefix such logs with "[AI-DEBUG]" so that they can easily removed after.
+
+## Nuget Package
+- This project produces two nuget packages: `Arb.NET` and `Arb.NET.Generators`.
+- Any changes from now on must accept that we could break someone! An attempt to minimize making such changes must be made.
+
+At the start of each session print:
+~~~~```
+I will follow the content of this file to my best ability.
+```

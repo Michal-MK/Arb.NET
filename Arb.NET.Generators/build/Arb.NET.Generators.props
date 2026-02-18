@@ -9,7 +9,6 @@
     <ArbDefaultClass Condition="'$(ArbDefaultClass)' == ''"></ArbDefaultClass>
     <ArbDefaultNamespace Condition="'$(ArbDefaultNamespace)' == ''"></ArbDefaultNamespace>
     <ArbDefaultLangCode Condition="'$(ArbDefaultLangCode)' == ''"></ArbDefaultLangCode>
-    <ArbUseContextForSubclasses Condition="'$(ArbUseContextForSubclasses)' == ''">false</ArbUseContextForSubclasses>
   </PropertyGroup>
 
 </Project>

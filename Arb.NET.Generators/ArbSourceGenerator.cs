@@ -8,10 +8,14 @@ namespace Arb.NET.Generators;
 /// Roslyn incremental source generator that turns .arb files (listed as AdditionalFiles
 /// via &lt;ArbSource&gt; items) into strongly-typed C# localization classes.
 ///
-/// When <c>ArbUseContextForSubclasses</c> is <c>false</c> and a base class name is
-/// configured, a dispatcher class (e.g. <c>AppLocale</c>) is also generated.  The
-/// dispatcher is a non-static class that accepts a <see cref="System.Globalization.CultureInfo"/>
+/// When <c>ArbDefaultClass</c> is set (e.g. <c>AppLocale</c>), locale-specific static
+/// classes are generated with that name as a prefix (e.g. <c>AppLocale_en</c>,
+/// <c>AppLocale_cs</c>), and a dispatcher class using the bare base name (<c>AppLocale</c>)
+/// is also generated.  The dispatcher accepts a <see cref="System.Globalization.CultureInfo"/>
 /// in its constructor and routes every call to the correct locale-specific static class.
+/// Without <c>ArbDefaultClass</c>, each .arb file produces an independent static class
+/// named by PascalCasing its filename segments and appending "Localizations"
+/// (e.g. <c>en.arb</c> → <c>EnLocalizations</c>), and no dispatcher is generated.
 ///
 /// Additionally, enums decorated with <c>[ArbLocalize]</c> (on the enum or individual
 /// members) get empty placeholder entries added to every .arb file so translators can
@@ -22,13 +26,20 @@ namespace Arb.NET.Generators;
 /// The optional <c>description</c> argument on <c>[ArbLocalize]</c> is written into
 /// the <c>@metadata</c> block of the <b>default locale</b> ARB file only.
 ///
+/// Namespace resolution order (first non-empty wins):
+/// <list type="number">
+///   <item>Per-file <c>Namespace</c> metadata on the <c>&lt;ArbSource&gt;</c> item</item>
+///   <item>Per-file <c>DefaultNamespace</c> metadata on the <c>&lt;ArbSource&gt;</c> item</item>
+///   <item><c>ArbDefaultNamespace</c> MSBuild property</item>
+///   <item><c>RootNamespace</c> MSBuild property (always set by the SDK to the project name)</item>
+/// </list>
+///
 /// Consumer setup in their .csproj (all optional — driven by build props):
 /// <code>
 ///   &lt;PropertyGroup&gt;
 ///     &lt;ArbDefaultClass&gt;AppLocale&lt;/ArbDefaultClass&gt;
 ///     &lt;ArbDefaultNamespace&gt;MyApp.Localizations&lt;/ArbDefaultNamespace&gt;
 ///     &lt;ArbDefaultLangCode&gt;en&lt;/ArbDefaultLangCode&gt;
-///     &lt;ArbUseContextForSubclasses&gt;true&lt;/ArbUseContextForSubclasses&gt;
 ///   &lt;/PropertyGroup&gt;
 ///   &lt;ItemGroup&gt;
 ///     &lt;ArbSource Include="arbs\app_en.arb" /&gt;
@@ -172,8 +183,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
             }
 
             // ── Step 2: parse ARB files and emit locale-specific C# classes ──────────
-            // Key: baseClassName → list of (document, className, namespace, defaultLang, useContext)
-            Dictionary<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>> groups = new();
+            // Key: baseClassName → list of (document, className, namespace, defaultLang)
+            Dictionary<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode)>> groups = new();
 
             foreach ((AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider) in arbPairs) {
                 // Re-read: the file may have been updated in Step 1
@@ -240,25 +251,10 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     );
 
                     if (!string.IsNullOrWhiteSpace(baseClass)) {
-                        bool useContext = StringHelper.IsTrue(
-                            FirstNonEmpty(
-                                GetFileMeta(fileOptions, "UseContextForSubclasses"),
-                                GetGlobalProp(globalOptions, "ArbUseContextForSubclasses")
-                            )
-                        );
-
-                        string? fileLangCode2 = FirstNonEmpty(
-                            GetFileMeta(fileOptions, "DefaultLangCode"),
-                            GetGlobalProp(globalOptions, "ArbDefaultLangCode")
-                        );
-
                         string localeSuffix = StringHelper.NormalizeLocale(document.Locale);
 
-                        bool isDefaultLocale2 = useContext
-                                                && !string.IsNullOrWhiteSpace(fileLangCode2)
-                                                && StringHelper.NormalizeLocale(fileLangCode2) == localeSuffix;
-
-                        className = isDefaultLocale2 || string.IsNullOrWhiteSpace(localeSuffix)
+                        // Locale-specific classes always get a suffix; the dispatcher owns the bare base name.
+                        className = string.IsNullOrWhiteSpace(localeSuffix)
                             ? baseClass!
                             : baseClass + "_" + localeSuffix;
                     }
@@ -274,22 +270,15 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
                 // Accumulate for dispatcher generation
                 if (!string.IsNullOrWhiteSpace(baseClass)) {
-                    bool useContextForGroup = StringHelper.IsTrue(
-                        FirstNonEmpty(
-                            GetFileMeta(fileOptions, "UseContextForSubclasses"),
-                            GetGlobalProp(globalOptions, "ArbUseContextForSubclasses")
-                        )
-                    );
-
                     string defaultLangCodeForGroup = FirstNonEmpty(
                         GetFileMeta(fileOptions, "DefaultLangCode"),
                         GetGlobalProp(globalOptions, "ArbDefaultLangCode")) ?? string.Empty;
 
-                    if (!groups.TryGetValue(baseClass!, out List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>? list)) {
+                    if (!groups.TryGetValue(baseClass!, out List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode)>? list)) {
                         list = [];
                         groups[baseClass!] = list;
                     }
-                    list.Add((document, className, namespaceName, defaultLangCodeForGroup, useContextForGroup));
+                    list.Add((document, className, namespaceName, defaultLangCodeForGroup));
                 }
             }
 
@@ -302,9 +291,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
             foreach (var groupPair in groups) {
                 string? baseClassName = groupPair.Key;
-                List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>? entries = groupPair.Value;
-
-                if (entries.Any(e => e.UseContext)) continue;
+                List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode)>? entries = groupPair.Value;
 
                 string? groupDefaultLangCode = entries.FirstOrDefault(e => !string.IsNullOrEmpty(e.DefaultLangCode)).DefaultLangCode;
                 string? namespaceName = entries[0].NamespaceName;
