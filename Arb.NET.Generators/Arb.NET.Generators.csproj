@@ -15,6 +15,8 @@
         <DefineConstants>$(DefineConstants);ARB_GENERATOR</DefineConstants>
         <!-- Roslyn source generators must be packaged under analyzers/dotnet/cs/, not lib/. -->
         <IncludeBuildOutput>false</IncludeBuildOutput>
+        <!-- NU5128: expected for analyzer packages — no lib/ folder by design -->
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

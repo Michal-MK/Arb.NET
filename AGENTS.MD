@@ -32,11 +32,12 @@
 
 ## Shell environment detection
 - Run `uname` to detect the shell environment:
-  - **Success** → bash/zsh/sh — the comands you write will execute in a Unix-like environment, and you can use Unix tools.
-  - **Failure (not recognized)** → PowerShell — Unix tools are not available, any unix commands will fail, and you should use PowerShell syntax for commands.
+  - **Success** → bash/zsh/sh
+  - **Failure (not recognized)** → PowerShell
+- Use only commands from the respective shell environment to ensure compatibility and avoid issues with command execution!
 
 ## Logging
-
+~~~~
 When adding logging code, determine if the log will be useful to keep or only used for debugging in the current session. Prefix such logs with "[AI-DEBUG]" so that they can easily removed after.
 
 ## Nuget Package
@@ -46,4 +47,5 @@ When adding logging code, determine if the log will be useful to keep or only us
 At the start of each session print:
 ~~~~```
 I will follow the content of this file to my best ability.
+Determining shell environment... ## Shell environment detection
 ```

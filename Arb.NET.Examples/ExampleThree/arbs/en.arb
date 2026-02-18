@@ -1,4 +1,6 @@
 ﻿{
     "@@locale": "en",
     "appTitle": "Arb.NET Example Three",
+    
+    "anotherString": "Another string",
 }

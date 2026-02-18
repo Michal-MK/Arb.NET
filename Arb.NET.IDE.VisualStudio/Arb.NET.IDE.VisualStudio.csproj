@@ -18,6 +18,7 @@
     <StartProgram Condition="'$(DevEnvDir)' == ''">C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
