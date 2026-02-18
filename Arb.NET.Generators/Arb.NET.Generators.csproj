@@ -7,14 +7,27 @@
         <LangVersion>latest</LangVersion>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
+        <PackageId>Arb.NET.Generators</PackageId>
+        <Description>Roslyn source generator for Arb.NET — generates strongly-typed localization classes from .arb files at design time.</Description>
+        <PackageTags>arb;localization;roslyn;source-generator;i18n</PackageTags>
         <!-- Tell shared source files that they are being compiled inside the generator,
              so they can #if out file-I/O methods that are banned in analyzer assemblies. -->
         <DefineConstants>$(DefineConstants);ARB_GENERATOR</DefineConstants>
+        <!-- Roslyn source generators must be packaged under analyzers/dotnet/cs/, not lib/. -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
 <PackageReference Include="System.Text.Json" Version="10.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="build\Arb.NET.Generators.props" Pack="true" PackagePath="build\" />
+        <None Include="build\Arb.NET.Generators.targets" Pack="true" PackagePath="build\" />
+        <None Include="..\README.MD" Pack="true" PackagePath="\" />
+        <!-- Package the generator DLL in the location Roslyn expects for source generators. -->
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>

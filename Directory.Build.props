@@ -1,5 +1,16 @@
 <Project>
 
+  <!-- Shared NuGet package metadata for all packable projects in this repo. -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>Michal Hazdra</Authors>
+    <RepositoryUrl>https://github.com/Michal-MK/Arb.NET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.MD</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
   <!--
     Auto-import Arb.NET.Generators build props for all projects in this repository.
     When distributed as a NuGet package, MSBuild imports build/Arb.NET.Generators.props

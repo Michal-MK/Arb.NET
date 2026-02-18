@@ -5,6 +5,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <PackageId>Arb.NET</PackageId>
+        <Description>ARB localization support for .NET — parse and generate code from .arb resource files.</Description>
+        <PackageTags>arb;localization;i18n;l10n;flutter;resx</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,5 +34,9 @@
         <EmbeddedResource Include="Specification\arb_spec.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\README.MD" Pack="true" PackagePath="\" />
     </ItemGroup>
 </Project>
