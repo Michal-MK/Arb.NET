@@ -136,7 +136,7 @@ public class ArbCodeGenerator {
             if (def is not ArbPluralizationParameterDefinition pluralDef) continue;
 
             sb.AppendLine($"        var @selectedContent_{pluralDef.Name} = ({pluralDef.Name}) switch {{");
-            foreach (var form in pluralDef.CountableParameters) {
+            foreach (KeyValuePair<int, string> form in pluralDef.CountableParameters) {
                 string escapeString = StringHelper.JsonString(form.Value);
                 escapeString = escapeString.Replace($"{{{def.Name}}}", $"\" + {def.Name}.ToString() + \"");
                 sb.AppendLine($"            {form.Key} => \"{escapeString}\",");
@@ -162,12 +162,15 @@ public class ArbCodeGenerator {
     /// Generates a dispatcher class that routes localization calls to the correct
     /// locale-specific static class based on a <see cref="System.Globalization.CultureInfo"/>.
     /// The <paramref name="defaultLocale"/> document is authoritative for entry signatures.
+    /// When <paramref name="enumLocalizations"/> is provided, a <c>Localize(EnumType)</c>
+    /// overload is emitted for each enum so callers can write <c>l.Localize(myEnumValue)</c>.
     /// </summary>
-    public string GenerateDispatcherClass(
+    internal string GenerateDispatcherClass(
         IReadOnlyList<(ArbDocument Document, string ClassName)> locales,
         ArbDocument defaultLocale,
         string baseClassName,
-        string namespaceName
+        string namespaceName,
+        IReadOnlyList<EnumLocalizationInfo>? enumLocalizations = null
     ) {
         StringBuilder sb = new();
         string availableLocales = string.Join(", ", locales.Select(l => l.Document.Locale));
@@ -218,6 +221,13 @@ public class ArbCodeGenerator {
         foreach (ArbEntry? entry in defaultLocale.Entries.Values) {
             sb.AppendLine();
             GenerateDispatcherEntry(sb, entry, locales, localeToClass, availableLocales);
+        }
+
+        // Emit Localize(EnumType) overloads for each [ArbLocalize] enum
+        if (enumLocalizations != null) {
+            foreach (EnumLocalizationInfo info in enumLocalizations) {
+                AppendEnumLocalizeMethod(sb, info.FullName, info.SimpleName, info.Members);
+            }
         }
 
         sb.AppendLine("}");
@@ -314,6 +324,33 @@ public class ArbCodeGenerator {
         sb.AppendLine($"    /// </summary>");
     }
 
+    /// <summary>
+    /// Appends a <c>Localize(EnumType)</c> method to <paramref name="sb"/> inside the
+    /// dispatcher class body.  Each arm delegates to the already-generated dispatcher
+    /// property for the corresponding ARB key, so locale routing is handled automatically.
+    /// </summary>
+    private static void AppendEnumLocalizeMethod(
+        StringBuilder sb,
+        string enumFullName,
+        string enumSimpleName,
+        IReadOnlyList<string> members
+    ) {
+        sb.AppendLine();
+        sb.AppendLine($"    /// <summary>Returns the localized display name for a <see cref=\"{enumFullName}\"/> value.</summary>");
+        sb.AppendLine($"    public string Localize({enumFullName} value) {{");
+        sb.AppendLine($"        return value switch {{");
+
+        foreach (string member in members) {
+            string camelKey = char.ToLowerInvariant(enumSimpleName[0]) + enumSimpleName.Substring(1)
+                              + char.ToUpperInvariant(member[0]) + member.Substring(1);
+            sb.AppendLine($"            {enumFullName}.{member} => {StringHelper.ToPascalCase(camelKey)},");
+        }
+
+        sb.AppendLine($"            _ => value.ToString()");
+        sb.AppendLine($"        }};");
+        sb.AppendLine($"    }}");
+    }
+
     /// <summary>Walks the parent chain to find the nearest ancestor locale that has the entry. Returns null if none found.</summary>
     private static string? ResolveFallbackLocale(string normalizedLocale, HashSet<string> localesWithEntry) {
         string current = normalizedLocale;
@@ -321,8 +358,9 @@ public class ArbCodeGenerator {
             int lastSep = current.LastIndexOf('_');
             if (lastSep < 0) return null;
             current = current.Substring(0, lastSep);
-            if (localesWithEntry.Contains(current))
+            if (localesWithEntry.Contains(current)) {
                 return current;
+            }
         }
     }
 
@@ -333,12 +371,14 @@ public class ArbCodeGenerator {
     /// Simple parameters and surrounding literal text are left as-is.
     /// </summary>
     private static string RenderEntryValueForDoc(ArbEntry entry) {
-        if (!entry.IsParametric(out List<ArbParameterDefinition> defs))
+        if (!entry.IsParametric(out List<ArbParameterDefinition> defs)) {
             return entry.Value;
+        }
 
         // Check if any def is a pluralization — if not, return the raw value unchanged.
-        if (!defs.Exists(d => d is ArbPluralizationParameterDefinition))
+        if (!defs.Exists(d => d is ArbPluralizationParameterDefinition)) {
             return entry.Value;
+        }
 
         StringBuilder sb = new();
         int index = 0;
@@ -358,7 +398,7 @@ public class ArbCodeGenerator {
                     // Build compact: {name, 0 - "...", 1 - "...", else "..."}
                     sb.Append('{');
                     sb.Append(pluralDef.Name);
-                    foreach (var kv in pluralDef.CountableParameters.OrderBy(kv => kv.Key)) {
+                    foreach (KeyValuePair<int, string> kv in pluralDef.CountableParameters.OrderBy(kv => kv.Key)) {
                         sb.Append(", ");
                         sb.Append(kv.Key);
                         sb.Append(" - \"");
@@ -414,11 +454,11 @@ public class ArbCodeGenerator {
 
             // Strip the last '_'-separated segment to walk up to the parent culture.
             int lastSep = current.LastIndexOf('_');
-            if (lastSep < 0)
+            if (lastSep < 0) {
                 return "\"<MISSING>\"";
+            }
 
             current = current.Substring(0, lastSep);
         }
     }
-
 }

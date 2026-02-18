@@ -1,6 +1,6 @@
 ﻿using Arb.NET.Example.Localizations;
 
-namespace Arb.NET.Example;
+namespace Arb.NET.ExampleOne;
 
 internal static class Program {
     private static void Main() {

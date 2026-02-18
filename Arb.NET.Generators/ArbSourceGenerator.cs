@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Arb.NET.Generators;
@@ -11,6 +12,15 @@ namespace Arb.NET.Generators;
 /// configured, a dispatcher class (e.g. <c>AppLocale</c>) is also generated.  The
 /// dispatcher is a non-static class that accepts a <see cref="System.Globalization.CultureInfo"/>
 /// in its constructor and routes every call to the correct locale-specific static class.
+///
+/// Additionally, enums decorated with <c>[ArbLocalize]</c> (on the enum or individual
+/// members) get empty placeholder entries added to every .arb file so translators can
+/// fill them in.  The key format is <c>&lt;EnumTypeName&gt;&lt;MemberName&gt;</c> in
+/// camelCase (e.g. <c>myEnumOneYoung</c>).  A <c>Localize(EnumType)</c> overload is
+/// also added to the dispatcher class so callers can write <c>l.Localize(myEnumValue)</c>.
+///
+/// The optional <c>description</c> argument on <c>[ArbLocalize]</c> is written into
+/// the <c>@metadata</c> block of the <b>default locale</b> ARB file only.
 ///
 /// Consumer setup in their .csproj (all optional — driven by build props):
 /// <code>
@@ -40,27 +50,149 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
         var arbFiles = context.AdditionalTextsProvider
             .Where(file => file.Path.EndsWith(".arb", StringComparison.OrdinalIgnoreCase));
 
-        var combined = arbFiles.Combine(context.AnalyzerConfigOptionsProvider);
+        var allFiles = arbFiles.Combine(context.AnalyzerConfigOptionsProvider).Collect();
 
-        var allFiles = combined.Collect();
+        // Collect enum declarations that have [ArbLocalize] on the type or its members
+        var enumsWithAttribute = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => node is EnumDeclarationSyntax,
+                transform: static (genCtx, _) => {
+                    EnumDeclarationSyntax enumDecl = (EnumDeclarationSyntax)genCtx.Node;
+                    INamedTypeSymbol? symbol = genCtx.SemanticModel.GetDeclaredSymbol(enumDecl) as INamedTypeSymbol;
+                    if (symbol is null) return null;
 
-        context.RegisterSourceOutput(allFiles, (ctx, pairs) => {
-            // ── Per-file pass: parse + emit locale-specific classes ──
-            // We also accumulate enough information to later emit the dispatcher.
+                    const string attrShort = "ArbLocalize";
+                    const string attrFull = "ArbLocalizeAttribute";
 
-            // Key: baseClassName
+                    AttributeData? enumAttr = symbol.GetAttributes()
+                        .FirstOrDefault(a => a.AttributeClass?.Name is attrShort or attrFull);
+
+                    if (enumAttr is null) return null;
+
+                    string? description = GetAttributeDescription(enumAttr);
+
+                    List<string> members = symbol.GetMembers().Where(w => w.Kind == SymbolKind.Field).Select(m => m.Name).ToList();
+
+                    if (members.Count == 0) return null;
+
+                    return new EnumLocalizationInfo(
+                        symbol.ToDisplayString(),
+                        symbol.Name,
+                        members.ToArray(),
+                        description
+                    );
+                }
+            )
+            .Where(static info => info is not null)
+            .Select(static (info, _) => info!)
+            .Collect();
+
+        // Combine ARB files and enum info into a single output pass
+        var combined = allFiles.Combine(enumsWithAttribute);
+
+        context.RegisterSourceOutput(combined, (ctx, pair) => {
+            var arbPairs = pair.Left;
+            var enumInfos = pair.Right;
+
+            // ── Resolve the default lang code (same for all files in a project) ──────
+            string? defaultLangCode = null;
+            if (arbPairs.Length > 0) {
+                AnalyzerConfigOptions globalOpts = arbPairs[0].Right.GlobalOptions;
+                defaultLangCode = GetGlobalProp(globalOpts, "ArbDefaultLangCode");
+            }
+
+            // ── Step 1: inject missing ARB keys for [ArbLocalize] enums ──────────────
+            if (!enumInfos.IsEmpty) {
+                foreach ((AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider) in arbPairs) {
+                    string? rawContent = file.GetText(ctx.CancellationToken)?.ToString();
+                    if (string.IsNullOrWhiteSpace(rawContent)) continue;
+
+                    ArbParseResult parseResult = new ArbParser().ParseContent(rawContent!);
+                    if (!parseResult.ValidationResults.IsValid) continue;
+
+                    ArbDocument doc = parseResult.Document!;
+
+                    // Determine whether this file is the primary/default locale
+                    AnalyzerConfigOptions fileOpts = optionsProvider.GetOptions(file);
+                    string? fileLangCode = FirstNonEmpty(
+                        GetFileMeta(fileOpts, "LangCode"),
+                        InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(file.Path)),
+                        doc.Locale,
+                        defaultLangCode
+                    );
+
+                    bool isDefaultLocale = !string.IsNullOrWhiteSpace(defaultLangCode)
+                                           && StringHelper.NormalizeLocale(fileLangCode) == StringHelper.NormalizeLocale(defaultLangCode);
+
+                    bool modified = false;
+
+                    foreach (EnumLocalizationInfo info in enumInfos) {
+                        string? attrDescription = info.Description;
+                        foreach (string member in info.Members) {
+                            string key = StringHelper.ArbKeyForEnumMember(info.SimpleName, member);
+
+                            if (!doc.Entries.ContainsKey(key)) {
+                                // New entry: only write @metadata description in the default locale file
+                                ArbMetadata? metadata = isDefaultLocale && attrDescription != null
+                                    ? new ArbMetadata {
+                                        Description = attrDescription
+                                    }
+                                    : null;
+
+                                doc.Entries[key] = new ArbEntry {
+                                    Key = key,
+                                    Value = string.Empty,
+                                    Metadata = metadata
+                                };
+                                modified = true;
+                            }
+                            else if (isDefaultLocale && attrDescription != null) {
+                                // Existing entry in the default locale: backfill the description
+                                // if it has none yet (never overwrite a description the translator set)
+                                ArbEntry existing = doc.Entries[key];
+                                if (existing.Metadata?.Description == null) {
+                                    if (existing.Metadata == null) {
+                                        existing.Metadata = new ArbMetadata {
+                                            Description = attrDescription
+                                        };
+                                    }
+                                    else {
+                                        existing.Metadata.Description = attrDescription;
+                                    }
+                                    modified = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (modified) {
+                        WriteArbFileToDisk(file.Path, ArbSerializer.Serialize(doc));
+                    }
+                }
+            }
+
+            // ── Step 2: parse ARB files and emit locale-specific C# classes ──────────
+            // Key: baseClassName → list of (document, className, namespace, defaultLang, useContext)
             Dictionary<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>> groups = new();
 
-            foreach ((AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider) in pairs) {
+            foreach ((AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider) in arbPairs) {
+                // Re-read: the file may have been updated in Step 1
                 string? content = file.GetText(ctx.CancellationToken)?.ToString();
-                if (string.IsNullOrWhiteSpace(content))
-                    continue;
+
+                // Fall back to the on-disk version if the in-memory text is stale
+                string? diskContent = ReadArbFileFromDisk(file.Path);
+                if (!string.IsNullOrWhiteSpace(diskContent)) {
+                    content = diskContent;
+                }
+
+                if (string.IsNullOrWhiteSpace(content)) continue;
 
                 ArbParseResult result = new ArbParser().ParseContent(content!);
 
                 if (!result.ValidationResults.IsValid) {
-                    foreach (var error in result.ValidationResults.Errors)
+                    foreach (var error in result.ValidationResults.Errors) {
                         ctx.ReportDiagnostic(Diagnostic.Create(ParseError, Location.None, file.Path, error.Keyword, error.Message, error.InstanceLocation, error.SchemaPath));
+                    }
                     continue;
                 }
 
@@ -76,7 +208,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     GetFileMeta(fileOptions, "DefaultNamespace"),
                     GetGlobalProp(globalOptions, "ArbDefaultNamespace"),
                     GetGlobalProp(globalOptions, "RootNamespace"),
-                    "Arb.Generated")!;
+                    "Arb.Generated"
+                )!;
 
                 // ── Resolve language code ──
                 string? langCode = FirstNonEmpty(
@@ -85,12 +218,12 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     document.Locale,
                     GetGlobalProp(globalOptions, "ArbDefaultLangCode"));
 
-                if (!string.IsNullOrWhiteSpace(langCode))
+                if (!string.IsNullOrWhiteSpace(langCode)) {
                     document.Locale = langCode!;
+                }
 
                 // ── Resolve class name ──
                 string? explicitClassName = GetFileMeta(fileOptions, "ClassName");
-
                 string className;
                 string? baseClass = null;
 
@@ -103,7 +236,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                 else {
                     baseClass = FirstNonEmpty(
                         GetFileMeta(fileOptions, "DefaultClass"),
-                        GetGlobalProp(globalOptions, "ArbDefaultClass"));
+                        GetGlobalProp(globalOptions, "ArbDefaultClass")
+                    );
 
                     if (!string.IsNullOrWhiteSpace(baseClass)) {
                         bool useContext = StringHelper.IsTrue(
@@ -113,18 +247,18 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                             )
                         );
 
-                        string? defaultLangCode = FirstNonEmpty(
+                        string? fileLangCode2 = FirstNonEmpty(
                             GetFileMeta(fileOptions, "DefaultLangCode"),
                             GetGlobalProp(globalOptions, "ArbDefaultLangCode")
                         );
 
                         string localeSuffix = StringHelper.NormalizeLocale(document.Locale);
 
-                        bool isDefaultLocale = useContext
-                                               && !string.IsNullOrWhiteSpace(defaultLangCode)
-                                               && StringHelper.NormalizeLocale(defaultLangCode) == localeSuffix;
+                        bool isDefaultLocale2 = useContext
+                                                && !string.IsNullOrWhiteSpace(fileLangCode2)
+                                                && StringHelper.NormalizeLocale(fileLangCode2) == localeSuffix;
 
-                        className = isDefaultLocale || string.IsNullOrWhiteSpace(localeSuffix)
+                        className = isDefaultLocale2 || string.IsNullOrWhiteSpace(localeSuffix)
                             ? baseClass!
                             : baseClass + "_" + localeSuffix;
                     }
@@ -159,23 +293,25 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                 }
             }
 
-            // ── Dispatcher pass ──
+            // ── Step 3: emit dispatcher classes (with Localize overloads if enums present) ──
+            IReadOnlyList<EnumLocalizationInfo>? enumForDispatcher = enumInfos.IsEmpty
+                ? null
+                : (IReadOnlyList<EnumLocalizationInfo>)enumInfos
+                    .Select(e => new EnumLocalizationInfo(e.FullName, e.SimpleName, e.Members, e.Description))
+                    .ToList();
+
             foreach (var groupPair in groups) {
                 string? baseClassName = groupPair.Key;
                 List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, bool UseContext)>? entries = groupPair.Value;
 
-                // Only emit dispatcher when ArbUseContextForSubclasses is false
-                // (if any entry in the group has it true, skip — mixed config is unsupported)
-                if (entries.Any(e => e.UseContext))
-                    continue;
+                if (entries.Any(e => e.UseContext)) continue;
 
-                string? defaultLangCode = entries.FirstOrDefault(e => !string.IsNullOrEmpty(e.DefaultLangCode)).DefaultLangCode;
+                string? groupDefaultLangCode = entries.FirstOrDefault(e => !string.IsNullOrEmpty(e.DefaultLangCode)).DefaultLangCode;
                 string? namespaceName = entries[0].NamespaceName;
 
-                // Find the default-locale document (authoritative for entry signatures)
                 ArbDocument? defaultDocument = null;
-                if (!string.IsNullOrWhiteSpace(defaultLangCode)) {
-                    string normalizedDefault = StringHelper.NormalizeLocale(defaultLangCode);
+                if (!string.IsNullOrWhiteSpace(groupDefaultLangCode)) {
+                    string normalizedDefault = StringHelper.NormalizeLocale(groupDefaultLangCode);
                     defaultDocument = entries
                         .FirstOrDefault(e => StringHelper.NormalizeLocale(e.Document.Locale) == normalizedDefault)
                         .Document;
@@ -190,7 +326,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     locales,
                     defaultDocument,
                     baseClassName,
-                    namespaceName
+                    namespaceName,
+                    enumForDispatcher
                 );
 
                 ctx.AddSource($"{baseClassName}Dispatcher.g.cs", dispatcher);
@@ -199,6 +336,42 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts the first constructor argument (the description string) from an
+    /// <c>[ArbLocalize("...")]</c> attribute, or <c>null</c> if absent or empty.
+    /// </summary>
+    private static string? GetAttributeDescription(AttributeData? attr) {
+        if (attr is null) return null;
+        if (attr.ConstructorArguments.Length == 0) return null;
+        object? value = attr.ConstructorArguments[0].Value;
+        string? str = value as string;
+        return string.IsNullOrWhiteSpace(str) ? null : str;
+    }
+
+    /// <summary>
+    /// Writes ARB content to disk. Wrapped in its own method so that the RS1035
+    /// pragma suppression is scoped as narrowly as possible.
+    /// </summary>
+#pragma warning disable RS1035
+    private static void WriteArbFileToDisk(string path, string content) {
+        try {
+            System.IO.File.WriteAllText(path, content, System.Text.Encoding.UTF8);
+        }
+        catch {
+            // Best-effort; don't crash the build if the file is read-only or locked
+        }
+    }
+
+    private static string? ReadArbFileFromDisk(string path) {
+        try {
+            return System.IO.File.ReadAllText(path, System.Text.Encoding.UTF8);
+        }
+        catch {
+            return null;
+        }
+    }
+#pragma warning restore RS1035
 
     private static string? GetFileMeta(AnalyzerConfigOptions options, string key) {
         options.TryGetValue($"build_metadata.AdditionalFiles.{key}", out string? value);

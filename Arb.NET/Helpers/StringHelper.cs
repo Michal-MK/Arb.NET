@@ -26,6 +26,12 @@ public static class StringHelper {
     public static string JsonString(string value) {
         return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
+    
+    public static string ArbKeyForEnumMember(string enumSimpleName, string memberName) {
+        string camelEnum = char.ToLowerInvariant(enumSimpleName[0]) + enumSimpleName.Substring(1);
+        string pascalMember = char.ToUpperInvariant(memberName[0]) + memberName.Substring(1);
+        return camelEnum + pascalMember;
+    }
 
     public static string XmlEscape(string value) {
         return value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");

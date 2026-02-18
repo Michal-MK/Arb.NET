@@ -1,0 +1,16 @@
+﻿{
+  "@@locale": "en",
+  "appTitle": "Arb.NET Example Two",
+  "myEnumOneGrownUp": "Adult",
+  "@myEnumOneGrownUp": {
+    "description": "Age group of the person"
+  },
+  "myEnumOneOld": "Senior",
+  "@myEnumOneOld": {
+    "description": "Age group of the person"
+  },
+  "myEnumOneYoung": "Juvenile",
+  "@myEnumOneYoung": {
+    "description": "Age group of the person"
+  }
+}

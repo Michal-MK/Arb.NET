@@ -32,6 +32,8 @@
         <Compile Include="..\Arb.NET\Models\ArbPlaceholder.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbParameterDefinition.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbParseResult.cs"/>
+        <Compile Include="..\Arb.NET\Models\EnumLocalizationInfo.cs"/>
+        <Compile Include="..\Arb.NET\ArbSerializer.cs"/>
     </ItemGroup>
 
 </Project>
