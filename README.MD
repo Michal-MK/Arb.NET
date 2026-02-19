@@ -18,7 +18,7 @@ This is a work in progress! Proof of concept!
 
 `Arb.NET` - shared lib for the lang code generation and the runtime support.
 
-`Arb.NET.Tool` - a app to be installed as a tool and ran as a executable in projects that use Arb.NET. It will generate the lang code from the .arb files.
+`Arb.NET.Tool` - an app to be installed as a tool and ran as a executable in projects that use Arb.NET. It will generate the lang code from the .arb files.
 
 `Arb.NET.Generator` - Roslyn source generator that will generate the lang code from the .arb files at design time.
 
@@ -37,4 +37,4 @@ This is a work in progress! Proof of concept!
 `Arb.NET.Analyzers` - analyzer project that will aid users in some way etc...
 
 ## License:
-**I do not care licence.** You can credit me. You can support me. I am not liable for anything.
+**I do not care licence.** (MIT) You can credit me. You can support me. I am not liable for anything.

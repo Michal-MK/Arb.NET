@@ -10,6 +10,7 @@
 `Arb.NET.Examples.*` - common prefix for example projects, examples use the Roslyn source generators
 
 ## IDE Support
+**Maintain feature parity between IDEs**
 `Arb.NET.IDE.Jetbrains` - a plugin for Rider and Resharper
 `Arb.NET.IDE.VisualStudio` - a plugin for Visual Studio
 
@@ -37,7 +38,7 @@
 - Use only commands from the respective shell environment to ensure compatibility and avoid issues with command execution!
 
 ## Logging
-~~~~
+
 When adding logging code, determine if the log will be useful to keep or only used for debugging in the current session. Prefix such logs with "[AI-DEBUG]" so that they can easily removed after.
 
 ## Nuget Package
@@ -45,7 +46,7 @@ When adding logging code, determine if the log will be useful to keep or only us
 - Any changes from now on must accept that we could break someone! An attempt to minimize making such changes must be made.
 
 At the start of each session print:
-~~~~```
+```
 I will follow the content of this file to my best ability.
 Determining shell environment... ## Shell environment detection
 ```

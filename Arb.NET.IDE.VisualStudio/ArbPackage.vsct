@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable">
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+
+  <Commands package="guidArbPackage">
+    <Groups>
+      <Group guid="guidArbCmdSet" id="ArbGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_VIEW"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidArbCmdSet" id="ArbToolWindowCommand" priority="0x0100" type="Button">
+        <Parent guid="guidArbCmdSet" id="ArbGroup"/>
+        <Strings>
+          <ButtonText>Arb.NET Tool Window</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidArbPackage" value="{3191a384-5cf6-4e40-bd0f-3a6dcd5dc05f}" />
+    <GuidSymbol name="guidArbCmdSet" value="{d8c8b3e1-2f3c-4b6c-9d4e-1f2b3c4d5e6f}">
+      <IDSymbol name="ArbGroup" value="0x1020"/>
+      <IDSymbol name="ArbToolWindowCommand" value="0x0100"/>
+    </GuidSymbol>
+  </Symbols>
+
+</CommandTable>
