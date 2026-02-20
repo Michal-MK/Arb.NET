@@ -1,9 +1,11 @@
-using Arb.NET.IDE.VisualStudio.Tools;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Task = System.Threading.Tasks.Task;
+using System.Threading.Tasks;
+
+using Arb.NET.IDE.VisualStudio.Tool;
+using Arb.NET.IDE.VisualStudio.Tool.Services;
 
 namespace Arb.NET.IDE.VisualStudio;
 
@@ -42,6 +44,10 @@ public sealed class ArbPackage : AsyncPackage {
         // When initialized asynchronously, the current thread may be a background thread at this point.
         // Do any initialization that requires the UI thread after switching to the UI thread.
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-        await ShowArbToolWindowCommand.InitializeAsync(this);
+        
+        PersistenceService persistenceService = new(this);
+        ArbService arbService = new(this);
+        
+        await ShowArbToolWindowCommand.InitializeAsync(this, persistenceService, arbService);
     }
 }

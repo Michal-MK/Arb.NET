@@ -1,4 +1,4 @@
-<UserControl x:Class="Arb.NET.IDE.VisualStudio.Tools.ArbEditorControl"
+<UserControl x:Class="Arb.NET.IDE.VisualStudio.Tool.UI.ArbEditorControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0">

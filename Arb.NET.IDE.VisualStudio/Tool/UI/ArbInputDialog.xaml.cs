@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.PlatformUI;
 using System.Windows;
 
-namespace Arb.NET.IDE.VisualStudio.Tools;
+namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
 public partial class ArbInputDialog : DialogWindow {
 

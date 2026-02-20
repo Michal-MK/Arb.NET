@@ -52,21 +52,26 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ArbPackage.cs" />
-    <Compile Include="Tools\ArbToolWindow.cs" />
-    <Compile Include="Tools\ShowArbToolWindowCommand.cs" />
-    <Compile Include="Tools\ArbEditorControl.xaml.cs">
+    <Compile Include="Tool\ArbToolWindow.cs" />
+    <Compile Include="Tool\Models\ArbFile.cs" />
+    <Compile Include="Tool\Models\ArbRow.cs" />
+    <Compile Include="Tool\Models\ArbScanResult.cs" />
+    <Compile Include="Tool\Services\ArbService.cs" />
+    <Compile Include="Tool\Services\PersistenceService.cs" />
+    <Compile Include="Tool\ShowArbToolWindowCommand.cs" />
+    <Compile Include="Tool\UI\ArbEditorControl.xaml.cs">
       <DependentUpon>ArbEditorControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Tools\ArbInputDialog.xaml.cs">
+    <Compile Include="Tool\UI\ArbInputDialog.xaml.cs">
       <DependentUpon>ArbInputDialog.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="Tools\ArbEditorControl.xaml">
+    <Page Include="Tool\UI\ArbEditorControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Tools\ArbInputDialog.xaml">
+    <Page Include="Tool\UI\ArbInputDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
