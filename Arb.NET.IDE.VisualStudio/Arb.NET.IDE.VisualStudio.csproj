@@ -57,9 +57,16 @@
     <Compile Include="Tools\ArbEditorControl.xaml.cs">
       <DependentUpon>ArbEditorControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tools\ArbInputDialog.xaml.cs">
+      <DependentUpon>ArbInputDialog.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Include="Tools\ArbEditorControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tools\ArbInputDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

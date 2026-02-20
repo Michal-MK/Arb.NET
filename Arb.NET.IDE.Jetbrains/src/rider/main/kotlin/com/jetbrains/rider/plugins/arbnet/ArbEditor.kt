@@ -1,5 +1,6 @@
 package com.jetbrains.rider.plugins.arbnet
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.fileEditor.FileEditor
@@ -42,6 +43,41 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     companion object {
         const val FILE_NAME = "Arb.NET Editor"
         val INITIAL_DIR_KEY: Key<String> = Key.create("arb.initialDir")
+
+        private const val COL_WIDTH_PREFIX = "arb.net.colWidth."
+        private const val COL_ORDER_PREFIX = "arb.net.colOrder."
+        private const val DEFAULT_KEY_COL_WIDTH = 240
+        private const val DEFAULT_LOCALE_COL_WIDTH = 220
+
+        // Keys are scoped by directory so different directories don't share state.
+        private fun widthKey(directory: String, header: String) = "$COL_WIDTH_PREFIX$directory:$header"
+        private fun orderKey(directory: String) = "$COL_ORDER_PREFIX$directory"
+    }
+
+    private fun loadColumnWidth(directory: String, header: String): Int {
+        val raw = PropertiesComponent.getInstance().getValue(widthKey(directory, header)) ?: return -1
+        return raw.toIntOrNull()?.takeIf { it > 0 } ?: -1
+    }
+
+    private fun saveColumnWidths(directory: String, table: JBTable, columnNames: Array<String>) {
+        val props = PropertiesComponent.getInstance()
+        for (i in columnNames.indices) {
+            props.setValue(widthKey(directory, columnNames[i]), table.columnModel.getColumn(i).width.toString())
+        }
+    }
+
+    // Locale order persisted as comma-separated names in display-index order (Key column excluded).
+    private fun loadLocaleOrder(directory: String): List<String>? {
+        val raw = PropertiesComponent.getInstance().getValue(orderKey(directory)) ?: return null
+        return raw.split(",").filter { it.isNotEmpty() }
+    }
+
+    private fun saveLocaleOrder(directory: String, table: JBTable) {
+        // Walk columns in current display order, skip the Key column.
+        val ordered = (0 until table.columnModel.columnCount)
+            .map { table.columnModel.getColumn(it).headerValue as? String ?: "" }
+            .filter { it.isNotEmpty() && it != "Key" }
+        PropertiesComponent.getInstance().setValue(orderKey(directory), ordered.joinToString(","))
     }
 
     private val lifetime = Lifetime.Eternal.createNested()
@@ -166,7 +202,14 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
         val localeDataList = byDirectory[directory] ?: return
         val localeToFilePath = localeDataList.associate { it.locale to it.filePath }
-        val locales = localeDataList.map { it.locale }.sorted()
+        val alphabetical = localeDataList.map { it.locale }.sorted()
+        val savedOrder = loadLocaleOrder(directory)
+        val locales = if (savedOrder != null) {
+            // Known locales in saved order, then any new locales (alphabetically) at the end.
+            savedOrder.filter { it in alphabetical } + alphabetical.filter { it !in savedOrder }
+        } else {
+            alphabetical
+        }
         val allKeys = localeDataList.flatMap { ld -> ld.entries.map { it.key } }.toSortedSet()
         val byLocale = localeDataList.associate { ld ->
             ld.locale to ld.entries.associate { it.key to it.value }
@@ -221,10 +264,16 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             isStriped = true
             setShowGrid(true)
             autoResizeMode = JBTable.AUTO_RESIZE_OFF
-            columnModel.getColumn(0).preferredWidth = 240
+            columnModel.getColumn(0).preferredWidth =
+                loadColumnWidth(directory, "Key").takeIf { it > 0 } ?: DEFAULT_KEY_COL_WIDTH
             for (i in 1 until columnModel.columnCount) {
-                columnModel.getColumn(i).preferredWidth = 220
+                columnModel.getColumn(i).preferredWidth =
+                    loadColumnWidth(directory, locales[i - 1]).takeIf { it > 0 } ?: DEFAULT_LOCALE_COL_WIDTH
             }
+
+            // Column-move persistence is handled in header mouseReleased (below) alongside widths,
+            // because columnMoved fires on every intermediate drag step — the fromIndex/toIndex
+            // values during intermediate events are unreliable for detecting completion.
 
             addKeyListener(object : java.awt.event.KeyAdapter() {
                 override fun keyPressed(e: KeyEvent) {
@@ -254,6 +303,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         }
 
         // Double-click on a locale column header → open the raw .arb file in the IDE text editor.
+        // mouseReleased → save widths once the user finishes dragging a column divider.
         table.tableHeader.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (e.clickCount != 2) return
@@ -263,6 +313,11 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                 val path = localeToFilePath[locale] ?: return
                 val vf = LocalFileSystem.getInstance().findFileByPath(path) ?: return
                 OpenFileDescriptor(project, vf).navigate(true)
+            }
+
+            override fun mouseReleased(e: MouseEvent) {
+                saveColumnWidths(directory, table, columnNames)
+                saveLocaleOrder(directory, table)
             }
         })
 
