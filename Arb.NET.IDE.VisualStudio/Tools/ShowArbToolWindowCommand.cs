@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.ComponentModel.Design;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ internal sealed class ShowArbToolWindowCommand {
     private static readonly Guid COMMAND_SET = new("d8c8b3e1-2f3c-4b6c-9d4e-1f2b3c4d5e6f");
 
     private readonly AsyncPackage package;
+    private uint selectionCookie;
 
     private ShowArbToolWindowCommand(AsyncPackage package, OleMenuCommandService commandService) {
         this.package = package;
@@ -28,7 +30,6 @@ internal sealed class ShowArbToolWindowCommand {
             throw new InvalidOperationException("Unable to get OleMenuCommandService.");
         }
 
-        // This is apparently how VS does it?
         // ReSharper disable once ObjectCreationAsStatement
         new ShowArbToolWindowCommand(package, commandService);
     }
@@ -43,6 +44,16 @@ internal sealed class ShowArbToolWindowCommand {
 
             if (window == null) {
                 throw new InvalidOperationException("Failed to show Arb.NET tool window.");
+            }
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            // Subscribe to global selection events once so we can detect when our tool
+            // window frame becomes the active window frame (Focus handling).
+            if (selectionCookie == 0 && window is ArbToolWindow arbWindow) {
+                if (await package.GetServiceAsync(typeof(SVsShellMonitorSelection)) is IVsMonitorSelection monitorSelection) {
+                    monitorSelection.AdviseSelectionEvents(arbWindow, out selectionCookie);
+                }
             }
         });
     }

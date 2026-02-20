@@ -39,6 +39,12 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("newKey", string)
     }
 
+    // Payload for adding a new (empty) key to all locale files in a directory.
+    val ArbNewKey = structdef {
+        field("directory", string)
+        field("key", string)
+    }
+
     init {
         // Call: Kotlin asks C# to scan the solution and return all ARB data.
         // Returns one ArbLocaleData per .arb file found.
@@ -51,5 +57,9 @@ object ArbModel : Ext(SolutionModel.Solution) {
         // Call: Kotlin asks C# to rename a key across all locale files.
         // Returns true if at least one file was updated.
         call("renameArbKey", ArbKeyRename, bool)
+
+        // Call: Kotlin asks C# to add a new empty key to all locale files in a directory.
+        // Returns true if at least one file was updated.
+        call("addArbKey", ArbNewKey, bool)
     }
 }

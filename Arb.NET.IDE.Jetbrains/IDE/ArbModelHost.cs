@@ -43,6 +43,27 @@ public class ArbModelHost {
             return true;
         });
 
+        model.AddArbKey.SetSync((_, payload) => {
+            bool anyChanged = false;
+
+            IEnumerable<string> dirFiles = localeToFilePath
+                .Where(kv => kv.Key.StartsWith(payload.Directory + "|"))
+                .Select(kv => kv.Value);
+
+            foreach (string filePath in dirFiles) {
+                string content = File.ReadAllText(filePath);
+                ArbParseResult parsed = new ArbParser().ParseContent(content);
+                if (parsed.Document == null) continue;
+                if (parsed.Document.Entries.ContainsKey(payload.Key)) continue;
+
+                parsed.Document.Entries[payload.Key] = new ArbEntry { Key = payload.Key, Value = "" };
+                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
+                anyChanged = true;
+            }
+
+            return anyChanged;
+        });
+
         model.RenameArbKey.SetSync((_, rename) => {
             bool anyChanged = false;
 

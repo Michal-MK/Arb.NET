@@ -21,7 +21,8 @@ import kotlin.jvm.JvmStatic
 class ArbModel private constructor(
     private val _getArbData: RdCall<Unit, List<ArbLocaleData>>,
     private val _saveArbEntry: RdCall<ArbEntryUpdate, Boolean>,
-    private val _renameArbKey: RdCall<ArbKeyRename, Boolean>
+    private val _renameArbKey: RdCall<ArbKeyRename, Boolean>,
+    private val _addArbKey: RdCall<ArbNewKey, Boolean>
 ) : RdExtBase() {
     //companion
     
@@ -33,6 +34,7 @@ class ArbModel private constructor(
             serializers.register(LazyCompanionMarshaller(RdId(1601623367371735298), classLoader, "com.jetbrains.rd.ide.model.ArbLocaleData"))
             serializers.register(LazyCompanionMarshaller(RdId(-5695656692253622339), classLoader, "com.jetbrains.rd.ide.model.ArbEntryUpdate"))
             serializers.register(LazyCompanionMarshaller(RdId(-1733504620339216673), classLoader, "com.jetbrains.rd.ide.model.ArbKeyRename"))
+            serializers.register(LazyCompanionMarshaller(RdId(561016481825661), classLoader, "com.jetbrains.rd.ide.model.ArbNewKey"))
         }
         
         
@@ -40,7 +42,7 @@ class ArbModel private constructor(
         
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         
-        const val serializationHash = -9024756280827998291L
+        const val serializationHash = -3393040445077500747L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -50,12 +52,14 @@ class ArbModel private constructor(
     val getArbData: IRdCall<Unit, List<ArbLocaleData>> get() = _getArbData
     val saveArbEntry: IRdCall<ArbEntryUpdate, Boolean> get() = _saveArbEntry
     val renameArbKey: IRdCall<ArbKeyRename, Boolean> get() = _renameArbKey
+    val addArbKey: IRdCall<ArbNewKey, Boolean> get() = _addArbKey
     //methods
     //initializer
     init {
         bindableChildren.add("getArbData" to _getArbData)
         bindableChildren.add("saveArbEntry" to _saveArbEntry)
         bindableChildren.add("renameArbKey" to _renameArbKey)
+        bindableChildren.add("addArbKey" to _addArbKey)
     }
     
     //secondary constructor
@@ -63,7 +67,8 @@ class ArbModel private constructor(
     ) : this(
         RdCall<Unit, List<ArbLocaleData>>(FrameworkMarshallers.Void, __ArbLocaleDataListSerializer),
         RdCall<ArbEntryUpdate, Boolean>(ArbEntryUpdate, FrameworkMarshallers.Bool),
-        RdCall<ArbKeyRename, Boolean>(ArbKeyRename, FrameworkMarshallers.Bool)
+        RdCall<ArbKeyRename, Boolean>(ArbKeyRename, FrameworkMarshallers.Bool),
+        RdCall<ArbNewKey, Boolean>(ArbNewKey, FrameworkMarshallers.Bool)
     )
     
     //equals trait
@@ -75,6 +80,7 @@ class ArbModel private constructor(
             print("getArbData = "); _getArbData.print(printer); println()
             print("saveArbEntry = "); _saveArbEntry.print(printer); println()
             print("renameArbKey = "); _renameArbKey.print(printer); println()
+            print("addArbKey = "); _addArbKey.print(printer); println()
         }
         printer.print(")")
     }
@@ -83,7 +89,8 @@ class ArbModel private constructor(
         return ArbModel(
             _getArbData.deepClonePolymorphic(),
             _saveArbEntry.deepClonePolymorphic(),
-            _renameArbKey.deepClonePolymorphic()
+            _renameArbKey.deepClonePolymorphic(),
+            _addArbKey.deepClonePolymorphic()
         )
     }
     //contexts
@@ -375,6 +382,71 @@ data class ArbLocaleData (
             print("directory = "); directory.print(printer); println()
             print("filePath = "); filePath.print(printer); println()
             print("entries = "); entries.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:43]
+ */
+data class ArbNewKey (
+    val directory: String,
+    val key: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbNewKey> {
+        override val _type: KClass<ArbNewKey> = ArbNewKey::class
+        override val id: RdId get() = RdId(561016481825661)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbNewKey  {
+            val directory = buffer.readString()
+            val key = buffer.readString()
+            return ArbNewKey(directory, key)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbNewKey)  {
+            buffer.writeString(value.directory)
+            buffer.writeString(value.key)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbNewKey
+        
+        if (directory != other.directory) return false
+        if (key != other.key) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + directory.hashCode()
+        __r = __r*31 + key.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbNewKey (")
+        printer.indent {
+            print("directory = "); directory.print(printer); println()
+            print("key = "); key.print(printer); println()
         }
         printer.print(")")
     }

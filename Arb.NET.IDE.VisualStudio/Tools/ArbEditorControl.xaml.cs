@@ -185,6 +185,65 @@ public partial class ArbEditorControl : UserControl {
         suppressSave = false;
     }
 
+    public void RefreshData() {
+        if (package == null) return;
+        _ = RefreshDataAsync();
+    }
+
+    private async Task RefreshDataAsync() {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        string solutionDir = GetSolutionDirectory();
+        if (string.IsNullOrEmpty(solutionDir)) return;
+
+        await Task.Run(() => {
+            Dictionary<string, List<ArbFile>> byDir = new(StringComparer.OrdinalIgnoreCase);
+            ArbParser parser = new();
+            
+            List<Exception> exceptions = [];
+
+            foreach (string filePath in Directory.EnumerateFiles(solutionDir, "*.arb", SearchOption.AllDirectories)) {
+                try {
+                    string content = File.ReadAllText(filePath);
+                    ArbParseResult result = parser.ParseContent(content);
+                    if (result.Document == null) continue;
+
+                    ArbDocument doc = result.Document;
+                    string locale = string.IsNullOrEmpty(doc.Locale)
+                        ? Path.GetFileNameWithoutExtension(filePath)
+                        : doc.Locale;
+
+                    string dir = Path.GetDirectoryName(filePath) ?? solutionDir;
+
+                    if (!byDir.TryGetValue(dir, out List<ArbFile> list)) {
+                        list = [];
+                        byDir[dir] = list;
+                    }
+                    list.Add(new ArbFile(locale, filePath));
+                }
+                catch (Exception ex) {
+                    exceptions.Add(ex);
+                }
+            }
+
+            if (exceptions.Count > 0) {
+                MessageBox.Show($"Completed refresh with {exceptions.Count} errors:\n" +
+                                string.Join("\n", exceptions.Select(ex => $"  {ex.Message}")),
+                                "Arb.NET - Refresh Errors", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            
+            byDirectory = byDir;
+        });
+
+        if (DirectoryCombo.SelectedItem is string currentDir && byDirectory.ContainsKey(currentDir)) {
+            BuildTable(currentDir);
+        }
+        else if (byDirectory.Count > 0) {
+            List<string> sortedDirs = byDirectory.Keys.OrderBy(d => d).ToList();
+            DirectoryCombo.ItemsSource = sortedDirs;
+            DirectoryCombo.SelectedIndex = 0;
+        }
+    }
+
     private void DirectoryCombo_OnSelectionChanged(object sender, SelectionChangedEventArgs e) {
         if (DirectoryCombo.SelectedItem is string dir) {
             BuildTable(dir);
@@ -194,12 +253,13 @@ public partial class ArbEditorControl : UserControl {
     private void ArbGrid_OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) {
         if (suppressSave) return;
         if (e.EditAction != DataGridEditAction.Commit) return;
-        if (e.Column.DisplayIndex == 0) return; // Key column — rename only via dialog.
+
+        string locale = e.Column.Header as string;
+        if (string.IsNullOrEmpty(locale) || locale == "Key") return;
 
         if (e.Row.Item is not ArbRow row) return;
         if (DirectoryCombo.SelectedItem is not string directory) return;
 
-        string locale = currentLangCodes[e.Column.DisplayIndex - 1];
         string newValue = (e.EditingElement as TextBox)?.Text ?? string.Empty;
 
         SaveEntry(directory, locale, row.Key, newValue);
@@ -218,6 +278,38 @@ public partial class ArbEditorControl : UserControl {
 
     private void RenameMenuItem_OnClick(object sender, RoutedEventArgs e) {
         TryRenameSelectedRow();
+    }
+
+    private void AddKeyButton_OnClick(object sender, RoutedEventArgs e) {
+        if (DirectoryCombo.SelectedItem is not string directory) return;
+        if (!byDirectory.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+
+        string newKey = ShowInputDialog("Add ARB Key", "Enter the new key name:", "");
+        if (newKey == null || string.IsNullOrWhiteSpace(newKey)) return;
+
+        bool anyChanged = false;
+        foreach (ArbFile arb in arbFiles) {
+            try {
+                string content = File.ReadAllText(arb.FilePath);
+                ArbParseResult parsed = new ArbParser().ParseContent(content);
+                if (parsed.Document == null) continue;
+                if (parsed.Document.Entries.ContainsKey(newKey)) continue;
+
+                parsed.Document.Entries[newKey] = new ArbEntry {
+                    Key = newKey,
+                    Value = ""
+                };
+                File.WriteAllText(arb.FilePath, ArbSerializer.Serialize(parsed.Document));
+                anyChanged = true;
+            }
+            catch (Exception ex) {
+                MessageBox.Show($"Failed to add key to {arb.FilePath}: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        if (anyChanged) {
+            BuildTable(directory);
+        }
     }
 
     private void SaveEntry(string directory, string locale, string key, string newValue) {
@@ -291,11 +383,9 @@ public partial class ArbEditorControl : UserControl {
         }
     }
 
-    private static string ShowRenameDialog(string currentKey) {
-        // DialogWindow is the VS-themed dialog base — it picks up the current VS colour theme
-        // automatically (background, foreground, borders) without any manual brush wiring.
+    private static string ShowInputDialog(string title, string labelText, string defaultText) {
         DialogWindow dialog = new() {
-            Title = "Rename ARB Key",
+            Title = title,
             Width = 400,
             Height = 140,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -319,13 +409,13 @@ public partial class ArbEditorControl : UserControl {
         });
 
         TextBlock label = new() {
-            Text = $"Rename key '{currentKey}' in all locale files:",
+            Text = labelText,
             Margin = new Thickness(0, 0, 0, 6)
         };
         Grid.SetRow(label, 0);
 
         TextBox textBox = new() {
-            Text = currentKey,
+            Text = defaultText,
             Margin = new Thickness(0, 0, 0, 10)
         };
         Grid.SetRow(textBox, 1);
@@ -356,19 +446,21 @@ public partial class ArbEditorControl : UserControl {
 
         buttons.Children.Add(ok);
         buttons.Children.Add(cancel);
-
         grid.Children.Add(label);
         grid.Children.Add(textBox);
         grid.Children.Add(buttons);
-
         dialog.Content = grid;
 
         textBox.Loaded += (_, _) => {
             textBox.SelectAll();
             textBox.Focus();
         };
-
         dialog.ShowDialog();
         return result;
     }
+
+    private static string ShowRenameDialog(string currentKey) {
+        return ShowInputDialog("Rename ARB Key", $"Rename key '{currentKey}' in all locale files:", currentKey);
+    }
+
 }

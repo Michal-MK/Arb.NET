@@ -63,6 +63,11 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            <Button Content="Add Key"
+                    Margin="8,0,0,0"
+                    Padding="8,2"
+                    VerticalAlignment="Center"
+                    Click="AddKeyButton_OnClick" />
         </StackPanel>
 
         <!-- Loading overlay -->
