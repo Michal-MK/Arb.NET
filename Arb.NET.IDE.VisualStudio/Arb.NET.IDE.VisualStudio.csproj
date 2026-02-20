@@ -16,6 +16,11 @@
     <RootNamespace>Arb.NET.IDE.VisualStudio</RootNamespace>
     <AssemblyName>Arb.NET.IDE.VisualStudio</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Suppress assembly version conflict warnings for BCL polyfills (System.Memory etc.)
+         that the VS SDK NuGet and the Arb.NET IDE build both supply. VS picks the right one at runtime. -->
+    <MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
@@ -49,6 +54,15 @@
     <Compile Include="ArbPackage.cs" />
     <Compile Include="Tools\ArbToolWindow.cs" />
     <Compile Include="Tools\ShowArbToolWindowCommand.cs" />
+    <Compile Include="Tools\ArbEditorControl.xaml.cs">
+      <DependentUpon>ArbEditorControl.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Tools\ArbEditorControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
@@ -62,20 +76,87 @@
       <Reference Include="PresentationFramework" />
       <Reference Include="WindowsBase" />
       <Reference Include="System.Xaml" />
+    <!-- Arb.NET and its transitive deps, copied to bin/IDE by the Arb.NET IDE build target. -->
+    <Reference Include="Arb.NET">
+      <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\Arb.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="JsonSchema.Net">
+      <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\JsonSchema.Net.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="JsonPointer.Net">
+      <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\JsonPointer.Net.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Json.More">
+      <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\Json.More.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Humanizer">
+      <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\Humanizer.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\System.Text.Json.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime" NoWarn="NU1604" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120" NoWarn="NU1604" />
   </ItemGroup>
+  <!-- This thing is responsible for the Menu buttons in VS -->
   <ItemGroup>
     <VSCTCompile Include="ArbPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
   </ItemGroup>
+  <!-- This is necessary as the DLLs are not part of the VSIX package otherwise and a runtime dependency resolution fails -->
   <ItemGroup>
     <Content Include="$(IntermediateOutputPath)ArbPackage.cto">
       <Link>ArbPackage.cto</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.Text.Json.dll">
+      <Link>System.Text.Json.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.Collections.Immutable.dll">
+      <Link>System.Collections.Immutable.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll">
+      <Link>System.Runtime.CompilerServices.Unsafe.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.Memory.dll">
+      <Link>System.Memory.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.Buffers.dll">
+      <Link>System.Buffers.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.Threading.Tasks.Extensions.dll">
+      <Link>System.Threading.Tasks.Extensions.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.Numerics.Vectors.dll">
+      <Link>System.Numerics.Vectors.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll">
+      <Link>Microsoft.Bcl.AsyncInterfaces.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.IO.Pipelines.dll">
+      <Link>System.IO.Pipelines.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\Arb.NET\bin\IDE\netstandard2.0\System.ComponentModel.Annotations.dll">
+      <Link>System.ComponentModel.Annotations.dll</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
