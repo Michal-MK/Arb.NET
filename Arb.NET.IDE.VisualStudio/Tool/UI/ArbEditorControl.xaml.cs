@@ -260,7 +260,9 @@ public partial class ArbEditorControl : UserControl {
     }
 
     private void GridContextMenu_OnOpened(object sender, RoutedEventArgs e) {
-        RenameMenuItem.IsEnabled = (ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is ArbRow;
+        bool hasSelection = (ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is ArbRow;
+        RenameMenuItem.IsEnabled = hasSelection;
+        DeleteKeyMenuItem.IsEnabled = hasSelection;
     }
 
     private void RenameMenuItem_OnClick(object sender, RoutedEventArgs e) {
@@ -286,6 +288,63 @@ public partial class ArbEditorControl : UserControl {
         }
 
         BuildTable(directory);
+    }
+
+    private void AddLocaleButton_OnClick(object sender, RoutedEventArgs e) {
+        if (DirectoryCombo.SelectedItem is not string directory) return;
+        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+
+        ArbInputDialog dialog = new("Add ARB Locale", "Enter locale code (e.g. de, fr):", "");
+        dialog.ShowDialog();
+        string locale = dialog.Result;
+        if (locale == null || string.IsNullOrWhiteSpace(locale)) return;
+        locale = locale.Trim();
+
+        string filePath = Path.Combine(directory, locale + ".arb");
+        if (File.Exists(filePath)) {
+            MessageBox.Show($"Locale file '{Path.GetFileName(filePath)}' already exists.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        SortedSet<string> allKeys = new(StringComparer.Ordinal);
+        foreach (ArbFile arb in arbFiles) {
+            try {
+                string content = File.ReadAllText(arb.FilePath);
+                ArbParseResult result = parser.ParseContent(content);
+                if (result.Document != null)
+                    foreach (string key in result.Document.Entries.Keys) allKeys.Add(key);
+            }
+            catch { }
+        }
+
+        ArbDocument newDoc = new() { Locale = locale };
+        foreach (string key in allKeys)
+            newDoc.Entries[key] = new ArbEntry { Key = key, Value = "" };
+
+        File.WriteAllText(filePath, ArbSerializer.Serialize(newDoc));
+        _ = RefreshDataAsync();
+    }
+
+    private void RemoveKeyButton_OnClick(object sender, RoutedEventArgs e) => TryRemoveSelectedKey();
+
+    private void RemoveKeyMenuItem_OnClick(object sender, RoutedEventArgs e) => TryRemoveSelectedKey();
+
+    private void TryRemoveSelectedKey() {
+        if ((ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is not ArbRow row) return;
+        if (DirectoryCombo.SelectedItem is not string directory) return;
+        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+
+        string key = row.Key;
+        MessageBoxResult confirm = MessageBox.Show(
+            $"Remove key '{key}' from all locale files in this directory?",
+            "Arb.NET \u2013 Remove Key", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.Yes) return;
+
+        bool anyChanged = false;
+        foreach (ArbFile arb in arbFiles)
+            anyChanged |= ModifyArbFile(arb, doc => doc.Entries.Remove(key));
+
+        if (anyChanged) BuildTable(directory);
     }
 
     private void SaveEntry(string directory, string locale, string key, string newValue) {

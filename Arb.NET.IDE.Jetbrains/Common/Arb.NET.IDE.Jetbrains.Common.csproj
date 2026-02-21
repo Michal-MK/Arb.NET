@@ -18,15 +18,5 @@
         <DependentUpon>CommonResources.resx</DependentUpon>
       </Compile>
     </ItemGroup>
-
-
-  <!-- Build Arb.NET with the IDE configuration so its CopyNuGetDepsForIde target runs,
-       placing Arb.NET.dll and all JsonSchema.Net transitive deps in bin/IDE/netstandard2.0/
-       before any IDE project resolves its HintPath references to them.
-       Placed here in Common so it runs exactly once regardless of how many IDE projects
-       reference this project in parallel. -->
-  <Target Name="BuildArbNetIde" BeforeTargets="ResolveReferences">
-    <Exec Command="dotnet build &quot;$(MSBuildThisFileDirectory)..\..\Arb.NET\Arb.NET.csproj&quot; -c IDE" />
-  </Target>
-
+    
 </Project>

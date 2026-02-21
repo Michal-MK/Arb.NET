@@ -71,6 +71,56 @@ public class ArbModelHost {
             return anyChanged;
         });
 
+        model.RemoveArbKey.SetSync((_, payload) => {
+            bool anyChanged = false;
+
+            IEnumerable<string> dirFiles = localeToFilePath
+                .Where(kv => kv.Key.StartsWith(payload.Directory + "|"))
+                .Select(kv => kv.Value);
+
+            foreach (string filePath in dirFiles) {
+                string content = File.ReadAllText(filePath);
+                ArbParseResult parsed = new ArbParser().ParseContent(content);
+                if (parsed.Document == null) continue;
+                if (!parsed.Document.Entries.Remove(payload.Key)) continue;
+
+                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
+                anyChanged = true;
+            }
+
+            return anyChanged;
+        });
+
+        model.AddArbLocale.SetSync((_, payload) => {
+            string newFilePath = Path.Combine(payload.Directory, payload.Locale + ".arb");
+            if (File.Exists(newFilePath)) return false;
+
+            // Collect all existing keys from files in this directory.
+            IEnumerable<string> dirFiles = localeToFilePath
+                .Where(kv => kv.Key.StartsWith(payload.Directory + "|"))
+                .Select(kv => kv.Value);
+
+            SortedSet<string> allKeys = new();
+            foreach (string filePath in dirFiles) {
+                string content = File.ReadAllText(filePath);
+                ArbParseResult parsed = new ArbParser().ParseContent(content);
+                if (parsed.Document == null) continue;
+                foreach (string key in parsed.Document.Entries.Keys) allKeys.Add(key);
+            }
+
+            ArbDocument newDoc = new() { Locale = payload.Locale };
+            foreach (string key in allKeys) {
+                newDoc.Entries[key] = new ArbEntry { Key = key, Value = "" };
+            }
+
+            File.WriteAllText(newFilePath, ArbSerializer.Serialize(newDoc));
+
+            string dictKey = payload.Directory + "|" + payload.Locale;
+            localeToFilePath[dictKey] = newFilePath;
+
+            return true;
+        });
+
         model.RenameArbKey.SetSync((_, rename) => {
             bool anyChanged = false;
 

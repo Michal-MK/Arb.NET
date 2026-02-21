@@ -23,6 +23,8 @@ class ArbModel private constructor(
     private val _saveArbEntry: RdCall<ArbEntryUpdate, Boolean>,
     private val _renameArbKey: RdCall<ArbKeyRename, Boolean>,
     private val _addArbKey: RdCall<ArbNewKey, Boolean>,
+    private val _removeArbKey: RdCall<ArbRemoveKey, Boolean>,
+    private val _addArbLocale: RdCall<ArbNewLocale, Boolean>,
     private val _translateArbEntries: RdCall<ArbTranslateRequest, ArbTranslateResponse>
 ) : RdExtBase() {
     //companion
@@ -36,6 +38,8 @@ class ArbModel private constructor(
             serializers.register(LazyCompanionMarshaller(RdId(-5695656692253622339), classLoader, "com.jetbrains.rd.ide.model.ArbEntryUpdate"))
             serializers.register(LazyCompanionMarshaller(RdId(-1733504620339216673), classLoader, "com.jetbrains.rd.ide.model.ArbKeyRename"))
             serializers.register(LazyCompanionMarshaller(RdId(561016481825661), classLoader, "com.jetbrains.rd.ide.model.ArbNewKey"))
+            serializers.register(LazyCompanionMarshaller(RdId(-1733498659906343011), classLoader, "com.jetbrains.rd.ide.model.ArbRemoveKey"))
+            serializers.register(LazyCompanionMarshaller(RdId(-1733502063603979140), classLoader, "com.jetbrains.rd.ide.model.ArbNewLocale"))
             serializers.register(LazyCompanionMarshaller(RdId(140704772302623256), classLoader, "com.jetbrains.rd.ide.model.AzureTranslationSettings"))
             serializers.register(LazyCompanionMarshaller(RdId(-6608617628705468346), classLoader, "com.jetbrains.rd.ide.model.ArbTranslationItem"))
             serializers.register(LazyCompanionMarshaller(RdId(-1952961815073205569), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateRequest"))
@@ -48,7 +52,7 @@ class ArbModel private constructor(
         
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         
-        const val serializationHash = 7348833052687017975L
+        const val serializationHash = 6641483481806948656L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -59,6 +63,8 @@ class ArbModel private constructor(
     val saveArbEntry: IRdCall<ArbEntryUpdate, Boolean> get() = _saveArbEntry
     val renameArbKey: IRdCall<ArbKeyRename, Boolean> get() = _renameArbKey
     val addArbKey: IRdCall<ArbNewKey, Boolean> get() = _addArbKey
+    val removeArbKey: IRdCall<ArbRemoveKey, Boolean> get() = _removeArbKey
+    val addArbLocale: IRdCall<ArbNewLocale, Boolean> get() = _addArbLocale
     val translateArbEntries: IRdCall<ArbTranslateRequest, ArbTranslateResponse> get() = _translateArbEntries
     //methods
     //initializer
@@ -67,6 +73,8 @@ class ArbModel private constructor(
         bindableChildren.add("saveArbEntry" to _saveArbEntry)
         bindableChildren.add("renameArbKey" to _renameArbKey)
         bindableChildren.add("addArbKey" to _addArbKey)
+        bindableChildren.add("removeArbKey" to _removeArbKey)
+        bindableChildren.add("addArbLocale" to _addArbLocale)
         bindableChildren.add("translateArbEntries" to _translateArbEntries)
     }
     
@@ -77,6 +85,8 @@ class ArbModel private constructor(
         RdCall<ArbEntryUpdate, Boolean>(ArbEntryUpdate, FrameworkMarshallers.Bool),
         RdCall<ArbKeyRename, Boolean>(ArbKeyRename, FrameworkMarshallers.Bool),
         RdCall<ArbNewKey, Boolean>(ArbNewKey, FrameworkMarshallers.Bool),
+        RdCall<ArbRemoveKey, Boolean>(ArbRemoveKey, FrameworkMarshallers.Bool),
+        RdCall<ArbNewLocale, Boolean>(ArbNewLocale, FrameworkMarshallers.Bool),
         RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest, ArbTranslateResponse)
     )
     
@@ -90,6 +100,8 @@ class ArbModel private constructor(
             print("saveArbEntry = "); _saveArbEntry.print(printer); println()
             print("renameArbKey = "); _renameArbKey.print(printer); println()
             print("addArbKey = "); _addArbKey.print(printer); println()
+            print("removeArbKey = "); _removeArbKey.print(printer); println()
+            print("addArbLocale = "); _addArbLocale.print(printer); println()
             print("translateArbEntries = "); _translateArbEntries.print(printer); println()
         }
         printer.print(")")
@@ -101,6 +113,8 @@ class ArbModel private constructor(
             _saveArbEntry.deepClonePolymorphic(),
             _renameArbKey.deepClonePolymorphic(),
             _addArbKey.deepClonePolymorphic(),
+            _removeArbKey.deepClonePolymorphic(),
+            _addArbLocale.deepClonePolymorphic(),
             _translateArbEntries.deepClonePolymorphic()
         )
     }
@@ -468,7 +482,137 @@ data class ArbNewKey (
 
 
 /**
- * #### Generated from [ArbModel.kt:62]
+ * #### Generated from [ArbModel.kt:55]
+ */
+data class ArbNewLocale (
+    val directory: String,
+    val locale: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbNewLocale> {
+        override val _type: KClass<ArbNewLocale> = ArbNewLocale::class
+        override val id: RdId get() = RdId(-1733502063603979140)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbNewLocale  {
+            val directory = buffer.readString()
+            val locale = buffer.readString()
+            return ArbNewLocale(directory, locale)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbNewLocale)  {
+            buffer.writeString(value.directory)
+            buffer.writeString(value.locale)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbNewLocale
+        
+        if (directory != other.directory) return false
+        if (locale != other.locale) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + directory.hashCode()
+        __r = __r*31 + locale.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbNewLocale (")
+        printer.indent {
+            print("directory = "); directory.print(printer); println()
+            print("locale = "); locale.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:49]
+ */
+data class ArbRemoveKey (
+    val directory: String,
+    val key: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbRemoveKey> {
+        override val _type: KClass<ArbRemoveKey> = ArbRemoveKey::class
+        override val id: RdId get() = RdId(-1733498659906343011)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbRemoveKey  {
+            val directory = buffer.readString()
+            val key = buffer.readString()
+            return ArbRemoveKey(directory, key)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbRemoveKey)  {
+            buffer.writeString(value.directory)
+            buffer.writeString(value.key)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbRemoveKey
+        
+        if (directory != other.directory) return false
+        if (key != other.key) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + directory.hashCode()
+        __r = __r*31 + key.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbRemoveKey (")
+        printer.indent {
+            print("directory = "); directory.print(printer); println()
+            print("key = "); key.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:74]
  */
 data class ArbTranslateRequest (
     val directory: String,
@@ -551,7 +695,7 @@ data class ArbTranslateRequest (
 
 
 /**
- * #### Generated from [ArbModel.kt:75]
+ * #### Generated from [ArbModel.kt:87]
  */
 data class ArbTranslateResponse (
     val success: Boolean,
@@ -622,7 +766,7 @@ data class ArbTranslateResponse (
 
 
 /**
- * #### Generated from [ArbModel.kt:70]
+ * #### Generated from [ArbModel.kt:82]
  */
 data class ArbTranslatedItem (
     val key: String,
@@ -687,7 +831,7 @@ data class ArbTranslatedItem (
 
 
 /**
- * #### Generated from [ArbModel.kt:56]
+ * #### Generated from [ArbModel.kt:68]
  */
 data class ArbTranslationItem (
     val key: String,
@@ -758,7 +902,7 @@ data class ArbTranslationItem (
 
 
 /**
- * #### Generated from [ArbModel.kt:48]
+ * #### Generated from [ArbModel.kt:60]
  */
 data class AzureTranslationSettings (
     val endpoint: String,

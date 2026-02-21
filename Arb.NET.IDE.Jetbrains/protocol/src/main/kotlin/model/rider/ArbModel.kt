@@ -45,6 +45,18 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("key", string)
     }
 
+    // Payload for removing a key from all locale files in a directory.
+    val ArbRemoveKey = structdef {
+        field("directory", string)
+        field("key", string)
+    }
+
+    // Payload for adding a new locale file to a directory.
+    val ArbNewLocale = structdef {
+        field("directory", string)
+        field("locale", string)
+    }
+
     val AzureTranslationSettings = structdef {
         field("endpoint", string)
         field("deploymentName", string)
@@ -94,6 +106,14 @@ object ArbModel : Ext(SolutionModel.Solution) {
         // Call: Kotlin asks C# to add a new empty key to all locale files in a directory.
         // Returns true if at least one file was updated.
         call("addArbKey", ArbNewKey, bool)
+
+        // Call: Kotlin asks C# to remove a key from all locale files in a directory.
+        // Returns true if at least one file was updated.
+        call("removeArbKey", ArbRemoveKey, bool)
+
+        // Call: Kotlin asks C# to create a new locale file in a directory.
+        // Returns true if the file was created successfully.
+        call("addArbLocale", ArbNewLocale, bool)
 
         // Call: Kotlin asks C# backend to translate source texts using Azure OpenAI.
         // Returns per-key translated strings or an error message.

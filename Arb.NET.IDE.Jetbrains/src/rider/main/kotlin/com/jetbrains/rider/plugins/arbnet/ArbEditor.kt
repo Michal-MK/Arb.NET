@@ -18,6 +18,8 @@ import com.jetbrains.rd.ide.model.ArbEntryUpdate
 import com.jetbrains.rd.ide.model.ArbKeyRename
 import com.jetbrains.rd.ide.model.ArbLocaleData
 import com.jetbrains.rd.ide.model.ArbNewKey
+import com.jetbrains.rd.ide.model.ArbNewLocale
+import com.jetbrains.rd.ide.model.ArbRemoveKey
 import com.jetbrains.rd.ide.model.arbModel
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rider.projectView.solution
@@ -104,6 +106,8 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     private var initialised = false
     // The translate action is updated each time buildTable() runs to capture the current directory data.
     private var openTranslateDialog: (() -> Unit)? = null
+    // The remove-key action is updated each time buildTable() runs so it can access the live table.
+    private var removeSelectedKey: (() -> Unit)? = null
 
     private val panel: JPanel = JPanel(BorderLayout()).also { root ->
         root.add(JLabel("Loading ARB data…", JLabel.CENTER), BorderLayout.CENTER)
@@ -139,12 +143,16 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     dirCombo = combo
 
                     val addKeyButton = JButton("Add Key")
+                    val addLocaleButton = JButton("Add Locale")
+                    val removeKeyButton = JButton("Remove Key")
                     val translateButton = JButton("Translate...")
                     val aiSettingsButton = JButton("AI Settings...")
 
                     val topPanel = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 4))
                     topPanel.add(combo)
+                    topPanel.add(addLocaleButton)
                     topPanel.add(addKeyButton)
+                    topPanel.add(removeKeyButton)
                     topPanel.add(translateButton)
                     topPanel.add(aiSettingsButton)
 
@@ -179,6 +187,24 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                             if (addResult.unwrap()) refresh()
                         }
                     }
+
+                    addLocaleButton.addActionListener {
+                        val directory = combo.selectedItem as? String ?: return@addActionListener
+                        val locale = Messages.showInputDialog(
+                            project,
+                            "Enter locale code (e.g. de, fr):",
+                            "Add ARB Locale",
+                            null,
+                            "",
+                            null
+                        ) ?: return@addActionListener
+                        if (locale.isBlank()) return@addActionListener
+                        project.solution.arbModel.addArbLocale.start(
+                            lifetime, ArbNewLocale(directory, locale.trim())
+                        ).result.advise(lifetime) { r -> if (r.unwrap()) refresh() }
+                    }
+
+                    removeKeyButton.addActionListener { removeSelectedKey?.invoke() }
 
                     translateButton.addActionListener {
                         openTranslateDialog?.invoke()
@@ -353,6 +379,22 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
         // Wire the top-toolbar "Translate..." button to open the dialog for all rows.
         openTranslateDialog = { openTranslateDialogForRows(null) }
+
+        // Wire the top-toolbar "Remove Key" button to remove the currently selected row.
+        removeSelectedKey = remove@{
+            val row = table.selectedRow.takeIf { it >= 0 } ?: return@remove
+            val key = tableModel.getValueAt(row, 0) as? String ?: return@remove
+            val confirm = Messages.showYesNoDialog(
+                project,
+                "Remove key '$key' from all locale files in this directory?",
+                "Remove ARB Key",
+                Messages.getQuestionIcon()
+            )
+            if (confirm != Messages.YES) return@remove
+            project.solution.arbModel.removeArbKey.start(
+                lifetime, ArbRemoveKey(directory, key)
+            ).result.advise(lifetime) { r -> if (r.unwrap()) refresh() }
+        }
 
         // Double-click on a locale column header → open the raw .arb file in the IDE text editor.
         // mouseReleased → save widths once the user finishes dragging a column divider.

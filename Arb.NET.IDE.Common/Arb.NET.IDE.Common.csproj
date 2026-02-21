@@ -8,7 +8,12 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <!-- Build Arb.NET with IDE config first so bin/IDE netstandard2.0 dependencies exist. -->
+  <!-- Build Arb.NET with the IDE configuration so its CopyNuGetDepsForIde target runs,
+       placing Arb.NET.dll and all transitive deps in bin/IDE/netstandard2.0/ before any
+       IDE project resolves its HintPath references to them.
+       Placed here in the shared Arb.NET.IDE.Common project so it runs exactly once —
+       both the VisualStudio and JetBrains plugins reference this project, so only one
+       dotnet build process is spawned regardless of parallel MSBuild scheduling. -->
   <Target Name="BuildArbNetIde" BeforeTargets="ResolveReferences">
     <Exec Command="dotnet build &quot;$(MSBuildThisFileDirectory)..\Arb.NET\Arb.NET.csproj&quot; -c IDE" />
   </Target>

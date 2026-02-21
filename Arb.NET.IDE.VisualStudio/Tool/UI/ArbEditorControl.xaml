@@ -63,11 +63,21 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
-            <Button Content="Add Key"
+            <Button Content="Add Locale"
                     Margin="8,0,0,0"
                     Padding="8,2"
                     VerticalAlignment="Center"
+                    Click="AddLocaleButton_OnClick" />
+            <Button Content="Add Key"
+                    Margin="4,0,0,0"
+                    Padding="8,2"
+                    VerticalAlignment="Center"
                     Click="AddKeyButton_OnClick" />
+            <Button Content="Remove Key"
+                    Margin="4,0,0,0"
+                    Padding="8,2"
+                    VerticalAlignment="Center"
+                    Click="RemoveKeyButton_OnClick" />
             <Button Content="Translate..."
                     Margin="8,0,0,0"
                     Padding="8,2"
@@ -114,6 +124,7 @@
             <DataGrid.ContextMenu>
                 <ContextMenu Opened="GridContextMenu_OnOpened">
                     <MenuItem x:Name="RenameMenuItem" Header="Rename" Click="RenameMenuItem_OnClick" />
+                    <MenuItem x:Name="DeleteKeyMenuItem" Header="Remove Key" Click="RemoveKeyMenuItem_OnClick" />
                     <MenuItem Header="Translate Selected" Click="TranslateSelectedMenuItem_OnClick" />
                 </ContextMenu>
             </DataGrid.ContextMenu>
