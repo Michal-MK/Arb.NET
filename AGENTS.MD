@@ -29,16 +29,21 @@
 ### Visual Studio specifics
 - Visual Studio is using the VSIX extension format. It is in an NetFramework 4.7.x project.
 
+### IDE Common
+The IDEs have specific requirements w.r.t. dependency handling. the individual .csproj files tell more
+
 - To run the protocol generator:
 `cd "./Arb.NET/Arb.NET.IDE.Jetbrains" && ./gradlew :protocol:rdgen 2>&1`
 
-~~~~## Logging
+## Logging
 When adding logging code, determine if the log will be useful to keep or only used for debugging in the current session.
 Prefix such logs with "[AI-DEBUG]" so that they can easily be removed after.
 
 ## Nuget Package
 - This project produces two nuget packages: `Arb.NET` and `Arb.NET.Generators`.
 - Any changes from now on must accept that we could break someone! An attempt to minimize making such changes must be made.
+
+**Write all plans into ai-ref/plans!**
 
 At the start of each session print:
 ```

@@ -48,6 +48,11 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         private const val COL_ORDER_PREFIX = "arb.net.colOrder."
         private const val DEFAULT_KEY_COL_WIDTH = 240
         private const val DEFAULT_LOCALE_COL_WIDTH = 220
+        internal const val SETTINGS_ENDPOINT = "arb.net.ai.endpoint"
+        internal const val SETTINGS_DEPLOYMENT = "arb.net.ai.deployment"
+        internal const val SETTINGS_API_KEY = "arb.net.ai.key"
+        internal const val SETTINGS_PROMPT = "arb.net.ai.prompt"
+        internal const val SETTINGS_TEMPERATURE = "arb.net.ai.temperature"
 
         // Keys are scoped by directory so different directories don't share state.
         private fun widthKey(directory: String, header: String) = "$COL_WIDTH_PREFIX$directory:$header"
@@ -97,6 +102,8 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     private var dirCombo: JComboBox<String>? = null
     private var tableHolder: JPanel? = null
     private var initialised = false
+    // The translate action is updated each time buildTable() runs to capture the current directory data.
+    private var openTranslateDialog: (() -> Unit)? = null
 
     private val panel: JPanel = JPanel(BorderLayout()).also { root ->
         root.add(JLabel("Loading ARB data…", JLabel.CENTER), BorderLayout.CENTER)
@@ -105,7 +112,17 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     /** Fetch fresh ARB data from the backend and rebuild the whole UI. */
     fun refresh() {
         project.solution.arbModel.getArbData.start(lifetime, Unit).result.advise(lifetime) { result ->
-            val allLocaleData = result.unwrap()
+            val allLocaleData = try {
+                result.unwrap()
+            } catch (t: Throwable) {
+                SwingUtilities.invokeLater {
+                    panel.removeAll()
+                    panel.add(JLabel("Failed to load ARB data: ${t.message ?: "unknown error"}", JLabel.CENTER), BorderLayout.CENTER)
+                    panel.revalidate()
+                    panel.repaint()
+                }
+                return@advise
+            }
 
             val byDirectory: Map<String, List<ArbLocaleData>> = allLocaleData
                 .groupBy { it.directory }
@@ -122,10 +139,14 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     dirCombo = combo
 
                     val addKeyButton = JButton("Add Key")
+                    val translateButton = JButton("Translate...")
+                    val aiSettingsButton = JButton("AI Settings...")
 
                     val topPanel = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 4))
                     topPanel.add(combo)
                     topPanel.add(addKeyButton)
+                    topPanel.add(translateButton)
+                    topPanel.add(aiSettingsButton)
 
                     val holder = JPanel(BorderLayout())
                     tableHolder = holder
@@ -157,6 +178,14 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                         ).result.advise(lifetime) { addResult ->
                             if (addResult.unwrap()) refresh()
                         }
+                    }
+
+                    translateButton.addActionListener {
+                        openTranslateDialog?.invoke()
+                    }
+
+                    aiSettingsButton.addActionListener {
+                        ArbTranslationSettingsDialog(project).showAndGet()
                     }
 
                     combo.addActionListener {
@@ -227,6 +256,13 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             }
         }
 
+        fun openTranslateDialogForRows(selectedRowIndices: List<Int>?) {
+            ArbTranslateDialog(
+                project, directory, locales, byLocale, selectedRowIndices,
+                onApplied = { refresh() }
+            ).show()
+        }
+
         tableModel.addTableModelListener { e ->
             if (e.type != TableModelEvent.UPDATE) return@addTableModelListener
             val row = e.firstRow
@@ -290,10 +326,23 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     val row = rowAtPoint(e.point)
                     val col = columnAtPoint(e.point)
                     if (row < 0) return
-                    // Select the row that was right-clicked.
-                    setRowSelectionInterval(row, row)
-                    if (col != 0) return
+                    // Keep current multi-selection if right-clicked row is already selected.
+                    if (!isRowSelected(row)) {
+                        setRowSelectionInterval(row, row)
+                    }
                     val menu = JPopupMenu()
+                    val translateItem = JMenuItem("Translate Selected")
+                    translateItem.addActionListener {
+                        val selectedIndices = this@apply.selectedRows.toList()
+                        openTranslateDialogForRows(selectedIndices.ifEmpty { null })
+                    }
+                    menu.add(translateItem)
+
+                    if (col != 0) {
+                        menu.show(this@apply, e.x, e.y)
+                        return
+                    }
+
                     val renameItem = JMenuItem("Rename")
                     renameItem.addActionListener { doRenameRow(this@apply, row) }
                     menu.add(renameItem)
@@ -301,6 +350,9 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                 }
             })
         }
+
+        // Wire the top-toolbar "Translate..." button to open the dialog for all rows.
+        openTranslateDialog = { openTranslateDialogForRows(null) }
 
         // Double-click on a locale column header → open the raw .arb file in the IDE text editor.
         // mouseReleased → save widths once the user finishes dragging a column divider.

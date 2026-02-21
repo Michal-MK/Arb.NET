@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Arb.NET;
+using System.Threading;
+using Arb.NET.IDE.Common.Models;
+using Arb.NET.IDE.Common.Services;
 using JetBrains.Application.Parts;
 using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
@@ -16,13 +18,15 @@ namespace Arb.NET.IDE.Jetbrains.Rider;
 
 [SolutionComponent(Instantiation.ContainerAsyncPrimaryThread)]
 public class ArbModelHost {
-    private static readonly ILogger Log = Logger.GetLogger<ArbModelHost>();
+    private static readonly ILogger LOG = Logger.GetLogger<ArbModelHost>();
     private readonly Dictionary<string, string> localeToFilePath = new();
+    private readonly AzureOpenAITranslator translator = new();
 
-    public ArbModelHost(ISolution solution, Lifetime lifetime) {
+    // ReSharper disable once UnusedParameter.Local - not sure is required by some from of reflection-based instantiation.
+    public ArbModelHost(ISolution solution, Lifetime _) {
         ArbModel model = solution.GetProtocolSolution().GetArbModel();
 
-        model.GetArbData.SetSync((_, _) => { return CollectArbData(solution); });
+        model.GetArbData.SetSync((_, _) => CollectArbData(solution));
 
         model.SaveArbEntry.SetSync((_, update) => {
             string dictKey = update.Directory + "|" + update.Locale;
@@ -56,7 +60,10 @@ public class ArbModelHost {
                 if (parsed.Document == null) continue;
                 if (parsed.Document.Entries.ContainsKey(payload.Key)) continue;
 
-                parsed.Document.Entries[payload.Key] = new ArbEntry { Key = payload.Key, Value = "" };
+                parsed.Document.Entries[payload.Key] = new ArbEntry {
+                    Key = payload.Key,
+                    Value = ""
+                };
                 File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
                 anyChanged = true;
             }
@@ -100,6 +107,93 @@ public class ArbModelHost {
 
             return anyChanged;
         });
+
+        model.TranslateArbEntries.SetAsync(async (_, request) => {
+            Arb.NET.IDE.Common.Models.AzureTranslationSettings settings = new() {
+                Endpoint = request.Settings.Endpoint,
+                DeploymentName = request.Settings.DeploymentName,
+                ApiKey = request.Settings.ApiKey,
+                CustomPrompt = request.Settings.CustomPrompt,
+                Temperature = request.Settings.Temperature
+            };
+
+            (bool valid, string? error) = translator.ValidateSettings(settings);
+            if (!valid) {
+                return new ArbTranslateResponse(false, error, []);
+            }
+
+            Dictionary<string, string?> descriptions = LoadDescriptions(request.Directory, request.SourceLocale);
+
+            List<ArbTranslationItem> validItems = request.Items
+                .Where(item => !string.IsNullOrWhiteSpace(item.SourceText))
+                .Select(item => {
+                    string? description = item.Description;
+                    if (string.IsNullOrWhiteSpace(description) && descriptions.TryGetValue(item.Key, out string? metadataDescription)) {
+                        description = metadataDescription;
+                    }
+
+                    return new ArbTranslationItem(item.Key, item.SourceText, description);
+                })
+                .ToList();
+
+            if (validItems.Count == 0) {
+                return new ArbTranslateResponse(true, null, []);
+            }
+
+            try {
+                IReadOnlyList<string> translated = await translator
+                    .TranslateBatchAsync(
+                        settings,
+                        request.SourceLocale,
+                        request.TargetLocale,
+                        validItems.Select(item => new AzureTranslationItem {
+                            Key = item.Key,
+                            SourceText = item.SourceText,
+                            Description = item.Description
+                        }).ToList(),
+                        CancellationToken.None
+                    );
+
+                List<ArbTranslatedItem> mapped = validItems
+                    .Select((item, index) => new ArbTranslatedItem(item.Key, translated[index]))
+                    .ToList();
+
+                return new ArbTranslateResponse(true, null, mapped);
+            }
+            catch (Exception ex) {
+                LOG.Warn($"Azure translation failed: {ex.Message}");
+                return new ArbTranslateResponse(false, ex.Message, []);
+            }
+        });
+    }
+
+    private Dictionary<string, string?> LoadDescriptions(string directory, string sourceLocale) {
+        Dictionary<string, string?> descriptions = new();
+        string dictKey = directory + "|" + sourceLocale;
+
+        if (!localeToFilePath.TryGetValue(dictKey, out string sourceFilePath)) {
+            return descriptions;
+        }
+
+        try {
+            string content = File.ReadAllText(sourceFilePath);
+            ArbParseResult parsed = new ArbParser().ParseContent(content);
+            if (parsed.Document == null) {
+                return descriptions;
+            }
+
+            foreach (KeyValuePair<string, ArbEntry> kvp in parsed.Document.Entries) {
+                ArbEntry entry = kvp.Value;
+                if (!string.IsNullOrWhiteSpace(entry.Metadata?.Description)) {
+                    descriptions[kvp.Key] = entry.Metadata?.Description;
+                }
+            }
+        }
+        catch (Exception ex) {
+            LOG.Warn($"Failed to load ARB descriptions from '{sourceFilePath}': {ex.Message}");
+        }
+
+        return descriptions;
     }
 
     private List<ArbLocaleData> CollectArbData(ISolution solution) {

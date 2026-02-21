@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Arb.NET.IDE.VisualStudio.Tool;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
+using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 
 namespace Arb.NET.IDE.VisualStudio;
 
@@ -45,9 +46,10 @@ public sealed class ArbPackage : AsyncPackage {
         // Do any initialization that requires the UI thread after switching to the UI thread.
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
         
-        PersistenceService persistenceService = new(this);
+        ColumnSettingsService columnSettingsService = new(this);
         ArbService arbService = new(this);
-        
-        await ShowArbToolWindowCommand.InitializeAsync(this, persistenceService, arbService);
+        TranslationSettingsService translationSettingsService = new(this);
+
+        await ShowArbToolWindowCommand.InitializeAsync(this, columnSettingsService, arbService, translationSettingsService);
     }
 }

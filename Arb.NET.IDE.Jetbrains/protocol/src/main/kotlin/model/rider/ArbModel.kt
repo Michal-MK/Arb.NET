@@ -45,6 +45,39 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("key", string)
     }
 
+    val AzureTranslationSettings = structdef {
+        field("endpoint", string)
+        field("deploymentName", string)
+        field("apiKey", string)
+        field("customPrompt", string)
+        field("temperature", float)
+    }
+
+    val ArbTranslationItem = structdef {
+        field("key", string)
+        field("sourceText", string)
+        field("description", string.nullable)
+    }
+
+    val ArbTranslateRequest = structdef {
+        field("directory", string)
+        field("settings", AzureTranslationSettings)
+        field("sourceLocale", string)
+        field("targetLocale", string)
+        field("items", immutableList(ArbTranslationItem))
+    }
+
+    val ArbTranslatedItem = structdef {
+        field("key", string)
+        field("translatedText", string)
+    }
+
+    val ArbTranslateResponse = structdef {
+        field("success", bool)
+        field("errorMessage", string.nullable)
+        field("items", immutableList(ArbTranslatedItem))
+    }
+
     init {
         // Call: Kotlin asks C# to scan the solution and return all ARB data.
         // Returns one ArbLocaleData per .arb file found.
@@ -61,5 +94,9 @@ object ArbModel : Ext(SolutionModel.Solution) {
         // Call: Kotlin asks C# to add a new empty key to all locale files in a directory.
         // Returns true if at least one file was updated.
         call("addArbKey", ArbNewKey, bool)
+
+        // Call: Kotlin asks C# backend to translate source texts using Azure OpenAI.
+        // Returns per-key translated strings or an error message.
+        call("translateArbEntries", ArbTranslateRequest, ArbTranslateResponse)
     }
 }

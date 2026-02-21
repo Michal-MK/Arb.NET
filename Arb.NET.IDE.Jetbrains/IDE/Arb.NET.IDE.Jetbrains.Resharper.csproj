@@ -19,6 +19,7 @@
 
     <!-- Bundle Arb.NET core library so the plugin is self-contained -->
     <Content Include="bin\$(AssemblyName)\$(Configuration)\Arb.NET.dll" PackagePath="dotFiles" Pack="true" Visible="false" />
+    <Content Include="bin\$(AssemblyName)\$(Configuration)\Arb.NET.IDE.Common.dll" PackagePath="dotFiles" Pack="true" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +48,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Arb.NET.IDE.Jetbrains.Common.csproj" />
+    <ProjectReference Include="..\..\Arb.NET.IDE.Common\Arb.NET.IDE.Common.csproj" />
   </ItemGroup>
 
   <!-- Rider-only files: these reference Rider protocol types not present in the ReSharper SDK -->

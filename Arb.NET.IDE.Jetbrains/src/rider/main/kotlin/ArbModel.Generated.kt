@@ -22,7 +22,8 @@ class ArbModel private constructor(
     private val _getArbData: RdCall<Unit, List<ArbLocaleData>>,
     private val _saveArbEntry: RdCall<ArbEntryUpdate, Boolean>,
     private val _renameArbKey: RdCall<ArbKeyRename, Boolean>,
-    private val _addArbKey: RdCall<ArbNewKey, Boolean>
+    private val _addArbKey: RdCall<ArbNewKey, Boolean>,
+    private val _translateArbEntries: RdCall<ArbTranslateRequest, ArbTranslateResponse>
 ) : RdExtBase() {
     //companion
     
@@ -35,6 +36,11 @@ class ArbModel private constructor(
             serializers.register(LazyCompanionMarshaller(RdId(-5695656692253622339), classLoader, "com.jetbrains.rd.ide.model.ArbEntryUpdate"))
             serializers.register(LazyCompanionMarshaller(RdId(-1733504620339216673), classLoader, "com.jetbrains.rd.ide.model.ArbKeyRename"))
             serializers.register(LazyCompanionMarshaller(RdId(561016481825661), classLoader, "com.jetbrains.rd.ide.model.ArbNewKey"))
+            serializers.register(LazyCompanionMarshaller(RdId(140704772302623256), classLoader, "com.jetbrains.rd.ide.model.AzureTranslationSettings"))
+            serializers.register(LazyCompanionMarshaller(RdId(-6608617628705468346), classLoader, "com.jetbrains.rd.ide.model.ArbTranslationItem"))
+            serializers.register(LazyCompanionMarshaller(RdId(-1952961815073205569), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateRequest"))
+            serializers.register(LazyCompanionMarshaller(RdId(-6163743818377381401), classLoader, "com.jetbrains.rd.ide.model.ArbTranslatedItem"))
+            serializers.register(LazyCompanionMarshaller(RdId(-5201584046087783919), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateResponse"))
         }
         
         
@@ -42,7 +48,7 @@ class ArbModel private constructor(
         
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         
-        const val serializationHash = -3393040445077500747L
+        const val serializationHash = 7348833052687017975L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -53,6 +59,7 @@ class ArbModel private constructor(
     val saveArbEntry: IRdCall<ArbEntryUpdate, Boolean> get() = _saveArbEntry
     val renameArbKey: IRdCall<ArbKeyRename, Boolean> get() = _renameArbKey
     val addArbKey: IRdCall<ArbNewKey, Boolean> get() = _addArbKey
+    val translateArbEntries: IRdCall<ArbTranslateRequest, ArbTranslateResponse> get() = _translateArbEntries
     //methods
     //initializer
     init {
@@ -60,6 +67,7 @@ class ArbModel private constructor(
         bindableChildren.add("saveArbEntry" to _saveArbEntry)
         bindableChildren.add("renameArbKey" to _renameArbKey)
         bindableChildren.add("addArbKey" to _addArbKey)
+        bindableChildren.add("translateArbEntries" to _translateArbEntries)
     }
     
     //secondary constructor
@@ -68,7 +76,8 @@ class ArbModel private constructor(
         RdCall<Unit, List<ArbLocaleData>>(FrameworkMarshallers.Void, __ArbLocaleDataListSerializer),
         RdCall<ArbEntryUpdate, Boolean>(ArbEntryUpdate, FrameworkMarshallers.Bool),
         RdCall<ArbKeyRename, Boolean>(ArbKeyRename, FrameworkMarshallers.Bool),
-        RdCall<ArbNewKey, Boolean>(ArbNewKey, FrameworkMarshallers.Bool)
+        RdCall<ArbNewKey, Boolean>(ArbNewKey, FrameworkMarshallers.Bool),
+        RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest, ArbTranslateResponse)
     )
     
     //equals trait
@@ -81,6 +90,7 @@ class ArbModel private constructor(
             print("saveArbEntry = "); _saveArbEntry.print(printer); println()
             print("renameArbKey = "); _renameArbKey.print(printer); println()
             print("addArbKey = "); _addArbKey.print(printer); println()
+            print("translateArbEntries = "); _translateArbEntries.print(printer); println()
         }
         printer.print(")")
     }
@@ -90,7 +100,8 @@ class ArbModel private constructor(
             _getArbData.deepClonePolymorphic(),
             _saveArbEntry.deepClonePolymorphic(),
             _renameArbKey.deepClonePolymorphic(),
-            _addArbKey.deepClonePolymorphic()
+            _addArbKey.deepClonePolymorphic(),
+            _translateArbEntries.deepClonePolymorphic()
         )
     }
     //contexts
@@ -447,6 +458,379 @@ data class ArbNewKey (
         printer.indent {
             print("directory = "); directory.print(printer); println()
             print("key = "); key.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:62]
+ */
+data class ArbTranslateRequest (
+    val directory: String,
+    val settings: AzureTranslationSettings,
+    val sourceLocale: String,
+    val targetLocale: String,
+    val items: List<ArbTranslationItem>
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbTranslateRequest> {
+        override val _type: KClass<ArbTranslateRequest> = ArbTranslateRequest::class
+        override val id: RdId get() = RdId(-1952961815073205569)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbTranslateRequest  {
+            val directory = buffer.readString()
+            val settings = AzureTranslationSettings.read(ctx, buffer)
+            val sourceLocale = buffer.readString()
+            val targetLocale = buffer.readString()
+            val items = buffer.readList { ArbTranslationItem.read(ctx, buffer) }
+            return ArbTranslateRequest(directory, settings, sourceLocale, targetLocale, items)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslateRequest)  {
+            buffer.writeString(value.directory)
+            AzureTranslationSettings.write(ctx, buffer, value.settings)
+            buffer.writeString(value.sourceLocale)
+            buffer.writeString(value.targetLocale)
+            buffer.writeList(value.items) { v -> ArbTranslationItem.write(ctx, buffer, v) }
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbTranslateRequest
+        
+        if (directory != other.directory) return false
+        if (settings != other.settings) return false
+        if (sourceLocale != other.sourceLocale) return false
+        if (targetLocale != other.targetLocale) return false
+        if (items != other.items) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + directory.hashCode()
+        __r = __r*31 + settings.hashCode()
+        __r = __r*31 + sourceLocale.hashCode()
+        __r = __r*31 + targetLocale.hashCode()
+        __r = __r*31 + items.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbTranslateRequest (")
+        printer.indent {
+            print("directory = "); directory.print(printer); println()
+            print("settings = "); settings.print(printer); println()
+            print("sourceLocale = "); sourceLocale.print(printer); println()
+            print("targetLocale = "); targetLocale.print(printer); println()
+            print("items = "); items.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:75]
+ */
+data class ArbTranslateResponse (
+    val success: Boolean,
+    val errorMessage: String?,
+    val items: List<ArbTranslatedItem>
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbTranslateResponse> {
+        override val _type: KClass<ArbTranslateResponse> = ArbTranslateResponse::class
+        override val id: RdId get() = RdId(-5201584046087783919)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbTranslateResponse  {
+            val success = buffer.readBool()
+            val errorMessage = buffer.readNullable { buffer.readString() }
+            val items = buffer.readList { ArbTranslatedItem.read(ctx, buffer) }
+            return ArbTranslateResponse(success, errorMessage, items)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslateResponse)  {
+            buffer.writeBool(value.success)
+            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
+            buffer.writeList(value.items) { v -> ArbTranslatedItem.write(ctx, buffer, v) }
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbTranslateResponse
+        
+        if (success != other.success) return false
+        if (errorMessage != other.errorMessage) return false
+        if (items != other.items) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + success.hashCode()
+        __r = __r*31 + if (errorMessage != null) errorMessage.hashCode() else 0
+        __r = __r*31 + items.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbTranslateResponse (")
+        printer.indent {
+            print("success = "); success.print(printer); println()
+            print("errorMessage = "); errorMessage.print(printer); println()
+            print("items = "); items.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:70]
+ */
+data class ArbTranslatedItem (
+    val key: String,
+    val translatedText: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbTranslatedItem> {
+        override val _type: KClass<ArbTranslatedItem> = ArbTranslatedItem::class
+        override val id: RdId get() = RdId(-6163743818377381401)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbTranslatedItem  {
+            val key = buffer.readString()
+            val translatedText = buffer.readString()
+            return ArbTranslatedItem(key, translatedText)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslatedItem)  {
+            buffer.writeString(value.key)
+            buffer.writeString(value.translatedText)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbTranslatedItem
+        
+        if (key != other.key) return false
+        if (translatedText != other.translatedText) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + key.hashCode()
+        __r = __r*31 + translatedText.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbTranslatedItem (")
+        printer.indent {
+            print("key = "); key.print(printer); println()
+            print("translatedText = "); translatedText.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:56]
+ */
+data class ArbTranslationItem (
+    val key: String,
+    val sourceText: String,
+    val description: String?
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbTranslationItem> {
+        override val _type: KClass<ArbTranslationItem> = ArbTranslationItem::class
+        override val id: RdId get() = RdId(-6608617628705468346)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbTranslationItem  {
+            val key = buffer.readString()
+            val sourceText = buffer.readString()
+            val description = buffer.readNullable { buffer.readString() }
+            return ArbTranslationItem(key, sourceText, description)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslationItem)  {
+            buffer.writeString(value.key)
+            buffer.writeString(value.sourceText)
+            buffer.writeNullable(value.description) { buffer.writeString(it) }
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbTranslationItem
+        
+        if (key != other.key) return false
+        if (sourceText != other.sourceText) return false
+        if (description != other.description) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + key.hashCode()
+        __r = __r*31 + sourceText.hashCode()
+        __r = __r*31 + if (description != null) description.hashCode() else 0
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbTranslationItem (")
+        printer.indent {
+            print("key = "); key.print(printer); println()
+            print("sourceText = "); sourceText.print(printer); println()
+            print("description = "); description.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:48]
+ */
+data class AzureTranslationSettings (
+    val endpoint: String,
+    val deploymentName: String,
+    val apiKey: String,
+    val customPrompt: String,
+    val temperature: Float
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<AzureTranslationSettings> {
+        override val _type: KClass<AzureTranslationSettings> = AzureTranslationSettings::class
+        override val id: RdId get() = RdId(140704772302623256)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): AzureTranslationSettings  {
+            val endpoint = buffer.readString()
+            val deploymentName = buffer.readString()
+            val apiKey = buffer.readString()
+            val customPrompt = buffer.readString()
+            val temperature = buffer.readFloat()
+            return AzureTranslationSettings(endpoint, deploymentName, apiKey, customPrompt, temperature)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: AzureTranslationSettings)  {
+            buffer.writeString(value.endpoint)
+            buffer.writeString(value.deploymentName)
+            buffer.writeString(value.apiKey)
+            buffer.writeString(value.customPrompt)
+            buffer.writeFloat(value.temperature)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as AzureTranslationSettings
+        
+        if (endpoint != other.endpoint) return false
+        if (deploymentName != other.deploymentName) return false
+        if (apiKey != other.apiKey) return false
+        if (customPrompt != other.customPrompt) return false
+        if (temperature != other.temperature) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + endpoint.hashCode()
+        __r = __r*31 + deploymentName.hashCode()
+        __r = __r*31 + apiKey.hashCode()
+        __r = __r*31 + customPrompt.hashCode()
+        __r = __r*31 + temperature.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("AzureTranslationSettings (")
+        printer.indent {
+            print("endpoint = "); endpoint.print(printer); println()
+            print("deploymentName = "); deploymentName.print(printer); println()
+            print("apiKey = "); apiKey.print(printer); println()
+            print("customPrompt = "); customPrompt.print(printer); println()
+            print("temperature = "); temperature.print(printer); println()
         }
         printer.print(")")
     }

@@ -4,15 +4,13 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Runtime.InteropServices;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
+using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 using Arb.NET.IDE.VisualStudio.Tool.UI;
 
 namespace Arb.NET.IDE.VisualStudio.Tool;
 
 [Guid("b7e3c1d1-9c1b-4f0e-9f7c-8c7b8c8e2b11")]
 public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolutionEvents {
-    private PersistenceService persistenceService;
-    private ArbService arbService;
-    
     private readonly ArbEditorControl control;
 
     public ArbToolWindow() : base(null) {
@@ -22,14 +20,8 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
     }
     
     [SuppressMessage("ReSharper", "ParameterHidesMember")]
-    public void Setup(PersistenceService persistenceService, ArbService arbService) {
-        this.persistenceService = persistenceService;
-        this.arbService = arbService;
-        control.Initialize((ArbPackage)Package, persistenceService, arbService);
-    }
-
-    public override void OnToolWindowCreated() {
-        base.OnToolWindowCreated();
+    public void Setup(ColumnSettingsService columnSettingsService, ArbService arbService, TranslationSettingsService translationSettingsService) {
+        control.Initialize((ArbPackage)Package, columnSettingsService, arbService, translationSettingsService);
     }
 
     #region IVsSelectionEvents - registered via IVsMonitorSelection.AdviseSelectionEvents in ShowArbToolWindowCommand

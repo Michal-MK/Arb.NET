@@ -13,14 +13,16 @@ using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
+using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
 public partial class ArbEditorControl : UserControl {
     private AsyncPackage package;
 
-    private PersistenceService persistenceService;
+    private ColumnSettingsService columnSettingsService;
     private ArbService arbService;
+    private TranslationSettingsService translationSettingsService;
 
     private const double DEFAULT_KEY_COLUMN_WIDTH = 240;
     private const double DEFAULT_LOCALE_COLUMN_WIDTH = 220;
@@ -41,10 +43,11 @@ public partial class ArbEditorControl : UserControl {
     }
 
     [SuppressMessage("ReSharper", "ParameterHidesMember")]
-    public void Initialize(AsyncPackage package, PersistenceService persistenceService, ArbService arbService) {
+    public void Initialize(AsyncPackage package, ColumnSettingsService columnSettingsService, ArbService arbService, TranslationSettingsService translationSettingsService) {
         this.package = package;
-        this.persistenceService = persistenceService;
+        this.columnSettingsService = columnSettingsService;
         this.arbService = arbService;
+        this.translationSettingsService = translationSettingsService;
         _ = LoadDataAsync();
     }
 
@@ -146,7 +149,7 @@ public partial class ArbEditorControl : UserControl {
         }
 
         // Restore user-defined column order; unknown/new locales are appended alphabetically at the end.
-        List<string> savedOrder = persistenceService.LoadLocaleOrder(directory);
+        List<string> savedOrder = columnSettingsService.LoadLocaleOrder(directory);
         List<string> alphabetical = arbFiles.Select(lf => lf.LangCode).OrderBy(l => l).ToList();
         if (savedOrder != null) {
             currentLangCodes = [
@@ -173,7 +176,7 @@ public partial class ArbEditorControl : UserControl {
         currentRows = rows;
         currentDirectory = directory;
 
-        Dictionary<string, double> savedWidths = persistenceService.LoadColumnWidths(directory);
+        Dictionary<string, double> savedWidths = columnSettingsService.LoadColumnWidths(directory);
 
         // Detach previous width listeners before clearing columns.
         DependencyPropertyDescriptor widthDpd = DependencyPropertyDescriptor.FromProperty(DataGridColumn.WidthProperty, typeof(DataGridColumn));
@@ -203,7 +206,7 @@ public partial class ArbEditorControl : UserControl {
         // Attach width-change listeners after suppressSave is cleared so the initial layout fires are ignored.
         foreach (DataGridColumn col in ArbGrid.Columns) {
             void Handler(object _, EventArgs _1) {
-                if (!suppressSave && currentDirectory != null) persistenceService.SaveColumnWidths(currentDirectory, ArbGrid.Columns);
+                if (!suppressSave && currentDirectory != null) columnSettingsService.SaveColumnWidths(currentDirectory, ArbGrid.Columns);
             }
 
             widthDpd.AddValueChanged(col, Handler);
@@ -253,7 +256,7 @@ public partial class ArbEditorControl : UserControl {
     }
 
     private void ArbGrid_OnColumnDisplayIndexChanged(object _, DataGridColumnEventArgs _1) {
-        if (currentDirectory != null) persistenceService.SaveLocaleOrder(currentDirectory, ArbGrid.Columns);
+        if (currentDirectory != null) columnSettingsService.SaveLocaleOrder(currentDirectory, ArbGrid.Columns);
     }
 
     private void GridContextMenu_OnOpened(object sender, RoutedEventArgs e) {
@@ -333,5 +336,32 @@ public partial class ArbEditorControl : UserControl {
         }
 
         if (anyChanged) BuildTable(directory);
+    }
+
+    private void TranslateButton_OnClick(object sender, RoutedEventArgs e) {
+        OpenTranslateDialog(currentRows.ToList());
+    }
+
+    private void TranslateSelectedMenuItem_OnClick(object sender, RoutedEventArgs e) {
+        List<ArbRow> selected = ArbGrid.SelectedItems.OfType<ArbRow>().ToList();
+        if (selected.Count == 0) return;
+        OpenTranslateDialog(selected);
+    }
+
+    private void AiSettingsButton_OnClick(object sender, RoutedEventArgs e) {
+        TranslationSettingsDialog dialog = new(translationSettingsService);
+        dialog.ShowDialog();
+    }
+
+    private void OpenTranslateDialog(List<ArbRow> rows) {
+        if (DirectoryCombo.SelectedItem is not string directory) return;
+        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+
+        TranslateDialog dialog = new(rows, currentLangCodes, arbFiles, directory, translationSettingsService, parser);
+        dialog.ShowDialog();
+
+        if (dialog.AppliedChanges) {
+            BuildTable(directory);
+        }
     }
 }

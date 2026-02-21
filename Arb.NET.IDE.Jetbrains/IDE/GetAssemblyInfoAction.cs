@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using Arb.NET.IDE.Jetbrains.Common;
 using JetBrains.Application.DataContext;
@@ -15,10 +16,10 @@ public class GetAssemblyInfoAction : IExecutableAction
     public void Execute(IDataContext context, DelegateExecute nextExecute)
     {
         // ReSharper disable once RedundantNameQualifier
-        var asm = typeof(Arb.NET.ArbParser).Assembly;
-        var name = asm.GetName();
+        Assembly asm = typeof(Arb.NET.ArbParser).Assembly;
+        AssemblyName name = asm.GetName();
 
-        var sb = new StringBuilder();
+        StringBuilder sb = new();
         sb.AppendLine($"Name:      {name.Name}");
         sb.AppendLine($"Version:   {name.Version}");
         sb.AppendLine($"Location:  {asm.Location}");

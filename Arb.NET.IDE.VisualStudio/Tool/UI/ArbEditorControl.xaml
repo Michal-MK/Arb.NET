@@ -68,6 +68,16 @@
                     Padding="8,2"
                     VerticalAlignment="Center"
                     Click="AddKeyButton_OnClick" />
+            <Button Content="Translate..."
+                    Margin="8,0,0,0"
+                    Padding="8,2"
+                    VerticalAlignment="Center"
+                    Click="TranslateButton_OnClick" />
+            <Button Content="AI Settings..."
+                    Margin="4,0,0,0"
+                    Padding="8,2"
+                    VerticalAlignment="Center"
+                    Click="AiSettingsButton_OnClick" />
         </StackPanel>
 
         <!-- Loading overlay -->
@@ -91,7 +101,7 @@
                   HeadersVisibility="Column"
                   GridLinesVisibility="All"
                   SelectionUnit="FullRow"
-                  SelectionMode="Single"
+                  SelectionMode="Extended"
                   Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
                   RowBackground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
@@ -104,6 +114,7 @@
             <DataGrid.ContextMenu>
                 <ContextMenu Opened="GridContextMenu_OnOpened">
                     <MenuItem x:Name="RenameMenuItem" Header="Rename" Click="RenameMenuItem_OnClick" />
+                    <MenuItem Header="Translate Selected" Click="TranslateSelectedMenuItem_OnClick" />
                 </ContextMenu>
             </DataGrid.ContextMenu>
         </DataGrid>

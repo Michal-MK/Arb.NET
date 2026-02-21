@@ -6,9 +6,9 @@ using System.Windows.Controls;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell.Settings;
 
-namespace Arb.NET.IDE.VisualStudio.Tool.Services;
+namespace Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 
-public class PersistenceService(ArbPackage package) {
+public class ColumnSettingsService(ArbPackage package) {
     #region Column layout persistence
 
     private const string SETTINGS_COLLECTION = "Arb.NET\\ColumnLayout";
@@ -22,7 +22,7 @@ public class PersistenceService(ArbPackage package) {
     #endregion
     
     private SettingsStore Store => new ShellSettingsManager(package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
-    private WritableSettingsStore WritableStore = new ShellSettingsManager(package).GetWritableSettingsStore(SettingsScope.UserSettings);
+    private WritableSettingsStore WritableStore => new ShellSettingsManager(package).GetWritableSettingsStore(SettingsScope.UserSettings);
     
     public Dictionary<string, double> LoadColumnWidths(string directory) {
         Dictionary<string, double> widths = new(StringComparer.Ordinal);

@@ -4,6 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>Arb.NET.IDE.Jetbrains.Rider</AssemblyName>
     <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);RIDER</DefineConstants>
   </PropertyGroup>
 
@@ -37,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Arb.NET.IDE.Jetbrains.Common.csproj" />
+    <ProjectReference Include="..\..\Arb.NET.IDE.Common\Arb.NET.IDE.Common.csproj" />
   </ItemGroup>
 
   <!-- RDGen-generated protocol files (produced by `gradle :protocol:generateRiderModel`) -->

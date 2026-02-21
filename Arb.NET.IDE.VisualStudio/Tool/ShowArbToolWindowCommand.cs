@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel.Design;
 using System.Threading.Tasks;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
+using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 
 namespace Arb.NET.IDE.VisualStudio.Tool;
 
@@ -14,16 +15,18 @@ internal sealed class ShowArbToolWindowCommand {
     private static readonly Guid COMMAND_SET = new("d8c8b3e1-2f3c-4b6c-9d4e-1f2b3c4d5e6f");
 
     private readonly ArbPackage package;
-    private readonly PersistenceService persistenceService;
+    private readonly ColumnSettingsService columnSettingsService;
     private readonly ArbService arbService;
+    private readonly TranslationSettingsService translationSettingsService;
 
     private uint selectionCookie;
     private uint solutionEventsCookie;
 
-    private ShowArbToolWindowCommand(ArbPackage package, OleMenuCommandService commandService, PersistenceService persistenceService, ArbService arbService) {
+    private ShowArbToolWindowCommand(ArbPackage package, OleMenuCommandService commandService, ColumnSettingsService columnSettingsService, ArbService arbService, TranslationSettingsService translationSettingsService) {
         this.package = package;
-        this.persistenceService = persistenceService;
+        this.columnSettingsService = columnSettingsService;
         this.arbService = arbService;
+        this.translationSettingsService = translationSettingsService;
 
         CommandID cmdId = new(COMMAND_SET, COMMAND_ID);
         OleMenuCommand cmd = new(Execute, cmdId);
@@ -31,7 +34,7 @@ internal sealed class ShowArbToolWindowCommand {
         commandService.AddCommand(cmd);
     }
 
-    public static async Task InitializeAsync(ArbPackage package, PersistenceService persistenceService, ArbService arbService) {
+    public static async Task InitializeAsync(ArbPackage package, ColumnSettingsService columnSettingsService, ArbService arbService, TranslationSettingsService translationSettingsService) {
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
         if (await package.GetServiceAsync(typeof(IMenuCommandService)) is not OleMenuCommandService commandService) {
@@ -39,7 +42,7 @@ internal sealed class ShowArbToolWindowCommand {
         }
 
         // ReSharper disable once ObjectCreationAsStatement
-        new ShowArbToolWindowCommand(package, commandService, persistenceService, arbService);
+        new ShowArbToolWindowCommand(package, commandService, columnSettingsService, arbService, translationSettingsService);
     }
 
     private void Execute(object sender, EventArgs e) {
@@ -59,7 +62,7 @@ internal sealed class ShowArbToolWindowCommand {
             // Subscribe to global selection events once so we can detect when our tool
             // window frame becomes the active window frame (Focus handling).
             if (window is ArbToolWindow arbWindow) {
-                arbWindow.Setup(persistenceService, arbService);
+                arbWindow.Setup(columnSettingsService, arbService, translationSettingsService);
                 
                 if (selectionCookie == 0) {
                     if (await package.GetServiceAsync(typeof(SVsShellMonitorSelection)) is IVsMonitorSelection monitorSelection) {

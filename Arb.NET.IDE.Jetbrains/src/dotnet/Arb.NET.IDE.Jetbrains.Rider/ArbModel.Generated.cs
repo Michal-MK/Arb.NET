@@ -46,34 +46,40 @@ namespace JetBrains.Rider.Model
     [NotNull] public IRdEndpoint<ArbEntryUpdate, bool> SaveArbEntry => _SaveArbEntry;
     [NotNull] public IRdEndpoint<ArbKeyRename, bool> RenameArbKey => _RenameArbKey;
     [NotNull] public IRdEndpoint<ArbNewKey, bool> AddArbKey => _AddArbKey;
+    [NotNull] public IRdEndpoint<ArbTranslateRequest, ArbTranslateResponse> TranslateArbEntries => _TranslateArbEntries;
     
     //private fields
     [NotNull] private readonly RdCall<Unit, List<ArbLocaleData>> _GetArbData;
     [NotNull] private readonly RdCall<ArbEntryUpdate, bool> _SaveArbEntry;
     [NotNull] private readonly RdCall<ArbKeyRename, bool> _RenameArbKey;
     [NotNull] private readonly RdCall<ArbNewKey, bool> _AddArbKey;
+    [NotNull] private readonly RdCall<ArbTranslateRequest, ArbTranslateResponse> _TranslateArbEntries;
     
     //primary constructor
     private ArbModel(
       [NotNull] RdCall<Unit, List<ArbLocaleData>> getArbData,
       [NotNull] RdCall<ArbEntryUpdate, bool> saveArbEntry,
       [NotNull] RdCall<ArbKeyRename, bool> renameArbKey,
-      [NotNull] RdCall<ArbNewKey, bool> addArbKey
+      [NotNull] RdCall<ArbNewKey, bool> addArbKey,
+      [NotNull] RdCall<ArbTranslateRequest, ArbTranslateResponse> translateArbEntries
     )
     {
       if (getArbData == null) throw new ArgumentNullException("getArbData");
       if (saveArbEntry == null) throw new ArgumentNullException("saveArbEntry");
       if (renameArbKey == null) throw new ArgumentNullException("renameArbKey");
       if (addArbKey == null) throw new ArgumentNullException("addArbKey");
+      if (translateArbEntries == null) throw new ArgumentNullException("translateArbEntries");
       
       _GetArbData = getArbData;
       _SaveArbEntry = saveArbEntry;
       _RenameArbKey = renameArbKey;
       _AddArbKey = addArbKey;
+      _TranslateArbEntries = translateArbEntries;
       BindableChildren.Add(new KeyValuePair<string, object>("getArbData", _GetArbData));
       BindableChildren.Add(new KeyValuePair<string, object>("saveArbEntry", _SaveArbEntry));
       BindableChildren.Add(new KeyValuePair<string, object>("renameArbKey", _RenameArbKey));
       BindableChildren.Add(new KeyValuePair<string, object>("addArbKey", _AddArbKey));
+      BindableChildren.Add(new KeyValuePair<string, object>("translateArbEntries", _TranslateArbEntries));
     }
     //secondary constructor
     internal ArbModel (
@@ -81,7 +87,8 @@ namespace JetBrains.Rider.Model
       new RdCall<Unit, List<ArbLocaleData>>(JetBrains.Rd.Impl.Serializers.ReadVoid, JetBrains.Rd.Impl.Serializers.WriteVoid, ReadArbLocaleDataList, WriteArbLocaleDataList),
       new RdCall<ArbEntryUpdate, bool>(ArbEntryUpdate.Read, ArbEntryUpdate.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbKeyRename, bool>(ArbKeyRename.Read, ArbKeyRename.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
-      new RdCall<ArbNewKey, bool>(ArbNewKey.Read, ArbNewKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool)
+      new RdCall<ArbNewKey, bool>(ArbNewKey.Read, ArbNewKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
+      new RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest.Read, ArbTranslateRequest.Write, ArbTranslateResponse.Read, ArbTranslateResponse.Write)
     ) {}
     //deconstruct trait
     //statics
@@ -90,7 +97,7 @@ namespace JetBrains.Rider.Model
     
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     
-    protected override long SerializationHash => -3393040445077500747L;
+    protected override long SerializationHash => 7348833052687017975L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -115,6 +122,7 @@ namespace JetBrains.Rider.Model
         printer.Print("saveArbEntry = "); _SaveArbEntry.PrintEx(printer); printer.Println();
         printer.Print("renameArbKey = "); _RenameArbKey.PrintEx(printer); printer.Println();
         printer.Print("addArbKey = "); _AddArbKey.PrintEx(printer); printer.Println();
+        printer.Print("translateArbEntries = "); _TranslateArbEntries.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }
@@ -639,6 +647,552 @@ namespace JetBrains.Rider.Model
       using (printer.IndentCookie()) {
         printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
         printer.Print("key = "); Key.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:62</p>
+  /// </summary>
+  public sealed class ArbTranslateRequest : IPrintable, IEquatable<ArbTranslateRequest>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Directory {get; private set;}
+    [NotNull] public AzureTranslationSettings Settings {get; private set;}
+    [NotNull] public string SourceLocale {get; private set;}
+    [NotNull] public string TargetLocale {get; private set;}
+    [NotNull] public List<ArbTranslationItem> Items {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbTranslateRequest(
+      [NotNull] string directory,
+      [NotNull] AzureTranslationSettings settings,
+      [NotNull] string sourceLocale,
+      [NotNull] string targetLocale,
+      [NotNull] List<ArbTranslationItem> items
+    )
+    {
+      if (directory == null) throw new ArgumentNullException("directory");
+      if (settings == null) throw new ArgumentNullException("settings");
+      if (sourceLocale == null) throw new ArgumentNullException("sourceLocale");
+      if (targetLocale == null) throw new ArgumentNullException("targetLocale");
+      if (items == null) throw new ArgumentNullException("items");
+      
+      Directory = directory;
+      Settings = settings;
+      SourceLocale = sourceLocale;
+      TargetLocale = targetLocale;
+      Items = items;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string directory, [NotNull] out AzureTranslationSettings settings, [NotNull] out string sourceLocale, [NotNull] out string targetLocale, [NotNull] out List<ArbTranslationItem> items)
+    {
+      directory = Directory;
+      settings = Settings;
+      sourceLocale = SourceLocale;
+      targetLocale = TargetLocale;
+      items = Items;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbTranslateRequest> Read = (ctx, reader) => 
+    {
+      var directory = reader.ReadString();
+      var settings = AzureTranslationSettings.Read(ctx, reader);
+      var sourceLocale = reader.ReadString();
+      var targetLocale = reader.ReadString();
+      var items = ReadArbTranslationItemList(ctx, reader);
+      var _result = new ArbTranslateRequest(directory, settings, sourceLocale, targetLocale, items);
+      return _result;
+    };
+    public static CtxReadDelegate<List<ArbTranslationItem>> ReadArbTranslationItemList = ArbTranslationItem.Read.List();
+    
+    public static CtxWriteDelegate<ArbTranslateRequest> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Directory);
+      AzureTranslationSettings.Write(ctx, writer, value.Settings);
+      writer.Write(value.SourceLocale);
+      writer.Write(value.TargetLocale);
+      WriteArbTranslationItemList(ctx, writer, value.Items);
+    };
+    public static  CtxWriteDelegate<List<ArbTranslationItem>> WriteArbTranslationItemList = ArbTranslationItem.Write.List();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbTranslateRequest) obj);
+    }
+    public bool Equals(ArbTranslateRequest other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Directory == other.Directory && Equals(Settings, other.Settings) && SourceLocale == other.SourceLocale && TargetLocale == other.TargetLocale && Items.SequenceEqual(other.Items);
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Directory.GetHashCode();
+        hash = hash * 31 + Settings.GetHashCode();
+        hash = hash * 31 + SourceLocale.GetHashCode();
+        hash = hash * 31 + TargetLocale.GetHashCode();
+        hash = hash * 31 + Items.ContentHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbTranslateRequest (");
+      using (printer.IndentCookie()) {
+        printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
+        printer.Print("settings = "); Settings.PrintEx(printer); printer.Println();
+        printer.Print("sourceLocale = "); SourceLocale.PrintEx(printer); printer.Println();
+        printer.Print("targetLocale = "); TargetLocale.PrintEx(printer); printer.Println();
+        printer.Print("items = "); Items.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:75</p>
+  /// </summary>
+  public sealed class ArbTranslateResponse : IPrintable, IEquatable<ArbTranslateResponse>
+  {
+    //fields
+    //public fields
+    public bool Success {get; private set;}
+    [CanBeNull] public string ErrorMessage {get; private set;}
+    [NotNull] public List<ArbTranslatedItem> Items {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbTranslateResponse(
+      bool success,
+      [CanBeNull] string errorMessage,
+      [NotNull] List<ArbTranslatedItem> items
+    )
+    {
+      if (items == null) throw new ArgumentNullException("items");
+      
+      Success = success;
+      ErrorMessage = errorMessage;
+      Items = items;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct(out bool success, [CanBeNull] out string errorMessage, [NotNull] out List<ArbTranslatedItem> items)
+    {
+      success = Success;
+      errorMessage = ErrorMessage;
+      items = Items;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbTranslateResponse> Read = (ctx, reader) => 
+    {
+      var success = reader.ReadBool();
+      var errorMessage = ReadStringNullable(ctx, reader);
+      var items = ReadArbTranslatedItemList(ctx, reader);
+      var _result = new ArbTranslateResponse(success, errorMessage, items);
+      return _result;
+    };
+    public static CtxReadDelegate<string> ReadStringNullable = JetBrains.Rd.Impl.Serializers.ReadString.NullableClass();
+    public static CtxReadDelegate<List<ArbTranslatedItem>> ReadArbTranslatedItemList = ArbTranslatedItem.Read.List();
+    
+    public static CtxWriteDelegate<ArbTranslateResponse> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Success);
+      WriteStringNullable(ctx, writer, value.ErrorMessage);
+      WriteArbTranslatedItemList(ctx, writer, value.Items);
+    };
+    public static  CtxWriteDelegate<string> WriteStringNullable = JetBrains.Rd.Impl.Serializers.WriteString.NullableClass();
+    public static  CtxWriteDelegate<List<ArbTranslatedItem>> WriteArbTranslatedItemList = ArbTranslatedItem.Write.List();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbTranslateResponse) obj);
+    }
+    public bool Equals(ArbTranslateResponse other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Success == other.Success && Equals(ErrorMessage, other.ErrorMessage) && Items.SequenceEqual(other.Items);
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Success.GetHashCode();
+        hash = hash * 31 + (ErrorMessage != null ? ErrorMessage.GetHashCode() : 0);
+        hash = hash * 31 + Items.ContentHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbTranslateResponse (");
+      using (printer.IndentCookie()) {
+        printer.Print("success = "); Success.PrintEx(printer); printer.Println();
+        printer.Print("errorMessage = "); ErrorMessage.PrintEx(printer); printer.Println();
+        printer.Print("items = "); Items.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:70</p>
+  /// </summary>
+  public sealed class ArbTranslatedItem : IPrintable, IEquatable<ArbTranslatedItem>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Key {get; private set;}
+    [NotNull] public string TranslatedText {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbTranslatedItem(
+      [NotNull] string key,
+      [NotNull] string translatedText
+    )
+    {
+      if (key == null) throw new ArgumentNullException("key");
+      if (translatedText == null) throw new ArgumentNullException("translatedText");
+      
+      Key = key;
+      TranslatedText = translatedText;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string key, [NotNull] out string translatedText)
+    {
+      key = Key;
+      translatedText = TranslatedText;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbTranslatedItem> Read = (ctx, reader) => 
+    {
+      var key = reader.ReadString();
+      var translatedText = reader.ReadString();
+      var _result = new ArbTranslatedItem(key, translatedText);
+      return _result;
+    };
+    
+    public static CtxWriteDelegate<ArbTranslatedItem> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Key);
+      writer.Write(value.TranslatedText);
+    };
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbTranslatedItem) obj);
+    }
+    public bool Equals(ArbTranslatedItem other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Key == other.Key && TranslatedText == other.TranslatedText;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Key.GetHashCode();
+        hash = hash * 31 + TranslatedText.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbTranslatedItem (");
+      using (printer.IndentCookie()) {
+        printer.Print("key = "); Key.PrintEx(printer); printer.Println();
+        printer.Print("translatedText = "); TranslatedText.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:56</p>
+  /// </summary>
+  public sealed class ArbTranslationItem : IPrintable, IEquatable<ArbTranslationItem>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Key {get; private set;}
+    [NotNull] public string SourceText {get; private set;}
+    [CanBeNull] public string Description {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbTranslationItem(
+      [NotNull] string key,
+      [NotNull] string sourceText,
+      [CanBeNull] string description
+    )
+    {
+      if (key == null) throw new ArgumentNullException("key");
+      if (sourceText == null) throw new ArgumentNullException("sourceText");
+      
+      Key = key;
+      SourceText = sourceText;
+      Description = description;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string key, [NotNull] out string sourceText, [CanBeNull] out string description)
+    {
+      key = Key;
+      sourceText = SourceText;
+      description = Description;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbTranslationItem> Read = (ctx, reader) => 
+    {
+      var key = reader.ReadString();
+      var sourceText = reader.ReadString();
+      var description = ReadStringNullable(ctx, reader);
+      var _result = new ArbTranslationItem(key, sourceText, description);
+      return _result;
+    };
+    public static CtxReadDelegate<string> ReadStringNullable = JetBrains.Rd.Impl.Serializers.ReadString.NullableClass();
+    
+    public static CtxWriteDelegate<ArbTranslationItem> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Key);
+      writer.Write(value.SourceText);
+      WriteStringNullable(ctx, writer, value.Description);
+    };
+    public static  CtxWriteDelegate<string> WriteStringNullable = JetBrains.Rd.Impl.Serializers.WriteString.NullableClass();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbTranslationItem) obj);
+    }
+    public bool Equals(ArbTranslationItem other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Key == other.Key && SourceText == other.SourceText && Equals(Description, other.Description);
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Key.GetHashCode();
+        hash = hash * 31 + SourceText.GetHashCode();
+        hash = hash * 31 + (Description != null ? Description.GetHashCode() : 0);
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbTranslationItem (");
+      using (printer.IndentCookie()) {
+        printer.Print("key = "); Key.PrintEx(printer); printer.Println();
+        printer.Print("sourceText = "); SourceText.PrintEx(printer); printer.Println();
+        printer.Print("description = "); Description.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:48</p>
+  /// </summary>
+  public sealed class AzureTranslationSettings : IPrintable, IEquatable<AzureTranslationSettings>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Endpoint {get; private set;}
+    [NotNull] public string DeploymentName {get; private set;}
+    [NotNull] public string ApiKey {get; private set;}
+    [NotNull] public string CustomPrompt {get; private set;}
+    public float Temperature {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public AzureTranslationSettings(
+      [NotNull] string endpoint,
+      [NotNull] string deploymentName,
+      [NotNull] string apiKey,
+      [NotNull] string customPrompt,
+      float temperature
+    )
+    {
+      if (endpoint == null) throw new ArgumentNullException("endpoint");
+      if (deploymentName == null) throw new ArgumentNullException("deploymentName");
+      if (apiKey == null) throw new ArgumentNullException("apiKey");
+      if (customPrompt == null) throw new ArgumentNullException("customPrompt");
+      
+      Endpoint = endpoint;
+      DeploymentName = deploymentName;
+      ApiKey = apiKey;
+      CustomPrompt = customPrompt;
+      Temperature = temperature;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string endpoint, [NotNull] out string deploymentName, [NotNull] out string apiKey, [NotNull] out string customPrompt, out float temperature)
+    {
+      endpoint = Endpoint;
+      deploymentName = DeploymentName;
+      apiKey = ApiKey;
+      customPrompt = CustomPrompt;
+      temperature = Temperature;
+    }
+    //statics
+    
+    public static CtxReadDelegate<AzureTranslationSettings> Read = (ctx, reader) => 
+    {
+      var endpoint = reader.ReadString();
+      var deploymentName = reader.ReadString();
+      var apiKey = reader.ReadString();
+      var customPrompt = reader.ReadString();
+      var temperature = reader.ReadFloat();
+      var _result = new AzureTranslationSettings(endpoint, deploymentName, apiKey, customPrompt, temperature);
+      return _result;
+    };
+    
+    public static CtxWriteDelegate<AzureTranslationSettings> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Endpoint);
+      writer.Write(value.DeploymentName);
+      writer.Write(value.ApiKey);
+      writer.Write(value.CustomPrompt);
+      writer.Write(value.Temperature);
+    };
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((AzureTranslationSettings) obj);
+    }
+    public bool Equals(AzureTranslationSettings other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Endpoint == other.Endpoint && DeploymentName == other.DeploymentName && ApiKey == other.ApiKey && CustomPrompt == other.CustomPrompt && Temperature == other.Temperature;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Endpoint.GetHashCode();
+        hash = hash * 31 + DeploymentName.GetHashCode();
+        hash = hash * 31 + ApiKey.GetHashCode();
+        hash = hash * 31 + CustomPrompt.GetHashCode();
+        hash = hash * 31 + Temperature.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("AzureTranslationSettings (");
+      using (printer.IndentCookie()) {
+        printer.Print("endpoint = "); Endpoint.PrintEx(printer); printer.Println();
+        printer.Print("deploymentName = "); DeploymentName.PrintEx(printer); printer.Println();
+        printer.Print("apiKey = "); ApiKey.PrintEx(printer); printer.Println();
+        printer.Print("customPrompt = "); CustomPrompt.PrintEx(printer); printer.Println();
+        printer.Print("temperature = "); Temperature.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }

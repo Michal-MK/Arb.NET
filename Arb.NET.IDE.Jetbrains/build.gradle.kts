@@ -174,6 +174,8 @@ tasks.prepareSandbox {
             "$outputFolder/${DotnetPluginId}.Common.pdb",
             "$outputFolder/${DotnetPluginId}.Rider.dll",
             "$outputFolder/${DotnetPluginId}.Rider.pdb",
+            "$outputFolder/Arb.NET.IDE.Common.dll",
+            "$outputFolder/Arb.NET.IDE.Common.pdb",
             "$outputFolder/Arb.NET.dll",
             "$outputFolder/Arb.NET.pdb",
             // JsonSchema + its dependencies
