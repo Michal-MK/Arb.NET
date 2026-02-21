@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
@@ -9,7 +10,7 @@ namespace Arb.NET.Tool.Migration;
 internal static class ResxMigrator
 {
     // Matches {0}, {1:N2}, {0,10} style format items
-    private static readonly Regex FormatItemRegex = new(@"\{(\d+)(?:,[^}]*)?(:[^}]*)?\}", RegexOptions.Compiled);
+    private static readonly Regex FORMAT_ITEM_REGEX = new(@"\{(\d+)(?:,[^}]*)?(:[^}]*)?\}", RegexOptions.Compiled);
 
     /// <summary>
     /// Discovers all .resx file groups under <paramref name="solutionFolder"/>, converts them to
@@ -17,15 +18,15 @@ internal static class ResxMigrator
     /// </summary>
     public static MigrationResult Migrate(string solutionFolder, bool dryRun)
     {
-        var result = new MigrationResult();
-        var groups = DiscoverResxGroups(solutionFolder);
+        MigrationResult result = new();
+        List<ResxGroup> groups = DiscoverResxGroups(solutionFolder);
 
         // Multiple .resx groups in the same directory share the same arbs/ output folder,
         // so their entries must be merged into a single ArbDocument per locale before writing.
-        var byOutputDir = groups.GroupBy(g => Path.Combine(g.Directory, "arbs"),
-                                         StringComparer.OrdinalIgnoreCase);
+        IEnumerable<IGrouping<string, ResxGroup>> byOutputDir = groups.GroupBy(g => Path.Combine(g.Directory, "arbs"),
+                                                                               StringComparer.OrdinalIgnoreCase);
 
-        foreach (var dirGroup in byOutputDir)
+        foreach (IGrouping<string, ResxGroup> dirGroup in byOutputDir)
         {
             try
             {
@@ -46,16 +47,16 @@ internal static class ResxMigrator
 
     private static List<ResxGroup> DiscoverResxGroups(string solutionFolder)
     {
-        var allResx = Directory.EnumerateFiles(solutionFolder, "*.resx", SearchOption.AllDirectories)
+        List<string> allResx = Directory.EnumerateFiles(solutionFolder, "*.resx", SearchOption.AllDirectories)
             .Where(f => !IsInBinOrObj(f))
             .ToList();
 
         // Group files: canonical name is the file without the locale suffix.
         // E.g. "Strings.fr.resx" → base = "Strings.resx", locale = "fr"
         //      "Strings.resx"    → base = "Strings.resx", locale = null (default)
-        var map = new Dictionary<string, ResxGroup>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, ResxGroup> map = new(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var file in allResx)
+        foreach (string file in allResx)
         {
             string dir = Path.GetDirectoryName(file)!;
             string fileName = Path.GetFileNameWithoutExtension(file); // e.g. "Strings.fr" or "Strings"
@@ -91,10 +92,12 @@ internal static class ResxMigrator
                 map[baseKey] = group;
             }
 
-            if (locale == null)
+            if (locale == null) {
                 group.DefaultFile = file;
-            else
+            }
+            else {
                 group.LocaleFiles[locale] = file;
+            }
         }
 
         return map.Values.ToList();
@@ -102,7 +105,7 @@ internal static class ResxMigrator
 
     private static bool IsInBinOrObj(string path)
     {
-        var parts = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string[] parts = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         return parts.Any(p => p.Equals("bin", StringComparison.OrdinalIgnoreCase)
                            || p.Equals("obj", StringComparison.OrdinalIgnoreCase));
     }
@@ -118,7 +121,7 @@ internal static class ResxMigrator
     private static void MigrateOutputDir(string outputDir, IEnumerable<ResxGroup> groups, bool dryRun, MigrationResult result)
     {
         // Accumulate entries per locale across all groups in this output directory.
-        var docsByLocale = new Dictionary<string, ArbDocument>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, ArbDocument> docsByLocale = new(StringComparer.OrdinalIgnoreCase);
 
         ArbDocument GetOrCreate(string locale)
         {
@@ -130,20 +133,22 @@ internal static class ResxMigrator
             return doc;
         }
 
-        foreach (var group in groups)
+        foreach (ResxGroup group in groups)
         {
             // Collect the set of locales covered by explicit locale files in this group.
-            var explicitLocales = new HashSet<string>(group.LocaleFiles.Keys, StringComparer.OrdinalIgnoreCase);
+            HashSet<string> explicitLocales = new(group.LocaleFiles.Keys, StringComparer.OrdinalIgnoreCase);
 
             // The default (neutral) file maps to "en", but only when no explicit "en" file exists.
-            if (group.DefaultFile != null && !explicitLocales.Contains("en"))
+            if (group.DefaultFile != null && !explicitLocales.Contains("en")) {
                 MergeResxInto(GetOrCreate("en"), group.DefaultFile);
+            }
 
-            foreach (var (locale, file) in group.LocaleFiles)
+            foreach ((string locale, string file) in group.LocaleFiles) {
                 MergeResxInto(GetOrCreate(locale), file);
+            }
         }
 
-        foreach (var (locale, doc) in docsByLocale)
+        foreach ((string locale, ArbDocument doc) in docsByLocale)
         {
             string outPath = Path.Combine(outputDir, $"{locale}.arb");
             WriteArb(doc, outPath, dryRun, result);
@@ -156,32 +161,35 @@ internal static class ResxMigrator
 
     private static void MergeResxInto(ArbDocument doc, string filePath)
     {
-        var xdoc = XDocument.Load(filePath);
+        XDocument xdoc = XDocument.Load(filePath);
 
-        foreach (var data in xdoc.Root?.Elements("data") ?? [])
+        foreach (XElement data in xdoc.Root?.Elements("data") ?? [])
         {
             string? name = data.Attribute("name")?.Value;
             string? value = data.Element("value")?.Value;
             string? comment = data.Element("comment")?.Value;
 
-            if (string.IsNullOrEmpty(name) || value == null)
-                continue;
+            if (string.IsNullOrEmpty(name) || value == null) continue;
 
             string arbKey = ToArbKey(name);
-            string arbValue = ConvertFormatString(value, out var placeholderNames);
+            string arbValue = ConvertFormatString(value, out List<string> placeholderNames);
 
-            var entry = new ArbEntry { Key = arbKey, Value = arbValue };
+            ArbEntry entry = new() { Key = arbKey, Value = arbValue };
 
             if (comment != null || placeholderNames.Count > 0)
             {
-                var metadata = new ArbMetadata();
-                if (comment != null)
+                ArbMetadata metadata = new();
+                if (comment != null) {
                     metadata.Description = comment.Trim();
+                }
                 if (placeholderNames.Count > 0)
                 {
                     metadata.Placeholders = [];
-                    foreach (var ph in placeholderNames)
-                        metadata.Placeholders[ph] = new ArbPlaceholder { Type = "String" };
+                    foreach (string ph in placeholderNames) {
+                        metadata.Placeholders[ph] = new ArbPlaceholder {
+                            Type = "String"
+                        };
+                    }
                 }
                 entry.Metadata = metadata;
             }
@@ -202,24 +210,23 @@ internal static class ResxMigrator
     private static string ConvertFormatString(string value, out List<string> placeholderNames)
     {
         placeholderNames = [];
-        var nameMap = new Dictionary<int, string>(); // index → arb name
+        Dictionary<int, string> nameMap = new(); // index → arb name
 
         // First pass: collect all unique indices
-        foreach (Match m in FormatItemRegex.Matches(value))
+        foreach (Match m in FORMAT_ITEM_REGEX.Matches(value))
         {
             int index = int.Parse(m.Groups[1].Value);
-            if (!nameMap.ContainsKey(index))
-            {
-                string phName = $"param{index}";
-                nameMap[index] = phName;
-            }
+            if (nameMap.ContainsKey(index)) continue;
+            string phName = $"param{index}";
+            nameMap[index] = phName;
         }
 
-        if (nameMap.Count == 0)
+        if (nameMap.Count == 0) {
             return value;
+        }
 
         // Replace from right to left to preserve indices
-        string result = FormatItemRegex.Replace(value, m =>
+        string result = FORMAT_ITEM_REGEX.Replace(value, m =>
         {
             int index = int.Parse(m.Groups[1].Value);
             return $"{{{nameMap[index]}}}";
@@ -242,17 +249,19 @@ internal static class ResxMigrator
         // Split on _, space, or PascalCase word boundaries, then rejoin as camelCase
         // Strategy: just lowercase the first character of the whole string and replace _ with nothing smart
         // Simple approach: treat underscores and dots as word separators
-        var parts = name.Split(['_', '.'], StringSplitOptions.RemoveEmptyEntries);
+        string[] parts = name.Split(['_', '.'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0) return name;
 
-        var sb = new System.Text.StringBuilder();
+        StringBuilder sb = new();
         for (int i = 0; i < parts.Length; i++)
         {
             string part = parts[i];
-            if (i == 0)
+            if (i == 0) {
                 sb.Append(char.ToLowerInvariant(part[0]) + part[1..]);
-            else
+            }
+            else {
                 sb.Append(char.ToUpperInvariant(part[0]) + part[1..]);
+            }
         }
 
         return sb.ToString();
@@ -273,7 +282,7 @@ internal static class ResxMigrator
         else
         {
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-            File.WriteAllText(outputPath, content, System.Text.Encoding.UTF8);
+            File.WriteAllText(outputPath, content, Encoding.UTF8);
             result.WrittenFiles.Add(outputPath);
         }
     }

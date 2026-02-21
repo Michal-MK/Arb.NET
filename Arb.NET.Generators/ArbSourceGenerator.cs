@@ -28,7 +28,6 @@ namespace Arb.NET.Generators;
 ///
 /// Namespace resolution order (first non-empty wins):
 /// <list type="number">
-///   <item>Per-file <c>Namespace</c> metadata on the <c>&lt;ArbSource&gt;</c> item</item>
 ///   <item>Per-file <c>DefaultNamespace</c> metadata on the <c>&lt;ArbSource&gt;</c> item</item>
 ///   <item><c>ArbDefaultNamespace</c> MSBuild property</item>
 ///   <item><c>RootNamespace</c> MSBuild property (always set by the SDK to the project name)</item>
@@ -43,13 +42,13 @@ namespace Arb.NET.Generators;
 ///   &lt;/PropertyGroup&gt;
 ///   &lt;ItemGroup&gt;
 ///     &lt;ArbSource Include="arbs\app_en.arb" /&gt;
-///     &lt;ArbSource Include="arbs\Czech.arb" LangCode="cs" /&gt;
+///     &lt;ArbSource Include="arbs\Czech.arb" /&gt;
 ///   &lt;/ItemGroup&gt;
 /// </code>
 /// </summary>
 [Generator]
 public sealed class ArbSourceGenerator : IIncrementalGenerator {
-    private static readonly DiagnosticDescriptor ParseError = new(
+    private static readonly DiagnosticDescriptor PARSE_ERROR = new(
         id: "ARB001",
         title: "ARB parse error",
         messageFormat: "Failed to parse '{0}': {1}",
@@ -72,11 +71,11 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     INamedTypeSymbol? symbol = genCtx.SemanticModel.GetDeclaredSymbol(enumDecl) as INamedTypeSymbol;
                     if (symbol is null) return null;
 
-                    const string attrShort = "ArbLocalize";
-                    const string attrFull = "ArbLocalizeAttribute";
+                    const string ATTR_SHORT = "ArbLocalize";
+                    const string ATTR_FULL = "ArbLocalizeAttribute";
 
                     AttributeData? enumAttr = symbol.GetAttributes()
-                        .FirstOrDefault(a => a.AttributeClass?.Name is attrShort or attrFull);
+                        .FirstOrDefault(a => a.AttributeClass?.Name is ATTR_SHORT or ATTR_FULL);
 
                     if (enumAttr is null) return null;
 
@@ -114,7 +113,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
             // ── Step 1: inject missing ARB keys for [ArbLocalize] enums ──────────────
             if (!enumInfos.IsEmpty) {
-                foreach ((AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider) in arbPairs) {
+                foreach ((AdditionalText file, AnalyzerConfigOptionsProvider _) in arbPairs) {
                     string? rawContent = file.GetText(ctx.CancellationToken)?.ToString();
                     if (string.IsNullOrWhiteSpace(rawContent)) continue;
 
@@ -124,9 +123,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     ArbDocument doc = parseResult.Document!;
 
                     // Determine whether this file is the primary/default locale
-                    AnalyzerConfigOptions fileOpts = optionsProvider.GetOptions(file);
                     string? fileLangCode = FirstNonEmpty(
-                        GetFileMeta(fileOpts, "LangCode"),
                         InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(file.Path)),
                         doc.Locale,
                         defaultLangCode
@@ -142,7 +139,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                         foreach (string member in info.Members) {
                             string key = StringHelper.ArbKeyForEnumMember(info.SimpleName, member);
 
-                            if (!doc.Entries.ContainsKey(key)) {
+                            if (!doc.Entries.TryGetValue(key, out ArbEntry? existing)) {
                                 // New entry: only write @metadata description in the default locale file
                                 ArbMetadata? metadata = isDefaultLocale && attrDescription != null
                                     ? new ArbMetadata {
@@ -160,7 +157,6 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                             else if (isDefaultLocale && attrDescription != null) {
                                 // Existing entry in the default locale: backfill the description
                                 // if it has none yet (never overwrite a description the translator set)
-                                ArbEntry existing = doc.Entries[key];
                                 if (existing.Metadata?.Description == null) {
                                     if (existing.Metadata == null) {
                                         existing.Metadata = new ArbMetadata {
@@ -202,7 +198,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
                 if (!result.ValidationResults.IsValid) {
                     foreach (var error in result.ValidationResults.Errors) {
-                        ctx.ReportDiagnostic(Diagnostic.Create(ParseError, Location.None, file.Path, error.Keyword, error.Message, error.InstanceLocation, error.SchemaPath));
+                        ctx.ReportDiagnostic(Diagnostic.Create(PARSE_ERROR, Location.None, file.Path, error.Keyword, error.Message, error.InstanceLocation, error.SchemaPath));
                     }
                     continue;
                 }
@@ -215,7 +211,6 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
                 // ── Resolve namespace ──
                 string namespaceName = FirstNonEmpty(
-                    GetFileMeta(fileOptions, "Namespace"),
                     GetFileMeta(fileOptions, "DefaultNamespace"),
                     GetGlobalProp(globalOptions, "ArbDefaultNamespace"),
                     GetGlobalProp(globalOptions, "RootNamespace"),
@@ -224,7 +219,6 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
                 // ── Resolve language code ──
                 string? langCode = FirstNonEmpty(
-                    GetFileMeta(fileOptions, "LangCode"),
                     InferLangCodeFromFilename(fileNameWithoutExt),
                     document.Locale,
                     GetGlobalProp(globalOptions, "ArbDefaultLangCode"));
@@ -234,34 +228,23 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                 }
 
                 // ── Resolve class name ──
-                string? explicitClassName = GetFileMeta(fileOptions, "ClassName");
                 string className;
-                string? baseClass = null;
+                string? baseClass = FirstNonEmpty(
+                    GetFileMeta(fileOptions, "DefaultClass"),
+                    GetGlobalProp(globalOptions, "ArbDefaultClass")
+                );
 
-                if (!string.IsNullOrWhiteSpace(explicitClassName)) {
+                if (!string.IsNullOrWhiteSpace(baseClass)) {
                     string localeSuffix = StringHelper.NormalizeLocale(document.Locale);
+
+                    // Locale-specific classes always get a suffix; the dispatcher owns the bare base name.
                     className = string.IsNullOrWhiteSpace(localeSuffix)
-                        ? explicitClassName!
-                        : explicitClassName + "_" + localeSuffix;
+                        ? baseClass!
+                        : baseClass + "_" + localeSuffix;
                 }
                 else {
-                    baseClass = FirstNonEmpty(
-                        GetFileMeta(fileOptions, "DefaultClass"),
-                        GetGlobalProp(globalOptions, "ArbDefaultClass")
-                    );
-
-                    if (!string.IsNullOrWhiteSpace(baseClass)) {
-                        string localeSuffix = StringHelper.NormalizeLocale(document.Locale);
-
-                        // Locale-specific classes always get a suffix; the dispatcher owns the bare base name.
-                        className = string.IsNullOrWhiteSpace(localeSuffix)
-                            ? baseClass!
-                            : baseClass + "_" + localeSuffix;
-                    }
-                    else {
-                        className = string.Concat(Array.ConvertAll(fileNameWithoutExt.Split('_'), StringHelper.ToPascalCase))
-                                    + "Localizations";
-                    }
+                    className = string.Concat(Array.ConvertAll(fileNameWithoutExt.Split('_'), StringHelper.ToPascalCase))
+                                + "Localizations";
                 }
 
                 // Emit the locale-specific class
@@ -331,6 +314,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
     private static string? GetAttributeDescription(AttributeData? attr) {
         if (attr is null) return null;
         if (attr.ConstructorArguments.Length == 0) return null;
+
         object? value = attr.ConstructorArguments[0].Value;
         string? str = value as string;
         return string.IsNullOrWhiteSpace(str) ? null : str;
@@ -343,7 +327,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 #pragma warning disable RS1035
     private static void WriteArbFileToDisk(string path, string content) {
         try {
-            System.IO.File.WriteAllText(path, content, System.Text.Encoding.UTF8);
+            File.WriteAllText(path, content, System.Text.Encoding.UTF8);
         }
         catch {
             // Best-effort; don't crash the build if the file is read-only or locked
@@ -352,7 +336,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
     private static string? ReadArbFileFromDisk(string path) {
         try {
-            return System.IO.File.ReadAllText(path, System.Text.Encoding.UTF8);
+            return File.ReadAllText(path, System.Text.Encoding.UTF8);
         }
         catch {
             return null;

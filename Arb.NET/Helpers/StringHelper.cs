@@ -37,7 +37,4 @@ public static class StringHelper {
         return value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
     }
 
-    public static bool IsTrue(string? value) {
-        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
-    }
 }

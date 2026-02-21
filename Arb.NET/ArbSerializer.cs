@@ -10,29 +10,33 @@ namespace Arb.NET;
 public static class ArbSerializer {
     public static string Serialize(ArbDocument doc) {
         MemoryStream buffer = new();
-        JsonWriterOptions options = new() { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+        JsonWriterOptions options = new() {
+            Indented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
 
-        using (Utf8JsonWriter writer = new(buffer, options)) {
-            writer.WriteStartObject();
+        using Utf8JsonWriter writer = new(buffer, options);
+        writer.WriteStartObject();
 
-            if (!string.IsNullOrEmpty(doc.Locale))
-                writer.WriteString("@@locale", doc.Locale);
-
-            if (!string.IsNullOrEmpty(doc.Context))
-                writer.WriteString("@@context", doc.Context);
-
-            foreach (var kvp in doc.Entries.OrderBy(e => e.Key)) {
-                string key = kvp.Key;
-                ArbEntry entry = kvp.Value;
-                writer.WriteString(key, entry.Value);
-
-                if (entry.Metadata != null) {
-                    WriteMetadata(writer, key, entry.Metadata);
-                }
-            }
-
-            writer.WriteEndObject();
+        if (!string.IsNullOrEmpty(doc.Locale)) {
+            writer.WriteString("@@locale", doc.Locale);
         }
+
+        if (!string.IsNullOrEmpty(doc.Context)) {
+            writer.WriteString("@@context", doc.Context);
+        }
+
+        foreach (KeyValuePair<string, ArbEntry> kvp in doc.Entries.OrderBy(e => e.Key)) {
+            string key = kvp.Key;
+            ArbEntry entry = kvp.Value;
+            writer.WriteString(key, entry.Value);
+
+            if (entry.Metadata != null) {
+                WriteMetadata(writer, key, entry.Metadata);
+            }
+        }
+
+        writer.WriteEndObject();
 
         return Encoding.UTF8.GetString(buffer.ToArray());
     }
@@ -45,7 +49,7 @@ public static class ArbSerializer {
 
         if (metadata.Placeholders is { Count: > 0 }) {
             writer.WriteStartObject("placeholders");
-            foreach (var kvp in metadata.Placeholders) {
+            foreach (KeyValuePair<string, ArbPlaceholder> kvp in metadata.Placeholders) {
                 string name = kvp.Key;
                 ArbPlaceholder placeholder = kvp.Value;
                 writer.WriteStartObject(name);

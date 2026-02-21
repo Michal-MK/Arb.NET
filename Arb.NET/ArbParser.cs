@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 #if !ARB_GENERATOR
 using Json.Schema;
@@ -10,21 +11,20 @@ namespace Arb.NET;
 /// </summary>
 public class ArbParser {
 #if !ARB_GENERATOR
-    private static readonly JsonSchema _schema = LoadSchema();
+    private static readonly JsonSchema SCHEMA = LoadSchema();
 
     private static JsonSchema LoadSchema() {
-        var assembly = typeof(ArbParser).Assembly;
-        var specStream = assembly.GetManifestResourceStream("Arb.NET.Specification.arb_spec.json");
+        Assembly assembly = typeof(ArbParser).Assembly;
+        Stream? specStream = assembly.GetManifestResourceStream("Arb.NET.Specification.arb_spec.json");
         if (specStream == null) throw new InvalidOperationException("Could not find ARB specification resource.");
-        var specString = new StreamReader(specStream).ReadToEnd();
+        string specString = new StreamReader(specStream).ReadToEnd();
         return JsonSchema.FromText(specString);
     }
 
     /// <summary>
     /// Parses an .arb file and returns the localization data
     /// </summary>
-    public ArbParseResult Parse(string filePath)
-        => ParseContent(File.ReadAllText(filePath));
+    public ArbParseResult Parse(string filePath) => ParseContent(File.ReadAllText(filePath));
 #endif
 
     /// <summary>
@@ -35,7 +35,7 @@ public class ArbParser {
 #if !ARB_GENERATOR
         EvaluationOptions options = new() { OutputFormat = OutputFormat.List };
 
-        JsonSchema schema = _schema;
+        JsonSchema schema = SCHEMA;
         using JsonDocument jsonForValidation = JsonDocument.Parse(content, parseOptions);
         EvaluationResults evalResult = schema.Evaluate(jsonForValidation.RootElement, options);
 
@@ -66,11 +66,9 @@ public class ArbParser {
 
         // Second pass: collect actual translation entries
         foreach (JsonProperty property in root.EnumerateObject()) {
-            if (property.Name.StartsWith("@"))
-                continue;
+            if (property.Name.StartsWith("@")) continue;
 
-            if (property.Value.ValueKind != JsonValueKind.String)
-                continue;
+            if (property.Value.ValueKind != JsonValueKind.String) continue;
 
             ArbEntry entry = new() {
                 Key = property.Name,
@@ -85,7 +83,7 @@ public class ArbParser {
         }
 
         return new ArbParseResult {
-            ValidationResults = ArbValidationResults.Valid,
+            ValidationResults = ArbValidationResults.VALID,
             Document = document
         };
     }

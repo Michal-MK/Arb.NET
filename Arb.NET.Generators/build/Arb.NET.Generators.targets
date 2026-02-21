@@ -31,10 +31,6 @@
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultClass" />
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultNamespace" />
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultLangCode" />
-    <!-- Legacy per-file overrides (direct metadata on ArbSource items) -->
-    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
-    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
-    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="LangCode" />
   </ItemGroup>
 
   <!--
