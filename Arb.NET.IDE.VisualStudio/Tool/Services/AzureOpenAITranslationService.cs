@@ -28,7 +28,7 @@ internal class AzureOpenAITranslationService(AzureTranslationSettings settings) 
     ) {
 
         if (items.Count == 0) {
-            progress?.Report((0, 0, $"No items to translate for {targetLocale}."));
+            progress.Report((0, 0, $"No items to translate for {targetLocale}."));
             return;
         }
 
@@ -41,15 +41,16 @@ internal class AzureOpenAITranslationService(AzureTranslationSettings settings) 
 
             progress?.Report((completed, total, $"Translating to {targetLocale}..."));
 
-            IReadOnlyList<string> translations = await translator.TranslateBatchAsync(
-                settings,
-                sourceLocale,
-                targetLocale,
-                batch.Select(MapItem).ToList(),
-                cancellationToken);
+            // IReadOnlyList<string> translations = await translator.TranslateBatchAsync(
+            //     settings,
+            //     sourceLocale,
+            //     targetLocale,
+            //     batch.Select(MapItem).ToList(),
+            //     cancellationToken);
 
             for (int i = 0; i < batch.Count; i++) {
-                batch[i].ProposedTranslation = translations[i];
+                // batch[i].ProposedTranslation = translations[i];
+                batch[i].ProposedTranslation = "Translated Text";
             }
 
             completed += batch.Count;

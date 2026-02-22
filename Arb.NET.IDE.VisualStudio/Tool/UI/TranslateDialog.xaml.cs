@@ -2,7 +2,6 @@ using Microsoft.VisualStudio.PlatformUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -19,12 +18,11 @@ public partial class TranslateDialog : DialogWindow {
     private readonly List<ArbRow> rows;
     private readonly List<string> langCodes;
     private readonly List<ArbFile> arbFiles;
-    private readonly string directory;
     private readonly TranslationSettingsService settingsService;
     private readonly ArbParser parser;
 
     private readonly ObservableCollection<TranslationItem> resultItems = new();
-    private CancellationTokenSource cts;
+    private CancellationTokenSource? cts;
 
     public bool AppliedChanges { get; private set; }
 
@@ -39,7 +37,6 @@ public partial class TranslateDialog : DialogWindow {
         this.rows = rows;
         this.langCodes = langCodes;
         this.arbFiles = arbFiles;
-        this.directory = directory;
         this.settingsService = settingsService;
         this.parser = parser;
 
@@ -59,7 +56,7 @@ public partial class TranslateDialog : DialogWindow {
             ?? langCodes.FirstOrDefault();
 
         AzureTranslationSettings settings = settingsService.Load();
-        CustomPromptBox.Text = settings.CustomPrompt ?? "";
+        CustomPromptBox.Text = settings.CustomPrompt;
 
         ResultsGrid.ItemsSource = resultItems;
 
@@ -73,11 +70,10 @@ public partial class TranslateDialog : DialogWindow {
     }
 
     private void PopulateTargetLocales() {
-        string source = SourceLocaleCombo.SelectedItem as string;
+        string? source = SourceLocaleCombo.SelectedItem as string;
         List<LocaleSelection> targets = langCodes
             .Where(l => l != source)
-            .Select(l => new LocaleSelection {
-                Locale = l,
+            .Select(l => new LocaleSelection(l) {
                 IsSelected = true
             })
             .ToList();
@@ -93,7 +89,7 @@ public partial class TranslateDialog : DialogWindow {
     private void ModeRadio_Changed(object sender, RoutedEventArgs e) => RebuildPreview();
 
     private void RebuildPreview() {
-        string sourceLocale = SourceLocaleCombo.SelectedItem as string;
+        string? sourceLocale = SourceLocaleCombo.SelectedItem as string;
         if (string.IsNullOrEmpty(sourceLocale)) return;
 
         List<string> targetLocales = (TargetLocalesPanel.ItemsSource as List<LocaleSelection>)?
@@ -106,7 +102,7 @@ public partial class TranslateDialog : DialogWindow {
         List<TranslationItem> newItems = [];
         foreach (string targetLocale in targetLocales) {
             foreach (ArbRow row in rows) {
-                string sourceText = row.Values.TryGetValue(sourceLocale, out string src) ? src : "";
+                string sourceText = row.Values.TryGetValue(sourceLocale!, out string src) ? src : "";
                 if (string.IsNullOrEmpty(sourceText)) continue;
 
                 string existing = row.Values.TryGetValue(targetLocale, out string ex) ? ex : "";
@@ -155,13 +151,13 @@ public partial class TranslateDialog : DialogWindow {
                 return;
             }
 
-            string sourceLocale = SourceLocaleCombo.SelectedItem as string;
+            string? sourceLocale = SourceLocaleCombo.SelectedItem as string;
             if (string.IsNullOrEmpty(sourceLocale)) return;
 
             // Snapshot descriptions for the source locale.
-            Dictionary<string, string> descriptions = LoadDescriptions(sourceLocale);
+            Dictionary<string, string?> descriptions = LoadDescriptions(sourceLocale!);
             foreach (TranslationItem item in resultItems) {
-                if (descriptions.TryGetValue(item.Key, out string desc)) {
+                if (descriptions.TryGetValue(item.Key, out string? desc)) {
                     item.Description = desc;
                 }
             }
@@ -191,7 +187,7 @@ public partial class TranslateDialog : DialogWindow {
                     StatusText.Text = p.message;
                 });
 
-                await service.TranslateAsync(sourceLocale, group.Key, localeItems, cts.Token, progress);
+                await service.TranslateAsync(sourceLocale!, group.Key, localeItems, cts.Token, progress);
                 completedItems += localeItems.Count;
             }
 
@@ -231,7 +227,7 @@ public partial class TranslateDialog : DialogWindow {
         int appliedCount = 0;
 
         foreach (IGrouping<string, TranslationItem> group in byLocale) {
-            ArbFile arb = arbFiles.FirstOrDefault(f => string.Equals(f.LangCode, group.Key, StringComparison.Ordinal));
+            ArbFile? arb = arbFiles.FirstOrDefault(f => string.Equals(f.LangCode, group.Key, StringComparison.Ordinal));
             if (arb == null) continue;
 
             Dictionary<string, string> updates = group.ToDictionary(i => i.Key, i => i.ProposedTranslation);
@@ -275,9 +271,9 @@ public partial class TranslateDialog : DialogWindow {
         }
     }
 
-    private Dictionary<string, string> LoadDescriptions(string sourceLocale) {
-        Dictionary<string, string> descriptions = new(StringComparer.Ordinal);
-        ArbFile sourceFile = arbFiles.FirstOrDefault(f => string.Equals(f.LangCode, sourceLocale, StringComparison.Ordinal));
+    private Dictionary<string, string?> LoadDescriptions(string sourceLocale) {
+        Dictionary<string, string?> descriptions = new(StringComparer.Ordinal);
+        ArbFile? sourceFile = arbFiles.FirstOrDefault(f => string.Equals(f.LangCode, sourceLocale, StringComparison.Ordinal));
         if (sourceFile == null) return descriptions;
 
         try {
@@ -287,7 +283,7 @@ public partial class TranslateDialog : DialogWindow {
 
             foreach (KeyValuePair<string, ArbEntry> kvp in result.Document.Entries) {
                 if (!string.IsNullOrEmpty(kvp.Value.Metadata?.Description)) {
-                    descriptions[kvp.Key] = kvp.Value.Metadata.Description;
+                    descriptions[kvp.Key] = kvp.Value.Metadata?.Description;
                 }
             }
         }
@@ -296,18 +292,4 @@ public partial class TranslateDialog : DialogWindow {
         }
         return descriptions;
     }
-}
-
-public class LocaleSelection : INotifyPropertyChanged {
-    public string Locale { get; set; }
-
-    public bool IsSelected {
-        get;
-        set {
-            field = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
-        }
-    }
-
-    public event PropertyChangedEventHandler PropertyChanged;
 }

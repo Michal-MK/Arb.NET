@@ -25,7 +25,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="build\Arb.NET.Generators.props" Pack="true" PackagePath="build\" />
         <None Include="build\Arb.NET.Generators.targets" Pack="true" PackagePath="build\" />
         <None Include="..\README.MD" Pack="true" PackagePath="\" />
         <!-- Package the generator DLL in the location Roslyn expects for source generators. -->
@@ -48,6 +47,7 @@
         <Compile Include="..\Arb.NET\Models\ArbParameterDefinition.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbParseResult.cs"/>
         <Compile Include="..\Arb.NET\Models\EnumLocalizationInfo.cs"/>
+        <Compile Include="..\Arb.NET\Models\L10nConfig.cs"/>
         <Compile Include="..\Arb.NET\ArbSerializer.cs"/>
     </ItemGroup>
 

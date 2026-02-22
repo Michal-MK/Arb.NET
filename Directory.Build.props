@@ -11,12 +11,4 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
-  <!--
-    Auto-import Arb.NET.Generators build props for all projects in this repository.
-    When distributed as a NuGet package, MSBuild imports build/Arb.NET.Generators.props
-    automatically; this file replicates that behaviour for local ProjectReference development.
-  -->
-  <Import Project="$(MSBuildThisFileDirectory)Arb.NET.Generators\build\Arb.NET.Generators.props"
-          Condition="Exists('$(MSBuildThisFileDirectory)Arb.NET.Generators\build\Arb.NET.Generators.props')" />
-
 </Project>

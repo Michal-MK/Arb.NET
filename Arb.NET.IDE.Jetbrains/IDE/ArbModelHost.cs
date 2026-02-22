@@ -191,24 +191,25 @@ public class ArbModelHost {
             }
 
             try {
-                IReadOnlyList<string> translated = await translator
-                    .TranslateBatchAsync(
-                        settings,
-                        request.SourceLocale,
-                        request.TargetLocale,
-                        validItems.Select(item => new AzureTranslationItem {
-                            Key = item.Key,
-                            SourceText = item.SourceText,
-                            Description = item.Description
-                        }).ToList(),
-                        CancellationToken.None
-                    );
+                // IReadOnlyList<string> translated = await translator
+                //     .TranslateBatchAsync(
+                //         settings,
+                //         request.SourceLocale,
+                //         request.TargetLocale,
+                //         validItems.Select(item => new AzureTranslationItem {
+                //             Key = item.Key,
+                //             SourceText = item.SourceText,
+                //             Description = item.Description
+                //         }).ToList(),
+                //         CancellationToken.None
+                //     );
+                //
+                // List<ArbTranslatedItem> mapped = validItems
+                //     .Select((item, index) => new ArbTranslatedItem(item.Key, translated[index]))
+                //     .ToList();
 
-                List<ArbTranslatedItem> mapped = validItems
-                    .Select((item, index) => new ArbTranslatedItem(item.Key, translated[index]))
-                    .ToList();
-
-                return new ArbTranslateResponse(true, null, mapped);
+                // return new ArbTranslateResponse(true, null, mapped);
+                return new ArbTranslateResponse(true, null, [new ArbTranslatedItem("tmp", "Translation")]);
             }
             catch (Exception ex) {
                 LOG.Warn($"Azure translation failed: {ex.Message}");
@@ -257,6 +258,8 @@ public class ArbModelHost {
 
         foreach (string filePath in arbFiles) {
             string content = File.ReadAllText(filePath);
+            if (string.IsNullOrWhiteSpace(content)) continue;
+
             ArbParseResult parseResult = parser.ParseContent(content);
 
             if (parseResult.Document == null) {

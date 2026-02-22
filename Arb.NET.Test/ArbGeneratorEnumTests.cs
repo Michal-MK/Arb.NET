@@ -10,7 +10,10 @@ public class ArbGeneratorEnumTests {
                 Value = $"Localized {key}"
             };
         }
-        return new ArbDocument { Locale = locale, Entries = entries };
+        return new ArbDocument {
+            Locale = locale,
+            Entries = entries
+        };
     }
 
     private static string GenerateDispatcher(ArbDocument defaultDoc, params EnumLocalizationInfo[] enums) {
@@ -33,7 +36,11 @@ public class ArbGeneratorEnumTests {
     public void Dispatcher_WithEnumInfo_ContainsLocalizeOverload() {
         ArbDocument doc = CreateDocument("en", "myStatusActive", "myStatusInactive");
 
-        string source = GenerateDispatcher(doc, new EnumLocalizationInfo("MyNamespace.MyStatus", "MyStatus", ["Active", "Inactive"]));
+        string source = GenerateDispatcher(doc, new EnumLocalizationInfo {
+            FullName = "MyNamespace.MyStatus",
+            SimpleName = "MyStatus",
+            Members = ["Active", "Inactive"]
+        });
 
         Console.WriteLine(source);
         Assert.That(source, Does.Contain("public string Localize(MyNamespace.MyStatus value)"));
@@ -43,7 +50,11 @@ public class ArbGeneratorEnumTests {
     public void Dispatcher_LocalizeMethod_ArmsUseCorrectPascalCaseProperties() {
         ArbDocument doc = CreateDocument("en", "myStatusActive", "myStatusInactive");
 
-        string source = GenerateDispatcher(doc, new EnumLocalizationInfo("MyNamespace.MyStatus", "MyStatus", ["Active", "Inactive"]));
+        string source = GenerateDispatcher(doc, new EnumLocalizationInfo {
+            FullName = "MyNamespace.MyStatus",
+            SimpleName = "MyStatus",
+            Members = ["Active", "Inactive"]
+        });
 
         // Each arm must reference the dispatcher property derived from the ARB key:
         // "myStatusActive"   → ToPascalCase → MyStatusActive
@@ -56,7 +67,11 @@ public class ArbGeneratorEnumTests {
     public void Dispatcher_LocalizeMethod_ContainsFallbackToStringCall() {
         ArbDocument doc = CreateDocument("en", "myStatusActive");
 
-        string source = GenerateDispatcher(doc, new EnumLocalizationInfo("MyStatus", "MyStatus", ["Active"]));
+        string source = GenerateDispatcher(doc, new EnumLocalizationInfo {
+            FullName = "MyStatus",
+            SimpleName = "MyStatus",
+            Members = ["Active"]
+        });
 
         Assert.That(source, Does.Contain("_ => value.ToString()"));
     }
@@ -64,12 +79,21 @@ public class ArbGeneratorEnumTests {
     [Test]
     public void Dispatcher_MultipleEnums_EmitsOneOverloadPerType() {
         ArbDocument doc = CreateDocument("en",
-            "myAgeYoung", "myAgeOld",
-            "myColorRed", "myColorBlue");
+                                         "myAgeYoung", "myAgeOld",
+                                         "myColorRed", "myColorBlue");
 
-        string source = GenerateDispatcher(doc,
-            new EnumLocalizationInfo("MyAge",   "MyAge",   ["Young", "Old"]),
-            new EnumLocalizationInfo("MyColor", "MyColor", ["Red",   "Blue"])
+        string source = GenerateDispatcher(
+            doc,
+            new EnumLocalizationInfo {
+                FullName = "MyAge",
+                SimpleName = "MyAge",
+                Members = ["Young", "Old"]
+            },
+            new EnumLocalizationInfo {
+                FullName = "MyColor",
+                SimpleName = "MyColor",
+                Members = ["Red", "Blue"]
+            }
         );
 
         Assert.That(source, Does.Contain("public string Localize(MyAge value)"));
@@ -80,7 +104,11 @@ public class ArbGeneratorEnumTests {
     public void Dispatcher_LocalizeMethod_CamelCasesEnumName() {
         ArbDocument doc = CreateDocument("en", "myLongEnumNameYoung");
 
-        string source = GenerateDispatcher(doc, new EnumLocalizationInfo("MyLongEnumName", "MyLongEnumName", ["Young"]));
+        string source = GenerateDispatcher(doc, new EnumLocalizationInfo {
+            FullName = "MyLongEnumName",
+            SimpleName = "MyLongEnumName",
+            Members = ["Young"]
+        });
 
         Assert.That(source, Does.Contain("MyLongEnumName.Young => MyLongEnumNameYoung,"));
     }

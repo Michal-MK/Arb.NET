@@ -17,6 +17,7 @@
     <AssemblyName>Arb.NET.IDE.VisualStudio</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
 
     <!-- Suppress assembly version conflict warnings for BCL polyfills (System.Memory etc.)
          that the VS SDK NuGet and the Arb.NET IDE build both supply. VS picks the right one at runtime. -->
@@ -56,6 +57,7 @@
     <Compile Include="Tool\Models\ArbFile.cs" />
     <Compile Include="Tool\Models\ArbRow.cs" />
     <Compile Include="Tool\Models\ArbScanResult.cs" />
+    <Compile Include="Tool\Models\LocaleSelection.cs" />
     <Compile Include="Tool\Services\ArbService.cs" />
     <Compile Include="Tool\Services\Persistence\ColumnSettingsService.cs" />
     <Compile Include="Tool\Services\Persistence\TranslationSettingsService.cs" />

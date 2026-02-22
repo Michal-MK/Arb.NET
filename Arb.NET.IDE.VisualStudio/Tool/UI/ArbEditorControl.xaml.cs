@@ -18,20 +18,20 @@ using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
 public partial class ArbEditorControl : UserControl {
-    private AsyncPackage package;
+    private AsyncPackage? package;
 
-    private ColumnSettingsService columnSettingsService;
-    private ArbService arbService;
-    private TranslationSettingsService translationSettingsService;
+    private ColumnSettingsService columnSettingsService = null!;
+    private ArbService arbService = null!;
+    private TranslationSettingsService translationSettingsService = null!;
 
     private const double DEFAULT_KEY_COLUMN_WIDTH = 240;
     private const double DEFAULT_LOCALE_COLUMN_WIDTH = 220;
 
-    private ArbScanResult arbScanResult;
+    private ArbScanResult arbScanResult = null!;
 
     private List<string> currentLangCodes = [];
     private ObservableCollection<ArbRow> currentRows = [];
-    private string currentDirectory;
+    private string? currentDirectory;
     private bool suppressSave;
     private readonly List<(DependencyPropertyDescriptor Dpd, DataGridColumn Col, EventHandler Handler)> widthListeners = [];
 
@@ -149,7 +149,7 @@ public partial class ArbEditorControl : UserControl {
         }
 
         // Restore user-defined column order; unknown/new locales are appended alphabetically at the end.
-        List<string> savedOrder = columnSettingsService.LoadLocaleOrder(directory);
+        List<string>? savedOrder = columnSettingsService.LoadLocaleOrder(directory);
         List<string> alphabetical = arbFiles.Select(lf => lf.LangCode).OrderBy(l => l).ToList();
         if (savedOrder != null) {
             currentLangCodes = [
@@ -163,9 +163,7 @@ public partial class ArbEditorControl : UserControl {
 
         ObservableCollection<ArbRow> rows = [];
         foreach (string key in allKeys) {
-            ArbRow row = new() {
-                Key = key
-            };
+            ArbRow row = new(key);
             foreach (string locale in currentLangCodes) {
                 row.Values[locale] = byLocale.TryGetValue(locale, out var vals) && vals.TryGetValue(key, out string val)
                     ? val
@@ -205,12 +203,14 @@ public partial class ArbEditorControl : UserControl {
 
         // Attach width-change listeners after suppressSave is cleared so the initial layout fires are ignored.
         foreach (DataGridColumn col in ArbGrid.Columns) {
-            void Handler(object _, EventArgs _1) {
-                if (!suppressSave && currentDirectory != null) columnSettingsService.SaveColumnWidths(currentDirectory, ArbGrid.Columns);
-            }
 
             widthDpd.AddValueChanged(col, Handler);
             widthListeners.Add((widthDpd, col, Handler));
+            continue;
+
+            void Handler(object _, EventArgs _1) {
+                if (!suppressSave && currentDirectory != null) columnSettingsService.SaveColumnWidths(currentDirectory, ArbGrid.Columns);
+            }
         }
     }
 
@@ -240,7 +240,7 @@ public partial class ArbEditorControl : UserControl {
         if (suppressSave) return;
         if (e.EditAction != DataGridEditAction.Commit) return;
 
-        string locale = e.Column.Header as string;
+        string locale = (string)e.Column.Header;
         if (string.IsNullOrEmpty(locale) || locale == "Key") return;
         if (e.Row.Item is not ArbRow row) return;
         if (DirectoryCombo.SelectedItem is not string directory) return;
@@ -275,13 +275,13 @@ public partial class ArbEditorControl : UserControl {
 
         ArbInputDialog dialog = new("Add ARB Key", "Enter the new key name:", "");
         dialog.ShowDialog();
-        string newKey = dialog.Result;
-        if (newKey == null || string.IsNullOrWhiteSpace(newKey)) return;
+        string? newKey = dialog.Result;
+        if (string.IsNullOrWhiteSpace(newKey)) return;
 
         foreach (ArbFile arb in arbFiles) {
             ModifyArbFile(arb, doc => {
-                doc.Entries[newKey] = new ArbEntry {
-                    Key = newKey,
+                doc.Entries[newKey!] = new ArbEntry {
+                    Key = newKey!,
                     Value = ""
                 };
             });
@@ -296,9 +296,9 @@ public partial class ArbEditorControl : UserControl {
 
         ArbInputDialog dialog = new("Add ARB Locale", "Enter locale code (e.g. de, fr):", "");
         dialog.ShowDialog();
-        string locale = dialog.Result;
-        if (locale == null || string.IsNullOrWhiteSpace(locale)) return;
-        locale = locale.Trim();
+        string? locale = dialog.Result;
+        if (string.IsNullOrWhiteSpace(locale)) return;
+        locale = locale!.Trim();
 
         string filePath = Path.Combine(directory, locale + ".arb");
         if (File.Exists(filePath)) {
@@ -311,15 +311,26 @@ public partial class ArbEditorControl : UserControl {
             try {
                 string content = File.ReadAllText(arb.FilePath);
                 ArbParseResult result = parser.ParseContent(content);
-                if (result.Document != null)
-                    foreach (string key in result.Document.Entries.Keys) allKeys.Add(key);
+                if (result.Document == null) continue;
+
+                foreach (string key in result.Document.Entries.Keys) {
+                    allKeys.Add(key);
+                }
             }
-            catch { }
+            catch {
+                // TODO handle?
+            }
         }
 
-        ArbDocument newDoc = new() { Locale = locale };
-        foreach (string key in allKeys)
-            newDoc.Entries[key] = new ArbEntry { Key = key, Value = "" };
+        ArbDocument newDoc = new() {
+            Locale = locale
+        };
+        foreach (string key in allKeys) {
+            newDoc.Entries[key] = new ArbEntry {
+                Key = key,
+                Value = ""
+            };
+        }
 
         File.WriteAllText(filePath, ArbSerializer.Serialize(newDoc));
         _ = RefreshDataAsync();
@@ -341,16 +352,19 @@ public partial class ArbEditorControl : UserControl {
         if (confirm != MessageBoxResult.Yes) return;
 
         bool anyChanged = false;
-        foreach (ArbFile arb in arbFiles)
+        foreach (ArbFile arb in arbFiles) {
             anyChanged |= ModifyArbFile(arb, doc => doc.Entries.Remove(key));
+        }
 
-        if (anyChanged) BuildTable(directory);
+        if (anyChanged) {
+            BuildTable(directory);
+        }
     }
 
     private void SaveEntry(string directory, string locale, string key, string newValue) {
         if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> localeFiles)) return;
 
-        ArbFile arb = localeFiles.FirstOrDefault(f => string.Equals(f.LangCode, locale, StringComparison.Ordinal));
+        ArbFile? arb = localeFiles.FirstOrDefault(f => string.Equals(f.LangCode, locale, StringComparison.Ordinal));
         if (arb == null) return;
 
         ModifyArbFile(arb, doc => {
@@ -367,10 +381,10 @@ public partial class ArbEditorControl : UserControl {
         string oldKey = row.Key;
         ArbInputDialog dialog = new("Rename ARB Key", $"Rename key '{oldKey}' in all locale files:", oldKey);
         dialog.ShowDialog();
-        string newKey = dialog.Result;
-        if (newKey == null || newKey == oldKey || string.IsNullOrWhiteSpace(newKey)) return;
+        string? newKey = dialog.Result;
+        if (newKey == oldKey || string.IsNullOrWhiteSpace(newKey)) return;
 
-        RenameKey(directory, oldKey, newKey);
+        RenameKey(directory, oldKey, newKey!);
     }
 
     private void RenameKey(string directory, string oldKey, string newKey) {

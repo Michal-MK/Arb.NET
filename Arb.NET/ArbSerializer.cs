@@ -15,29 +15,30 @@ public static class ArbSerializer {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        using Utf8JsonWriter writer = new(buffer, options);
-        writer.WriteStartObject();
+        // This has to be a using block to ensure the writer flushes to the buffer
+        using (Utf8JsonWriter writer = new(buffer, options)) {
+            writer.WriteStartObject();
 
-        if (!string.IsNullOrEmpty(doc.Locale)) {
-            writer.WriteString("@@locale", doc.Locale);
-        }
-
-        if (!string.IsNullOrEmpty(doc.Context)) {
-            writer.WriteString("@@context", doc.Context);
-        }
-
-        foreach (KeyValuePair<string, ArbEntry> kvp in doc.Entries.OrderBy(e => e.Key)) {
-            string key = kvp.Key;
-            ArbEntry entry = kvp.Value;
-            writer.WriteString(key, entry.Value);
-
-            if (entry.Metadata != null) {
-                WriteMetadata(writer, key, entry.Metadata);
+            if (!string.IsNullOrEmpty(doc.Locale)) {
+                writer.WriteString("@@locale", doc.Locale);
             }
+
+            if (!string.IsNullOrEmpty(doc.Context)) {
+                writer.WriteString("@@context", doc.Context);
+            }
+
+            foreach (KeyValuePair<string, ArbEntry> kvp in doc.Entries.OrderBy(e => e.Key)) {
+                string key = kvp.Key;
+                ArbEntry entry = kvp.Value;
+                writer.WriteString(key, entry.Value);
+
+                if (entry.Metadata != null) {
+                    WriteMetadata(writer, key, entry.Metadata);
+                }
+            }
+
+            writer.WriteEndObject();
         }
-
-        writer.WriteEndObject();
-
         return Encoding.UTF8.GetString(buffer.ToArray());
     }
 

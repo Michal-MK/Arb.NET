@@ -6,7 +6,7 @@ internal class TranslationItem : INotifyPropertyChanged {
 
     public string Key { get; set; } = "";
     public string SourceText { get; set; } = "";
-    public string Description { get; set; }
+    public string? Description { get; set; }
     public string TargetLocale { get; set; } = "";
     public string ExistingTranslation { get; set; } = "";
 
@@ -26,5 +26,5 @@ internal class TranslationItem : INotifyPropertyChanged {
         }
     } = true;
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 }

@@ -5,7 +5,7 @@ namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
 public partial class ArbInputDialog : DialogWindow {
 
-    public string Result { get; private set; }
+    public string? Result { get; private set; }
 
     public ArbInputDialog(string title, string labelText, string defaultText) {
         InitializeComponent();

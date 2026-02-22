@@ -1,46 +1,20 @@
 <Project>
 
   <!--
-    Default metadata for ArbSource items, applied when the item itself doesn't override them.
-    This must be in .targets (not .props) so that $(ArbDefault*) properties are already set
-    by the consumer's PropertyGroup before this is evaluated.
-  -->
-  <ItemDefinitionGroup>
-    <ArbSource>
-      <DefaultClass>$(ArbDefaultClass)</DefaultClass>
-      <DefaultNamespace>$(ArbDefaultNamespace)</DefaultNamespace>
-      <DefaultLangCode>$(ArbDefaultLangCode)</DefaultLangCode>
-    </ArbSource>
-  </ItemDefinitionGroup>
-
-  <!--
-    Promote ArbSource items to AdditionalFiles so Roslyn passes them to the generator.
-    This static ItemGroup is evaluated after the consumer's own ItemGroups (because
-    Directory.Build.targets is imported after the project file), so @(ArbSource) is
-    already populated here.
+    Auto-include l10n.yaml (if present) and all .arb files as AdditionalFiles so the
+    Roslyn source generator can see them without any changes to the consumer's .csproj.
   -->
   <ItemGroup>
-    <AdditionalFiles Include="@(ArbSource)" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\**\l10n.yaml" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\**\*.arb" />
   </ItemGroup>
 
   <!--
-    Make per-file ArbSource metadata visible to the Roslyn generator via AnalyzerConfigOptions.
-    The generator reads these as: build_metadata.AdditionalFiles.<Key>
+    Make RootNamespace visible to the generator as a fallback when output-namespace
+    is not specified in l10n.yaml.
   -->
   <ItemGroup>
-    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultClass" />
-    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultNamespace" />
-    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="DefaultLangCode" />
-  </ItemGroup>
-
-  <!--
-    Make project-level ArbDefault* properties visible to the generator via GlobalOptions.
-    The generator reads these as: build_property.<Name>
-  -->
-  <ItemGroup>
-    <CompilerVisibleProperty Include="ArbDefaultClass" />
-    <CompilerVisibleProperty Include="ArbDefaultNamespace" />
-    <CompilerVisibleProperty Include="ArbDefaultLangCode" />
+    <CompilerVisibleProperty Include="RootNamespace" />
   </ItemGroup>
 
 </Project>

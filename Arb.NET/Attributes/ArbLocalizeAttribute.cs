@@ -19,5 +19,5 @@ public class ArbLocalizeAttribute(string? description = null) : Attribute {
     /// Optional translator note written into the <c>@metadata</c> description field
     /// of the primary locale ARB file for each generated entry.
     /// </summary>
-    public string? Description { get; } = description;
+    public string? Description => description;
 }

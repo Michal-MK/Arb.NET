@@ -6,6 +6,10 @@
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);RIDER</DefineConstants>
+
+    <!-- JetBrains SDK packages declare dependencies on exact base versions that are never published;
+         NuGet resolves to the nearest available patch build, which is correct behaviour. -->
+    <NoWarn>$(NoWarn);NU1603</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

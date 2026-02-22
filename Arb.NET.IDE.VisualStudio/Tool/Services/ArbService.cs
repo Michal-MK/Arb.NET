@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,20 +12,21 @@ public class ArbService(ArbPackage package) {
 
     private readonly ArbParser parser = new();
 
-    private string GetSolutionDirectory() {
+    private string? GetSolutionDirectory() {
         ThreadHelper.ThrowIfNotOnUIThread();
-        DTE dte = ((IServiceProvider)package).GetService(typeof(DTE)) as DTE;
-        string solutionFullPath = dte?.Solution?.FullName;
+        DTE? dte = ((IServiceProvider)package).GetService(typeof(DTE)) as DTE;
+        string? solutionFullPath = dte?.Solution?.FullName;
         return string.IsNullOrEmpty(solutionFullPath)
             ? null
             : Path.GetDirectoryName(solutionFullPath);
     }
 
     public async Task<ArbScanResult> ScanArbFilesAsync() {
-        string solutionDir = GetSolutionDirectory();
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        string? solutionDir = GetSolutionDirectory();
 
         if (string.IsNullOrEmpty(solutionDir)) {
-            return new ArbScanResult(new Dictionary<string, List<ArbFile>>(), [], solutionNotLoaded: true);
+            return new ArbScanResult([], [], solutionNotLoaded: true);
         }
 
         return await Task.Run(() => {
@@ -43,7 +44,13 @@ public class ArbService(ArbPackage package) {
                         ? Path.GetFileNameWithoutExtension(filePath)
                         : doc.Locale;
 
-                    string dir = Path.GetDirectoryName(filePath) ?? solutionDir;
+                    string? dir = Path.GetDirectoryName(filePath) ?? solutionDir;
+
+
+                    if (dir is null) {
+                        // TODO handle?
+                        continue;
+                    }
 
                     if (!byDir.TryGetValue(dir, out List<ArbFile> list)) {
                         list = [];

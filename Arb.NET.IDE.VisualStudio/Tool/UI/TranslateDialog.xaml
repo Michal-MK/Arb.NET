@@ -7,6 +7,7 @@
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                   mc:Ignorable="d"
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:models="clr-namespace:Arb.NET.IDE.VisualStudio.Tool.Models"
                   d:DesignHeight="600"
                   d:DesignWidth="800"
                   Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}">
@@ -53,7 +54,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <CheckBox d:DataContext="{d:DesignInstance Type=ui:LocaleSelection}"
+                        <CheckBox d:DataContext="{d:DesignInstance Type=models:LocaleSelection}"
                                   Content="{Binding Locale}"
                                   IsChecked="{Binding IsSelected}"
                                   Margin="0,0,12,2"

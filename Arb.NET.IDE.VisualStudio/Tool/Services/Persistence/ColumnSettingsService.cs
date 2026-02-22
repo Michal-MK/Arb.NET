@@ -64,7 +64,7 @@ public class ColumnSettingsService(ArbPackage package) {
     }
     
     // Locale order persisted as comma-separated locale names in display-index order (Key column excluded).
-    public List<string> LoadLocaleOrder(string directory) {
+    public List<string>? LoadLocaleOrder(string directory) {
         try {
             if (!Store.CollectionExists(SETTINGS_COLLECTION)) return null;
             string raw = Store.GetString(SETTINGS_COLLECTION, OrderKey(directory), null);
@@ -83,7 +83,7 @@ public class ColumnSettingsService(ArbPackage package) {
             // Collect locale columns in current display-index order (skip the Key column at index 0).
             string[] ordered = columns
                 .OrderBy(c => c.DisplayIndex)
-                .Select(c => c.Header as string)
+                .Select(c => (string)c.Header)
                 .Where(h => h != null && h != "Key")
                 .ToArray();
             WritableStore.SetString(SETTINGS_COLLECTION, OrderKey(directory), string.Join(",", ordered));
