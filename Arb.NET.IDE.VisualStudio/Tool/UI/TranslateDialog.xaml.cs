@@ -144,7 +144,11 @@ public partial class TranslateDialog : DialogWindow {
                 settings.CustomPrompt = CustomPromptBox.Text.Trim();
             }
 
-            AzureOpenAITranslationService service = new(settings);
+            TranslationProvider provider = GoogleProviderRadio.IsChecked == true
+                ? TranslationProvider.Google
+                : TranslationProvider.AzureOpenAI;
+
+            AzureOpenAITranslationService service = new(settings, provider);
             (bool valid, string error) = service.ValidateSettings();
             if (!valid) {
                 MessageBox.Show(error, "Arb.NET - Configuration Error", MessageBoxButton.OK, MessageBoxImage.Warning);

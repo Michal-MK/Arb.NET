@@ -27,6 +27,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -67,10 +68,10 @@
         <!-- Mode -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,6">
             <RadioButton x:Name="EmptyOnlyRadio" Content="Empty cells only" IsChecked="True" Margin="0,0,16,0"
-                         Checked="ModeRadio_Changed"
+                         GroupName="TranslateMode" Checked="ModeRadio_Changed"
                          Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
             <RadioButton x:Name="AllCellsRadio" Content="All cells"
-                         Checked="ModeRadio_Changed"
+                         GroupName="TranslateMode" Checked="ModeRadio_Changed"
                          Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
         </StackPanel>
 
@@ -83,8 +84,22 @@
                      TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
         </StackPanel>
 
+        <!-- Provider -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="Provider:"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+                       Margin="0,0,8,0" />
+            <RadioButton x:Name="AzureProviderRadio" Content="Azure OpenAI" IsChecked="True" Margin="0,0,16,0"
+                         GroupName="TranslateProvider"
+                         Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <RadioButton x:Name="GoogleProviderRadio" Content="Google Translate (free)"
+                         GroupName="TranslateProvider"
+                         Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+        </StackPanel>
+
         <!-- Translate button -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,8">
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,0,0,8">
             <Button x:Name="TranslateButton" Content="Translate" Padding="12,4" Click="TranslateButton_OnClick" />
             <Button x:Name="CancelTranslationButton" Content="Stop" Padding="12,4" Margin="8,0,0,0"
                     Visibility="Collapsed" Click="CancelTranslationButton_OnClick" />
@@ -92,7 +107,7 @@
 
         <!-- Results grid -->
         <DataGrid x:Name="ResultsGrid"
-                  Grid.Row="5"
+                  Grid.Row="6"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
@@ -119,7 +134,7 @@
         </DataGrid>
 
         <!-- Progress -->
-        <StackPanel Grid.Row="6" Margin="0,6,0,6">
+        <StackPanel Grid.Row="7" Margin="0,6,0,6">
             <TextBlock x:Name="StatusText" Text=""
                        Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
                        Margin="0,0,0,4" />
@@ -128,7 +143,7 @@
         </StackPanel>
 
         <!-- Action buttons -->
-        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="ApplyButton" Content="Apply Selected" Padding="12,4" Margin="0,0,8,0"
                     IsEnabled="False" Click="ApplyButton_OnClick" />
             <Button Content="Close" Padding="12,4" IsCancel="True" />

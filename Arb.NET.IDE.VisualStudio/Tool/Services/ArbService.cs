@@ -63,7 +63,7 @@ public class ArbService(ArbPackage package) {
                 }
             }
 
-            return new ArbScanResult(byDir, errors);
+            return new ArbScanResult(byDir, errors, solutionDirectory: solutionDir);
         });
     }
 }

@@ -14,6 +14,7 @@ using System.Windows.Input;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
+using Arb.NET.IDE.VisualStudio.Tool.UI.Converters;
 
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
@@ -73,9 +74,16 @@ public partial class ArbEditorControl : UserControl {
         LoadingLabel.Visibility = Visibility.Collapsed;
         ArbGrid.Visibility = Visibility.Visible;
 
+        UpdateRelativePathConverter();
         List<string> sortedDirs = arbScanResult.DirGroupedArbFiles.Keys.OrderBy(d => d).ToList();
         DirectoryCombo.ItemsSource = sortedDirs;
         DirectoryCombo.SelectedIndex = 0;
+    }
+
+    private void UpdateRelativePathConverter() {
+        if (Resources["RelativePathConverter"] is RelativePathConverter converter) {
+            converter.ScanResult = arbScanResult;
+        }
     }
 
     public void RefreshData() {
@@ -87,6 +95,7 @@ public partial class ArbEditorControl : UserControl {
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
         arbScanResult = await arbService.ScanArbFilesAsync();
+        UpdateRelativePathConverter();
 
         if (arbScanResult.SolutionNotLoaded) {
             LoadingLabel.Text = "No solution open. Open a solution and reopen this window.";

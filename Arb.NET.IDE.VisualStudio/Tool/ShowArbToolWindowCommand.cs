@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.ComponentModel.Design;
 using System.Threading.Tasks;
@@ -18,9 +17,6 @@ internal sealed class ShowArbToolWindowCommand {
     private readonly ColumnSettingsService columnSettingsService;
     private readonly ArbService arbService;
     private readonly TranslationSettingsService translationSettingsService;
-
-    private uint selectionCookie;
-    private uint solutionEventsCookie;
 
     private ShowArbToolWindowCommand(ArbPackage package, OleMenuCommandService commandService, ColumnSettingsService columnSettingsService, ArbService arbService, TranslationSettingsService translationSettingsService) {
         this.package = package;
@@ -57,23 +53,11 @@ internal sealed class ShowArbToolWindowCommand {
                 throw new InvalidOperationException("Failed to show Arb.NET tool window.");
             }
 
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            // Subscribe to global selection events once so we can detect when our tool
-            // window frame becomes the active window frame (Focus handling).
             if (window is ArbToolWindow arbWindow) {
-                arbWindow.Setup(columnSettingsService, arbService, translationSettingsService);
-                
-                if (selectionCookie == 0) {
-                    if (await package.GetServiceAsync(typeof(SVsShellMonitorSelection)) is IVsMonitorSelection monitorSelection) {
-                        monitorSelection.AdviseSelectionEvents(arbWindow, out selectionCookie);
-                    }
-                }
-                if (solutionEventsCookie == 0) {
-                    if (await package.GetServiceAsync(typeof(SVsSolution)) is IVsSolution solution) {
-                        solution.AdviseSolutionEvents(arbWindow, out solutionEventsCookie);
-                    }
-                } 
+                // OnToolWindowCreated already runs on both user-open and restore, but if services
+                // were not yet ready at that point (restore case handled by InitializeAsync),
+                // SetupIfNeededAsync is idempotent and safe to call again here.
+                await arbWindow.SetupIfNeededAsync(columnSettingsService, arbService, translationSettingsService);
             }
 
             // TODO handle unsubscribe

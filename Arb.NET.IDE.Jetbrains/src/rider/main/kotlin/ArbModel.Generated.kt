@@ -52,7 +52,7 @@ class ArbModel private constructor(
         
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         
-        const val serializationHash = 6641483481806948656L
+        const val serializationHash = 1250713055647364370L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -619,7 +619,8 @@ data class ArbTranslateRequest (
     val settings: AzureTranslationSettings,
     val sourceLocale: String,
     val targetLocale: String,
-    val items: List<ArbTranslationItem>
+    val items: List<ArbTranslationItem>,
+    val provider: String
 ) : IPrintable {
     //companion
     
@@ -634,7 +635,8 @@ data class ArbTranslateRequest (
             val sourceLocale = buffer.readString()
             val targetLocale = buffer.readString()
             val items = buffer.readList { ArbTranslationItem.read(ctx, buffer) }
-            return ArbTranslateRequest(directory, settings, sourceLocale, targetLocale, items)
+            val provider = buffer.readString()
+            return ArbTranslateRequest(directory, settings, sourceLocale, targetLocale, items, provider)
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslateRequest)  {
@@ -643,6 +645,7 @@ data class ArbTranslateRequest (
             buffer.writeString(value.sourceLocale)
             buffer.writeString(value.targetLocale)
             buffer.writeList(value.items) { v -> ArbTranslationItem.write(ctx, buffer, v) }
+            buffer.writeString(value.provider)
         }
         
         
@@ -663,6 +666,7 @@ data class ArbTranslateRequest (
         if (sourceLocale != other.sourceLocale) return false
         if (targetLocale != other.targetLocale) return false
         if (items != other.items) return false
+        if (provider != other.provider) return false
         
         return true
     }
@@ -674,6 +678,7 @@ data class ArbTranslateRequest (
         __r = __r*31 + sourceLocale.hashCode()
         __r = __r*31 + targetLocale.hashCode()
         __r = __r*31 + items.hashCode()
+        __r = __r*31 + provider.hashCode()
         return __r
     }
     //pretty print
@@ -685,6 +690,7 @@ data class ArbTranslateRequest (
             print("sourceLocale = "); sourceLocale.print(printer); println()
             print("targetLocale = "); targetLocale.print(printer); println()
             print("items = "); items.print(printer); println()
+            print("provider = "); provider.print(printer); println()
         }
         printer.print(")")
     }
@@ -695,7 +701,7 @@ data class ArbTranslateRequest (
 
 
 /**
- * #### Generated from [ArbModel.kt:87]
+ * #### Generated from [ArbModel.kt:88]
  */
 data class ArbTranslateResponse (
     val success: Boolean,
@@ -766,7 +772,7 @@ data class ArbTranslateResponse (
 
 
 /**
- * #### Generated from [ArbModel.kt:82]
+ * #### Generated from [ArbModel.kt:83]
  */
 data class ArbTranslatedItem (
     val key: String,

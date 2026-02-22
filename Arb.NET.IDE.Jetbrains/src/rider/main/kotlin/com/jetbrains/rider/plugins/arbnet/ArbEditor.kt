@@ -28,10 +28,13 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.beans.PropertyChangeListener
+import java.awt.Component
+import javax.swing.DefaultListCellRenderer
 import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
+import javax.swing.JList
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
@@ -141,6 +144,19 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
                     val combo = JComboBox(directories.toTypedArray())
                     dirCombo = combo
+                    val basePath = project.basePath
+                    combo.renderer = object : DefaultListCellRenderer() {
+                        override fun getListCellRendererComponent(list: JList<*>, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean): Component {
+                            val display = if (value is String && basePath != null) {
+                                val normalizedValue = value.replace('\\', '/')
+                                val normalizedBase = basePath.replace('\\', '/')
+                                if (normalizedValue.startsWith(normalizedBase))
+                                    normalizedValue.removePrefix(normalizedBase).trimStart('/').ifEmpty { "." }
+                                else value
+                            } else value
+                            return super.getListCellRendererComponent(list, display, index, isSelected, cellHasFocus)
+                        }
+                    }
 
                     val addKeyButton = JButton("Add Key")
                     val addLocaleButton = JButton("Add Locale")
@@ -283,8 +299,17 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         }
 
         fun openTranslateDialogForRows(selectedRowIndices: List<Int>?) {
+            // Build byLocale from the live tableModel so edits made since buildTable()
+            // (e.g. clearing a cell) are reflected in the translate dialog.
+            val liveByLocale: Map<String, Map<String, String>> = locales.associateWith { locale ->
+                val colIndex = locales.indexOf(locale) + 1 // col 0 is Key
+                (0 until tableModel.rowCount).associate { row ->
+                    (tableModel.getValueAt(row, 0) as? String ?: "") to
+                        (tableModel.getValueAt(row, colIndex) as? String ?: "")
+                }
+            }
             ArbTranslateDialog(
-                project, directory, locales, byLocale, selectedRowIndices,
+                project, directory, locales, liveByLocale, selectedRowIndices,
                 onApplied = { refresh() }
             ).show()
         }

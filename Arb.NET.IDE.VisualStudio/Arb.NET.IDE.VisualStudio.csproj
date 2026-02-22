@@ -70,6 +70,7 @@
     </Compile>
     <Compile Include="Tool\Models\TranslationItem.cs" />
 <Compile Include="Tool\Services\AzureOpenAITranslationService.cs" />
+<Compile Include="Tool\UI\Converters\RelativePathConverter.cs" />
     <Compile Include="Tool\UI\TranslationSettingsDialog.xaml.cs">
       <DependentUpon>TranslationSettingsDialog.xaml</DependentUpon>
     </Compile>

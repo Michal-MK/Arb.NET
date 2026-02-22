@@ -10,7 +10,6 @@
 `Arb.NET.Examples.*` - common prefix for example projects, examples use the Roslyn source generators
 
 ## IDE Support
-**Maintain feature parity between IDEs**
 `Arb.NET.IDE.Jetbrains` - a plugin for Rider and Resharper
 `Arb.NET.IDE.VisualStudio` - a plugin for Visual Studio
 
@@ -44,6 +43,8 @@ Prefix such logs with "[AI-DEBUG]" so that they can easily be removed after.
 - Any changes from now on must accept that we could break someone! An attempt to minimize making such changes must be made.
 
 **Write all plans into ai-ref/plans!**
+**Maintain feature parity between IDEs! When a feature is requested always assume both IDEs are affected. Unless explicitly stated otherwise.**
+
 
 At the start of each session print:
 ```

@@ -111,7 +111,7 @@ namespace JetBrains.Rider.Model
     
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     
-    protected override long SerializationHash => 6641483481806948656L;
+    protected override long SerializationHash => 1250713055647364370L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -876,6 +876,7 @@ namespace JetBrains.Rider.Model
     [NotNull] public string SourceLocale {get; private set;}
     [NotNull] public string TargetLocale {get; private set;}
     [NotNull] public List<ArbTranslationItem> Items {get; private set;}
+    [NotNull] public string Provider {get; private set;}
     
     //private fields
     //primary constructor
@@ -884,7 +885,8 @@ namespace JetBrains.Rider.Model
       [NotNull] AzureTranslationSettings settings,
       [NotNull] string sourceLocale,
       [NotNull] string targetLocale,
-      [NotNull] List<ArbTranslationItem> items
+      [NotNull] List<ArbTranslationItem> items,
+      [NotNull] string provider
     )
     {
       if (directory == null) throw new ArgumentNullException("directory");
@@ -892,22 +894,25 @@ namespace JetBrains.Rider.Model
       if (sourceLocale == null) throw new ArgumentNullException("sourceLocale");
       if (targetLocale == null) throw new ArgumentNullException("targetLocale");
       if (items == null) throw new ArgumentNullException("items");
+      if (provider == null) throw new ArgumentNullException("provider");
       
       Directory = directory;
       Settings = settings;
       SourceLocale = sourceLocale;
       TargetLocale = targetLocale;
       Items = items;
+      Provider = provider;
     }
     //secondary constructor
     //deconstruct trait
-    public void Deconstruct([NotNull] out string directory, [NotNull] out AzureTranslationSettings settings, [NotNull] out string sourceLocale, [NotNull] out string targetLocale, [NotNull] out List<ArbTranslationItem> items)
+    public void Deconstruct([NotNull] out string directory, [NotNull] out AzureTranslationSettings settings, [NotNull] out string sourceLocale, [NotNull] out string targetLocale, [NotNull] out List<ArbTranslationItem> items, [NotNull] out string provider)
     {
       directory = Directory;
       settings = Settings;
       sourceLocale = SourceLocale;
       targetLocale = TargetLocale;
       items = Items;
+      provider = Provider;
     }
     //statics
     
@@ -918,7 +923,8 @@ namespace JetBrains.Rider.Model
       var sourceLocale = reader.ReadString();
       var targetLocale = reader.ReadString();
       var items = ReadArbTranslationItemList(ctx, reader);
-      var _result = new ArbTranslateRequest(directory, settings, sourceLocale, targetLocale, items);
+      var provider = reader.ReadString();
+      var _result = new ArbTranslateRequest(directory, settings, sourceLocale, targetLocale, items, provider);
       return _result;
     };
     public static CtxReadDelegate<List<ArbTranslationItem>> ReadArbTranslationItemList = ArbTranslationItem.Read.List();
@@ -930,6 +936,7 @@ namespace JetBrains.Rider.Model
       writer.Write(value.SourceLocale);
       writer.Write(value.TargetLocale);
       WriteArbTranslationItemList(ctx, writer, value.Items);
+      writer.Write(value.Provider);
     };
     public static  CtxWriteDelegate<List<ArbTranslationItem>> WriteArbTranslationItemList = ArbTranslationItem.Write.List();
     
@@ -949,7 +956,7 @@ namespace JetBrains.Rider.Model
     {
       if (ReferenceEquals(null, other)) return false;
       if (ReferenceEquals(this, other)) return true;
-      return Directory == other.Directory && Equals(Settings, other.Settings) && SourceLocale == other.SourceLocale && TargetLocale == other.TargetLocale && Items.SequenceEqual(other.Items);
+      return Directory == other.Directory && Equals(Settings, other.Settings) && SourceLocale == other.SourceLocale && TargetLocale == other.TargetLocale && Items.SequenceEqual(other.Items) && Provider == other.Provider;
     }
     //hash code trait
     public override int GetHashCode()
@@ -961,6 +968,7 @@ namespace JetBrains.Rider.Model
         hash = hash * 31 + SourceLocale.GetHashCode();
         hash = hash * 31 + TargetLocale.GetHashCode();
         hash = hash * 31 + Items.ContentHashCode();
+        hash = hash * 31 + Provider.GetHashCode();
         return hash;
       }
     }
@@ -974,6 +982,7 @@ namespace JetBrains.Rider.Model
         printer.Print("sourceLocale = "); SourceLocale.PrintEx(printer); printer.Println();
         printer.Print("targetLocale = "); TargetLocale.PrintEx(printer); printer.Println();
         printer.Print("items = "); Items.PrintEx(printer); printer.Println();
+        printer.Print("provider = "); Provider.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }
@@ -988,7 +997,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:87</p>
+  /// <p>Generated from: ArbModel.kt:88</p>
   /// </summary>
   public sealed class ArbTranslateResponse : IPrintable, IEquatable<ArbTranslateResponse>
   {
@@ -1093,7 +1102,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:82</p>
+  /// <p>Generated from: ArbModel.kt:83</p>
   /// </summary>
   public sealed class ArbTranslatedItem : IPrintable, IEquatable<ArbTranslatedItem>
   {

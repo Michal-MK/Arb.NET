@@ -10,12 +10,15 @@ using Arb.NET.IDE.VisualStudio.Tool.Models;
 namespace Arb.NET.IDE.VisualStudio.Tool.Services;
 
 // ReSharper disable once InconsistentNaming
-internal class AzureOpenAITranslationService(AzureTranslationSettings settings) {
+internal class AzureOpenAITranslationService(AzureTranslationSettings settings, TranslationProvider provider = TranslationProvider.AzureOpenAI) {
     private const int DEFAULT_BATCH_SIZE = 20;
-    private readonly AzureOpenAITranslator translator = new();
+
+    private readonly ITranslator translator = provider == TranslationProvider.Google
+        ? new GoogleTranslator()
+        : new AzureOpenAITranslator(settings);
 
     public (bool Valid, string Error) ValidateSettings() {
-        (bool valid, string? error) = translator.ValidateSettings(settings);
+        (bool valid, string? error) = translator.ValidateSettings();
         return (valid, error ?? string.Empty);
     }
 
@@ -32,9 +35,9 @@ internal class AzureOpenAITranslationService(AzureTranslationSettings settings) 
             return;
         }
 
-        List<List<TranslationItem>> batches = CreateBatches(items, DEFAULT_BATCH_SIZE);
         int completed = 0;
         int total = items.Count;
+        List<List<TranslationItem>> batches = CreateBatches(items, DEFAULT_BATCH_SIZE);
 
         foreach (List<TranslationItem> batch in batches) {
             cancellationToken.ThrowIfCancellationRequested();
@@ -42,7 +45,6 @@ internal class AzureOpenAITranslationService(AzureTranslationSettings settings) 
             progress?.Report((completed, total, $"Translating to {targetLocale}..."));
 
             IReadOnlyList<string> translations = await translator.TranslateBatchAsync(
-                settings,
                 sourceLocale,
                 targetLocale,
                 batch.Select(MapItem).ToList(),

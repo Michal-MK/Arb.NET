@@ -6,11 +6,11 @@ using Arb.NET.IDE.Common.Models;
 namespace Arb.NET.IDE.Common.Services;
 
 // ReSharper disable once InconsistentNaming
-public sealed class AzureOpenAITranslator {
+public sealed class AzureOpenAITranslator(AzureTranslationSettings settings) : ITranslator {
     private const string API_VERSION = "2024-06-01";
     private const int MAX_RETRIES = 5;
 
-    public (bool Valid, string? Error) ValidateSettings(AzureTranslationSettings settings) {
+    public (bool Valid, string? Error) ValidateSettings() {
         if (string.IsNullOrWhiteSpace(settings.Endpoint))
             return (false, "Azure OpenAI endpoint URL is not configured.");
         if (string.IsNullOrWhiteSpace(settings.DeploymentName))
@@ -21,7 +21,6 @@ public sealed class AzureOpenAITranslator {
     }
 
     public async Task<IReadOnlyList<string>> TranslateBatchAsync(
-        AzureTranslationSettings settings,
         string sourceLocale,
         string targetLocale,
         IReadOnlyList<AzureTranslationItem> items,
@@ -31,10 +30,10 @@ public sealed class AzureOpenAITranslator {
             return [];
         }
 
-        using HttpClient client = CreateHttpClient(settings);
-        (string systemMessage, string userMessage) = BuildPrompt(settings, sourceLocale, targetLocale, items);
+        using HttpClient client = CreateHttpClient();
+        (string systemMessage, string userMessage) = BuildPrompt(sourceLocale, targetLocale, items);
 
-        string requestJson = BuildRequestJson(settings, systemMessage, userMessage);
+        string requestJson = BuildRequestJson(systemMessage, userMessage);
         string endpointUri = $"/openai/deployments/{Uri.EscapeDataString(settings.DeploymentName)}/chat/completions?api-version={API_VERSION}";
 
         int retries = 0;
@@ -64,8 +63,7 @@ public sealed class AzureOpenAITranslator {
         throw new OperationCanceledException();
     }
 
-    private static (string systemMessage, string userMessage) BuildPrompt(
-        AzureTranslationSettings settings,
+    private (string systemMessage, string userMessage) BuildPrompt(
         string sourceLocale,
         string targetLocale,
         IReadOnlyList<AzureTranslationItem> items) {
@@ -118,7 +116,7 @@ public sealed class AzureOpenAITranslator {
         return (systemMessage, userBuilder.ToString());
     }
 
-    private static string BuildRequestJson(AzureTranslationSettings settings, string systemMessage, string userMessage) {
+    private string BuildRequestJson(string systemMessage, string userMessage) {
         using MemoryStream ms = new();
         using Utf8JsonWriter writer = new(ms);
         writer.WriteStartObject();
@@ -222,7 +220,7 @@ public sealed class AzureOpenAITranslator {
         return result;
     }
 
-    private static HttpClient CreateHttpClient(AzureTranslationSettings settings) {
+    private HttpClient CreateHttpClient() {
         HttpClient client = new() {
             BaseAddress = new Uri(settings.Endpoint, UriKind.Absolute)
         };

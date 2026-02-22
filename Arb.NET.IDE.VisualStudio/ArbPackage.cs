@@ -34,6 +34,10 @@ namespace Arb.NET.IDE.VisualStudio;
 public sealed class ArbPackage : AsyncPackage {
     private const string PACKAGE_GUID_STRING = "3191a384-5cf6-4e40-bd0f-3a6dcd5dc05f";
 
+    internal ColumnSettingsService? ColumnSettingsService { get; private set; }
+    internal ArbService? ArbService { get; private set; }
+    internal TranslationSettingsService? TranslationSettingsService { get; private set; }
+
     /// <summary>
     /// Initialization of the package; this method is called right after the package is sited, so this is the place
     /// where you can put all the initialization code that rely on services provided by VisualStudio.
@@ -45,11 +49,18 @@ public sealed class ArbPackage : AsyncPackage {
         // When initialized asynchronously, the current thread may be a background thread at this point.
         // Do any initialization that requires the UI thread after switching to the UI thread.
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-        
-        ColumnSettingsService columnSettingsService = new(this);
-        ArbService arbService = new(this);
-        TranslationSettingsService translationSettingsService = new(this);
 
-        await ShowArbToolWindowCommand.InitializeAsync(this, columnSettingsService, arbService, translationSettingsService);
+        ColumnSettingsService = new ColumnSettingsService(this);
+        ArbService = new ArbService(this);
+        TranslationSettingsService = new TranslationSettingsService(this);
+
+        await ShowArbToolWindowCommand.InitializeAsync(this, ColumnSettingsService, ArbService, TranslationSettingsService);
+
+        // If VS restored the tool window before InitializeAsync ran (window was open in the
+        // previous session), OnToolWindowCreated will have fired but found null services.
+        // Now that services are ready, find the window and set it up if still uninitialized.
+        if (FindToolWindow(typeof(ArbToolWindow), 0, false) is ArbToolWindow restoredWindow) {
+            await restoredWindow.SetupIfNeededAsync(ColumnSettingsService, ArbService, TranslationSettingsService);
+        }
     }
 }

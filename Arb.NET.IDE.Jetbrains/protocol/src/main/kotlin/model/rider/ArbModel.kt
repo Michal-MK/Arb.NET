@@ -77,6 +77,7 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("sourceLocale", string)
         field("targetLocale", string)
         field("items", immutableList(ArbTranslationItem))
+        field("provider", string)
     }
 
     val ArbTranslatedItem = structdef {

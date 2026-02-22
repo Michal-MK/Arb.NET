@@ -87,6 +87,8 @@ class ArbTranslateDialog(
     private val targetPanel = JPanel(FlowLayout(FlowLayout.LEFT, 8, 2))
     private val emptyOnlyRadio = JRadioButton("Empty cells only", true)
     private val allCellsRadio = JRadioButton("All cells")
+    private val azureProviderRadio = JRadioButton("Azure OpenAI", true)
+    private val googleProviderRadio = JRadioButton("Google Translate (free)")
     private val customPromptField = JBTextField()
     private val translateButton = JButton("Translate")
     private val stopButton = JButton("Stop").also { it.isVisible = false }
@@ -181,6 +183,11 @@ class ArbTranslateDialog(
             add(allCellsRadio)
         }
 
+        ButtonGroup().apply {
+            add(azureProviderRadio)
+            add(googleProviderRadio)
+        }
+
         sourceCombo.addActionListener {
             rebuildTargetCheckboxes()
             rebuildPreview()
@@ -239,7 +246,16 @@ class ArbTranslateDialog(
         gbc.gridx = 1; gbc.weightx = 1.0
         topSection.add(customPromptField, gbc)
 
-        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0; gbc.gridwidth = 2
+        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0
+        topSection.add(JBLabel("Provider:"), gbc)
+        gbc.gridx = 1; gbc.weightx = 1.0
+        val providerPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        providerPanel.add(azureProviderRadio)
+        providerPanel.add(Box.createHorizontalStrut(16))
+        providerPanel.add(googleProviderRadio)
+        topSection.add(providerPanel, gbc)
+
+        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.0; gbc.gridwidth = 2
         val translateRow = JPanel(FlowLayout(FlowLayout.LEFT, 4, 0))
         translateRow.add(translateButton)
         translateRow.add(stopButton)
@@ -332,11 +348,14 @@ class ArbTranslateDialog(
 
         val sourceLocale = sourceCombo.selectedItem as? String ?: return
 
+        val useGoogle = googleProviderRadio.isSelected
+        val provider = if (useGoogle) "Google" else "AzureOpenAI"
+
         val props = PropertiesComponent.getInstance()
         val endpoint = props.getValue(ArbEditor.SETTINGS_ENDPOINT, "")
         val deployment = props.getValue(ArbEditor.SETTINGS_DEPLOYMENT, "")
         val apiKey = props.getValue(ArbEditor.SETTINGS_API_KEY, "")
-        if (endpoint.isBlank() || deployment.isBlank() || apiKey.isBlank()) {
+        if (!useGoogle && (endpoint.isBlank() || deployment.isBlank() || apiKey.isBlank())) {
             statusLabel.text = "AI settings are not configured. Use the \"AI Settings...\" button."
             return
         }
@@ -402,7 +421,7 @@ class ArbTranslateDialog(
             contentPane?.revalidate()
             contentPane?.repaint()
 
-            val request = ArbTranslateRequest(directory, settings, sourceLocale, current.targetLocale, current.items)
+            val request = ArbTranslateRequest(directory, settings, sourceLocale, current.targetLocale, current.items, provider)
 
             log.warn("[AI-DEBUG] calling translateArbEntries.start() locale=${current.targetLocale} items=${current.items.size} thread=${Thread.currentThread().name}")
             project.solution.arbModel.translateArbEntries.start(Lifetime.Eternal, request)

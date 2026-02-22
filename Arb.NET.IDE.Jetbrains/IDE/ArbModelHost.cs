@@ -20,7 +20,6 @@ namespace Arb.NET.IDE.Jetbrains.Rider;
 public class ArbModelHost {
     private static readonly ILogger LOG = Logger.GetLogger<ArbModelHost>();
     private readonly Dictionary<string, string> localeToFilePath = new();
-    private readonly AzureOpenAITranslator translator = new();
 
     // ReSharper disable once UnusedParameter.Local - not sure is required by some from of reflection-based instantiation.
     public ArbModelHost(ISolution solution, Lifetime _) {
@@ -159,15 +158,17 @@ public class ArbModelHost {
         });
 
         model.TranslateArbEntries.SetAsync(async (_, request) => {
-            Arb.NET.IDE.Common.Models.AzureTranslationSettings settings = new() {
-                Endpoint = request.Settings.Endpoint,
-                DeploymentName = request.Settings.DeploymentName,
-                ApiKey = request.Settings.ApiKey,
-                CustomPrompt = request.Settings.CustomPrompt,
-                Temperature = request.Settings.Temperature
-            };
+            ITranslator provider = string.Equals(request.Provider, "Google", StringComparison.OrdinalIgnoreCase)
+                ? new GoogleTranslator()
+                : new AzureOpenAITranslator(new Arb.NET.IDE.Common.Models.AzureTranslationSettings {
+                    Endpoint = request.Settings.Endpoint,
+                    DeploymentName = request.Settings.DeploymentName,
+                    ApiKey = request.Settings.ApiKey,
+                    CustomPrompt = request.Settings.CustomPrompt,
+                    Temperature = request.Settings.Temperature
+                });
 
-            (bool valid, string? error) = translator.ValidateSettings(settings);
+            (bool valid, string? error) = provider.ValidateSettings();
             if (!valid) {
                 return new ArbTranslateResponse(false, error, []);
             }
@@ -191,19 +192,18 @@ public class ArbModelHost {
             }
 
             try {
-                IReadOnlyList<string> translated = await translator
-                    .TranslateBatchAsync(
-                        settings,
-                        request.SourceLocale,
-                        request.TargetLocale,
-                        validItems.Select(item => new AzureTranslationItem {
-                            Key = item.Key,
-                            SourceText = item.SourceText,
-                            Description = item.Description
-                        }).ToList(),
-                        CancellationToken.None
-                    );
-                
+                List<AzureTranslationItem> apiItems = [..validItems.Select(item => new AzureTranslationItem {
+                    Key = item.Key,
+                    SourceText = item.SourceText,
+                    Description = item.Description
+                })];
+
+                IReadOnlyList<string> translated = await provider.TranslateBatchAsync(
+                    request.SourceLocale,
+                    request.TargetLocale,
+                    apiItems,
+                    CancellationToken.None);
+
                 List<ArbTranslatedItem> mapped = validItems
                     .Select((item, index) => new ArbTranslatedItem(item.Key, translated[index]))
                     .ToList();
@@ -211,7 +211,7 @@ public class ArbModelHost {
                 return new ArbTranslateResponse(true, null, mapped);
             }
             catch (Exception ex) {
-                LOG.Warn($"Azure translation failed: {ex.Message}");
+                LOG.Warn($"Translation failed: {ex.Message}");
                 return new ArbTranslateResponse(false, ex.Message, []);
             }
         });
