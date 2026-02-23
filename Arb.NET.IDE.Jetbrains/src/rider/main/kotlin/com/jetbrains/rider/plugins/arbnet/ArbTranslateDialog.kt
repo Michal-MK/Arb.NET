@@ -385,7 +385,6 @@ class ArbTranslateDialog(
         // Capture modality after the dialog is visible so invokeLater is dispatched
         // by the correct pump context.
         dialogModality = ModalityState.current()
-        log.warn("[AI-DEBUG] startTranslation: batches=${batches.size} totalItems=$totalItems modality=$dialogModality thread=${Thread.currentThread().name}")
 
         cancelled = false
         translateButton.isEnabled = false
@@ -423,10 +422,8 @@ class ArbTranslateDialog(
 
             val request = ArbTranslateRequest(directory, settings, sourceLocale, current.targetLocale, current.items, provider)
 
-            log.warn("[AI-DEBUG] calling translateArbEntries.start() locale=${current.targetLocale} items=${current.items.size} thread=${Thread.currentThread().name}")
             project.solution.arbModel.translateArbEntries.start(Lifetime.Eternal, request)
                 .result.advise(Lifetime.Eternal) { rdResult ->
-                    log.warn("[AI-DEBUG] advise fired thread=${Thread.currentThread().name}")
                     val translatedByKey: Map<String, String>?
                     val errMsg: String?
                     try {

@@ -27,9 +27,8 @@ local.properties
 
 # Executables
 Arb.NET.IDE.Jetbrains/tools/nuget.exe
+publish-local.ps1
 
 # AI files
 .claude
 ai-ref/
-
-

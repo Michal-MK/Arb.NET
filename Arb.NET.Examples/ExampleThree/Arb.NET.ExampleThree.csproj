@@ -9,19 +9,8 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     
-    <PropertyGroup>
-        <!-- ARB -->
-        <ArbDefaultClass>AppLocale</ArbDefaultClass>
-        <ArbDefaultNamespace>ExampleThree.Localizations</ArbDefaultNamespace>
-        <ArbDefaultLangCode>en</ArbDefaultLangCode>
-    </PropertyGroup>
-
     <ItemGroup>
       <PackageReference Include="Arb.NET.Generators" Version="0.1.0" />
-    </ItemGroup>
-    
-    <ItemGroup>
-         <ArbSource Include="arbs\*" /> 
     </ItemGroup>
 
 </Project>

@@ -41,14 +41,9 @@ internal static class ResxMigrator
         return result;
     }
 
-    // -------------------------------------------------------------------------
-    // Discovery
-    // -------------------------------------------------------------------------
-
     private static List<ResxGroup> DiscoverResxGroups(string solutionFolder)
     {
         List<string> allResx = Directory.EnumerateFiles(solutionFolder, "*.resx", SearchOption.AllDirectories)
-            .Where(f => !IsInBinOrObj(f))
             .ToList();
 
         // Group files: canonical name is the file without the locale suffix.
@@ -86,7 +81,7 @@ internal static class ResxMigrator
 
             string baseKey = Path.Combine(dir, baseStem + ".resx");
 
-            if (!map.TryGetValue(baseKey, out var group))
+            if (!map.TryGetValue(baseKey, out ResxGroup? group))
             {
                 group = new ResxGroup(dir, baseStem);
                 map[baseKey] = group;
@@ -103,35 +98,14 @@ internal static class ResxMigrator
         return map.Values.ToList();
     }
 
-    private static bool IsInBinOrObj(string path)
-    {
-        string[] parts = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return parts.Any(p => p.Equals("bin", StringComparison.OrdinalIgnoreCase)
-                           || p.Equals("obj", StringComparison.OrdinalIgnoreCase));
-    }
-
     // Very lightweight locale code heuristic: 2-letter, 2+2 (zh-CN), 3-letter (zho), etc.
     private static bool IsLocaleCode(string s) =>
         Regex.IsMatch(s, @"^[a-zA-Z]{2,3}(-[a-zA-Z]{2,4})?$");
-
-    // -------------------------------------------------------------------------
-    // Group migration
-    // -------------------------------------------------------------------------
 
     private static void MigrateOutputDir(string outputDir, IEnumerable<ResxGroup> groups, bool dryRun, MigrationResult result)
     {
         // Accumulate entries per locale across all groups in this output directory.
         Dictionary<string, ArbDocument> docsByLocale = new(StringComparer.OrdinalIgnoreCase);
-
-        ArbDocument GetOrCreate(string locale)
-        {
-            if (!docsByLocale.TryGetValue(locale, out var doc))
-            {
-                doc = new ArbDocument { Locale = locale };
-                docsByLocale[locale] = doc;
-            }
-            return doc;
-        }
 
         foreach (ResxGroup group in groups)
         {
@@ -153,11 +127,18 @@ internal static class ResxMigrator
             string outPath = Path.Combine(outputDir, $"{locale}.arb");
             WriteArb(doc, outPath, dryRun, result);
         }
-    }
+        return;
 
-    // -------------------------------------------------------------------------
-    // Parsing
-    // -------------------------------------------------------------------------
+        ArbDocument GetOrCreate(string locale)
+        {
+            if (!docsByLocale.TryGetValue(locale, out var doc))
+            {
+                doc = new ArbDocument { Locale = locale };
+                docsByLocale[locale] = doc;
+            }
+            return doc;
+        }
+    }
 
     private static void MergeResxInto(ArbDocument doc, string filePath)
     {
@@ -197,10 +178,6 @@ internal static class ResxMigrator
             doc.Entries[arbKey] = entry;
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Format string conversion
-    // -------------------------------------------------------------------------
 
     /// <summary>
     /// Converts a .NET composite format string (e.g. "Hello {0}, you have {1} messages")

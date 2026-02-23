@@ -1,0 +1,4 @@
+arb-dir: arbs
+template-arb-file: en.arb
+output-class: AppLocale
+output-namespace: ExampleThree.Localizations
