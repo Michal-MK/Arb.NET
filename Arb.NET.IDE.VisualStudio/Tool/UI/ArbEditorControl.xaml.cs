@@ -28,7 +28,7 @@ public partial class ArbEditorControl : UserControl {
     private const double DEFAULT_KEY_COLUMN_WIDTH = 240;
     private const double DEFAULT_LOCALE_COLUMN_WIDTH = 220;
 
-    private ArbScanResult arbScanResult = null!;
+    private ArbScanResult? arbScanResult;
 
     private List<string> currentLangCodes = [];
     private ObservableCollection<ArbRow> currentRows = [];
@@ -91,6 +91,43 @@ public partial class ArbEditorControl : UserControl {
         _ = RefreshDataAsync();
     }
 
+    public async Task NavigateToArbKeyAsync(string arbFilePath, string key) {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+        string? directory = Path.GetDirectoryName(arbFilePath);
+        if (string.IsNullOrWhiteSpace(directory)) return;
+
+        if (arbScanResult is null || arbScanResult.DirGroupedArbFiles.Count == 0) {
+            await LoadDataAsync();
+        }
+
+        if (!arbScanResult!.DirGroupedArbFiles.ContainsKey(directory)) {
+            return;
+        }
+
+        if (!string.Equals(currentDirectory, directory, StringComparison.Ordinal)) {
+            DirectoryCombo.SelectedItem = directory;
+            if (!string.Equals(currentDirectory, directory, StringComparison.Ordinal)) {
+                BuildTable(directory);
+            }
+        }
+
+        ArbRow? match = currentRows.FirstOrDefault(r => string.Equals(r.Key, key, StringComparison.Ordinal));
+        if (match == null && key.Length > 0) {
+            string normalized = char.ToLowerInvariant(key[0]) + key.Substring(1);
+            match = currentRows.FirstOrDefault(r => string.Equals(r.Key, normalized, StringComparison.Ordinal));
+        }
+
+        if (match == null) {
+            return;
+        }
+
+        ArbGrid.SelectedItem = match;
+        ArbGrid.CurrentItem = match;
+        ArbGrid.ScrollIntoView(match);
+        ArbGrid.Focus();
+    }
+
     private async Task RefreshDataAsync() {
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -124,7 +161,7 @@ public partial class ArbEditorControl : UserControl {
     }
 
     private void BuildTable(string directory) {
-        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         suppressSave = true;
 
@@ -280,7 +317,7 @@ public partial class ArbEditorControl : UserControl {
 
     private void AddKeyButton_OnClick(object sender, RoutedEventArgs e) {
         if (DirectoryCombo.SelectedItem is not string directory) return;
-        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         ArbInputDialog dialog = new("Add ARB Key", "Enter the new key name:", "");
         dialog.ShowDialog();
@@ -301,7 +338,7 @@ public partial class ArbEditorControl : UserControl {
 
     private void AddLocaleButton_OnClick(object sender, RoutedEventArgs e) {
         if (DirectoryCombo.SelectedItem is not string directory) return;
-        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         ArbInputDialog dialog = new("Add ARB Locale", "Enter locale code (e.g. de, fr):", "");
         dialog.ShowDialog();
@@ -352,7 +389,7 @@ public partial class ArbEditorControl : UserControl {
     private void TryRemoveSelectedKey() {
         if ((ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is not ArbRow row) return;
         if (DirectoryCombo.SelectedItem is not string directory) return;
-        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         string key = row.Key;
         MessageBoxResult confirm = MessageBox.Show(
@@ -371,7 +408,7 @@ public partial class ArbEditorControl : UserControl {
     }
 
     private void SaveEntry(string directory, string locale, string key, string newValue) {
-        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> localeFiles)) return;
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> localeFiles) is null or false) return;
 
         ArbFile? arb = localeFiles.FirstOrDefault(f => string.Equals(f.LangCode, locale, StringComparison.Ordinal));
         if (arb == null) return;
@@ -397,7 +434,7 @@ public partial class ArbEditorControl : UserControl {
     }
 
     private void RenameKey(string directory, string oldKey, string newKey) {
-        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         bool anyChanged = false;
         foreach (ArbFile arb in arbFiles) {
@@ -437,7 +474,7 @@ public partial class ArbEditorControl : UserControl {
 
     private void OpenTranslateDialog(List<ArbRow> rows) {
         if (DirectoryCombo.SelectedItem is not string directory) return;
-        if (!arbScanResult.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles)) return;
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         TranslateDialog dialog = new(rows, currentLangCodes, arbFiles, directory, translationSettingsService, parser);
         dialog.ShowDialog();

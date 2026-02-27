@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -32,11 +33,26 @@ namespace Arb.NET.IDE.VisualStudio;
 [Guid(PACKAGE_GUID_STRING)]
 [ProvideToolWindow(typeof(ArbToolWindow))]
 public sealed class ArbPackage : AsyncPackage {
+    internal static ArbPackage? Instance { get; private set; }
+
     private const string PACKAGE_GUID_STRING = "3191a384-5cf6-4e40-bd0f-3a6dcd5dc05f";
 
     internal ColumnSettingsService? ColumnSettingsService { get; private set; }
     internal ArbService? ArbService { get; private set; }
     internal TranslationSettingsService? TranslationSettingsService { get; private set; }
+
+    internal static async Task<ArbPackage?> GetOrLoadAsync() {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+        if (Instance != null) return Instance;
+
+        if (ServiceProvider.GlobalProvider.GetService(typeof(SVsShell)) is IVsShell shell) {
+            Guid packageGuid = new(PACKAGE_GUID_STRING);
+            shell.LoadPackage(ref packageGuid, out IVsPackage _);
+        }
+
+        return Instance;
+    }
 
     /// <summary>
     /// Initialization of the package; this method is called right after the package is sited, so this is the place
@@ -49,6 +65,8 @@ public sealed class ArbPackage : AsyncPackage {
         // When initialized asynchronously, the current thread may be a background thread at this point.
         // Do any initialization that requires the UI thread after switching to the UI thread.
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        Instance = this;
 
         ColumnSettingsService = new ColumnSettingsService(this);
         ArbService = new ArbService(this);

@@ -45,6 +45,10 @@ Prefix such logs with "[AI-DEBUG]" so that they can easily be removed after.
 **Write all plans into ai-ref/plans!**
 **Maintain feature parity between IDEs! When a feature is requested always assume both IDEs are affected. Unless explicitly stated otherwise.**
 
+### Tips
+
+For disassembly of .NET code you can use `ilspycmd`. If not installed, request it if you think it would be useful. 
+`dotnet tool install --global ilspycmd --version 9.1.0.7988`
 
 At the start of each session print:
 ```

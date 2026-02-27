@@ -72,6 +72,11 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
         }
     }
 
+    public async Task NavigateToArbKeyAsync(string arbFilePath, string key) {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        await control.NavigateToArbKeyAsync(arbFilePath, key);
+    }
+
     #region IVsSelectionEvents - registered via IVsMonitorSelection.AdviseSelectionEvents in ShowArbToolWindowCommand
 
     public int OnElementValueChanged(uint elementid, object varValueOld, object varValueNew) {
