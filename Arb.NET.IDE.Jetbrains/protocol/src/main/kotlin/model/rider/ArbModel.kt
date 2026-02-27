@@ -91,6 +91,17 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("items", immutableList(ArbTranslatedItem))
     }
 
+    // A single ARB key with its parametric status (parametric = becomes a method, not a property).
+    // Also carries the description from the .arb metadata, the path to the template .arb file,
+    // and the 0-based line number of the key in that file (for F12 / Go To Source navigation).
+    val ArbKeyInfo = structdef {
+        field("key", string)
+        field("isParametric", bool)
+        field("description", string.nullable)  // from @key metadata block in template .arb; null if absent
+        field("arbFilePath", string.nullable)  // absolute path to the template .arb file; null if unavailable
+        field("lineNumber", int)               // 0-based line index of the key; -1 if unknown
+    }
+
     init {
         // Call: Kotlin asks C# to scan the solution and return all ARB data.
         // Returns one ArbLocaleData per .arb file found.
@@ -119,5 +130,10 @@ object ArbModel : Ext(SolutionModel.Solution) {
         // Call: Kotlin asks C# backend to translate source texts using Azure OpenAI.
         // Returns per-key translated strings or an error message.
         call("translateArbEntries", ArbTranslateRequest, ArbTranslateResponse)
+
+        // Call: Kotlin asks C# backend for all ARB keys from the AppLocale generated class
+        // for a given project directory. Falls back to parsing the template .arb file if the
+        // class is not yet generated. Returns key names with parametric flag.
+        call("getArbKeys", string, immutableList(ArbKeyInfo))
     }
 }

@@ -25,7 +25,8 @@ class ArbModel private constructor(
     private val _addArbKey: RdCall<ArbNewKey, Boolean>,
     private val _removeArbKey: RdCall<ArbRemoveKey, Boolean>,
     private val _addArbLocale: RdCall<ArbNewLocale, Boolean>,
-    private val _translateArbEntries: RdCall<ArbTranslateRequest, ArbTranslateResponse>
+    private val _translateArbEntries: RdCall<ArbTranslateRequest, ArbTranslateResponse>,
+    private val _getArbKeys: RdCall<String, List<ArbKeyInfo>>
 ) : RdExtBase() {
     //companion
     
@@ -45,14 +46,16 @@ class ArbModel private constructor(
             serializers.register(LazyCompanionMarshaller(RdId(-1952961815073205569), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateRequest"))
             serializers.register(LazyCompanionMarshaller(RdId(-6163743818377381401), classLoader, "com.jetbrains.rd.ide.model.ArbTranslatedItem"))
             serializers.register(LazyCompanionMarshaller(RdId(-5201584046087783919), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateResponse"))
+            serializers.register(LazyCompanionMarshaller(RdId(17391508275880079), classLoader, "com.jetbrains.rd.ide.model.ArbKeyInfo"))
         }
         
         
         
         
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
+        private val __ArbKeyInfoListSerializer = ArbKeyInfo.list()
         
-        const val serializationHash = 1250713055647364370L
+        const val serializationHash = -7577675158314463945L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -66,6 +69,7 @@ class ArbModel private constructor(
     val removeArbKey: IRdCall<ArbRemoveKey, Boolean> get() = _removeArbKey
     val addArbLocale: IRdCall<ArbNewLocale, Boolean> get() = _addArbLocale
     val translateArbEntries: IRdCall<ArbTranslateRequest, ArbTranslateResponse> get() = _translateArbEntries
+    val getArbKeys: IRdCall<String, List<ArbKeyInfo>> get() = _getArbKeys
     //methods
     //initializer
     init {
@@ -76,6 +80,7 @@ class ArbModel private constructor(
         bindableChildren.add("removeArbKey" to _removeArbKey)
         bindableChildren.add("addArbLocale" to _addArbLocale)
         bindableChildren.add("translateArbEntries" to _translateArbEntries)
+        bindableChildren.add("getArbKeys" to _getArbKeys)
     }
     
     //secondary constructor
@@ -87,7 +92,8 @@ class ArbModel private constructor(
         RdCall<ArbNewKey, Boolean>(ArbNewKey, FrameworkMarshallers.Bool),
         RdCall<ArbRemoveKey, Boolean>(ArbRemoveKey, FrameworkMarshallers.Bool),
         RdCall<ArbNewLocale, Boolean>(ArbNewLocale, FrameworkMarshallers.Bool),
-        RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest, ArbTranslateResponse)
+        RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest, ArbTranslateResponse),
+        RdCall<String, List<ArbKeyInfo>>(FrameworkMarshallers.String, __ArbKeyInfoListSerializer)
     )
     
     //equals trait
@@ -103,6 +109,7 @@ class ArbModel private constructor(
             print("removeArbKey = "); _removeArbKey.print(printer); println()
             print("addArbLocale = "); _addArbLocale.print(printer); println()
             print("translateArbEntries = "); _translateArbEntries.print(printer); println()
+            print("getArbKeys = "); _getArbKeys.print(printer); println()
         }
         printer.print(")")
     }
@@ -115,7 +122,8 @@ class ArbModel private constructor(
             _addArbKey.deepClonePolymorphic(),
             _removeArbKey.deepClonePolymorphic(),
             _addArbLocale.deepClonePolymorphic(),
-            _translateArbEntries.deepClonePolymorphic()
+            _translateArbEntries.deepClonePolymorphic(),
+            _getArbKeys.deepClonePolymorphic()
         )
     }
     //contexts
@@ -259,6 +267,89 @@ data class ArbEntryUpdate (
             print("locale = "); locale.print(printer); println()
             print("key = "); key.print(printer); println()
             print("value = "); value.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:97]
+ */
+data class ArbKeyInfo (
+    val key: String,
+    val isParametric: Boolean,
+    val description: String?,
+    val arbFilePath: String?,
+    val lineNumber: Int
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbKeyInfo> {
+        override val _type: KClass<ArbKeyInfo> = ArbKeyInfo::class
+        override val id: RdId get() = RdId(17391508275880079)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbKeyInfo  {
+            val key = buffer.readString()
+            val isParametric = buffer.readBool()
+            val description = buffer.readNullable { buffer.readString() }
+            val arbFilePath = buffer.readNullable { buffer.readString() }
+            val lineNumber = buffer.readInt()
+            return ArbKeyInfo(key, isParametric, description, arbFilePath, lineNumber)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbKeyInfo)  {
+            buffer.writeString(value.key)
+            buffer.writeBool(value.isParametric)
+            buffer.writeNullable(value.description) { buffer.writeString(it) }
+            buffer.writeNullable(value.arbFilePath) { buffer.writeString(it) }
+            buffer.writeInt(value.lineNumber)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbKeyInfo
+        
+        if (key != other.key) return false
+        if (isParametric != other.isParametric) return false
+        if (description != other.description) return false
+        if (arbFilePath != other.arbFilePath) return false
+        if (lineNumber != other.lineNumber) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + key.hashCode()
+        __r = __r*31 + isParametric.hashCode()
+        __r = __r*31 + if (description != null) description.hashCode() else 0
+        __r = __r*31 + if (arbFilePath != null) arbFilePath.hashCode() else 0
+        __r = __r*31 + lineNumber.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbKeyInfo (")
+        printer.indent {
+            print("key = "); key.print(printer); println()
+            print("isParametric = "); isParametric.print(printer); println()
+            print("description = "); description.print(printer); println()
+            print("arbFilePath = "); arbFilePath.print(printer); println()
+            print("lineNumber = "); lineNumber.print(printer); println()
         }
         printer.print(")")
     }

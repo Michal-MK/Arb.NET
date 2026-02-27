@@ -49,6 +49,7 @@ namespace JetBrains.Rider.Model
     [NotNull] public IRdEndpoint<ArbRemoveKey, bool> RemoveArbKey => _RemoveArbKey;
     [NotNull] public IRdEndpoint<ArbNewLocale, bool> AddArbLocale => _AddArbLocale;
     [NotNull] public IRdEndpoint<ArbTranslateRequest, ArbTranslateResponse> TranslateArbEntries => _TranslateArbEntries;
+    [NotNull] public IRdEndpoint<string, List<ArbKeyInfo>> GetArbKeys => _GetArbKeys;
     
     //private fields
     [NotNull] private readonly RdCall<Unit, List<ArbLocaleData>> _GetArbData;
@@ -58,6 +59,7 @@ namespace JetBrains.Rider.Model
     [NotNull] private readonly RdCall<ArbRemoveKey, bool> _RemoveArbKey;
     [NotNull] private readonly RdCall<ArbNewLocale, bool> _AddArbLocale;
     [NotNull] private readonly RdCall<ArbTranslateRequest, ArbTranslateResponse> _TranslateArbEntries;
+    [NotNull] private readonly RdCall<string, List<ArbKeyInfo>> _GetArbKeys;
     
     //primary constructor
     private ArbModel(
@@ -67,7 +69,8 @@ namespace JetBrains.Rider.Model
       [NotNull] RdCall<ArbNewKey, bool> addArbKey,
       [NotNull] RdCall<ArbRemoveKey, bool> removeArbKey,
       [NotNull] RdCall<ArbNewLocale, bool> addArbLocale,
-      [NotNull] RdCall<ArbTranslateRequest, ArbTranslateResponse> translateArbEntries
+      [NotNull] RdCall<ArbTranslateRequest, ArbTranslateResponse> translateArbEntries,
+      [NotNull] RdCall<string, List<ArbKeyInfo>> getArbKeys
     )
     {
       if (getArbData == null) throw new ArgumentNullException("getArbData");
@@ -77,6 +80,7 @@ namespace JetBrains.Rider.Model
       if (removeArbKey == null) throw new ArgumentNullException("removeArbKey");
       if (addArbLocale == null) throw new ArgumentNullException("addArbLocale");
       if (translateArbEntries == null) throw new ArgumentNullException("translateArbEntries");
+      if (getArbKeys == null) throw new ArgumentNullException("getArbKeys");
       
       _GetArbData = getArbData;
       _SaveArbEntry = saveArbEntry;
@@ -85,6 +89,7 @@ namespace JetBrains.Rider.Model
       _RemoveArbKey = removeArbKey;
       _AddArbLocale = addArbLocale;
       _TranslateArbEntries = translateArbEntries;
+      _GetArbKeys = getArbKeys;
       BindableChildren.Add(new KeyValuePair<string, object>("getArbData", _GetArbData));
       BindableChildren.Add(new KeyValuePair<string, object>("saveArbEntry", _SaveArbEntry));
       BindableChildren.Add(new KeyValuePair<string, object>("renameArbKey", _RenameArbKey));
@@ -92,6 +97,7 @@ namespace JetBrains.Rider.Model
       BindableChildren.Add(new KeyValuePair<string, object>("removeArbKey", _RemoveArbKey));
       BindableChildren.Add(new KeyValuePair<string, object>("addArbLocale", _AddArbLocale));
       BindableChildren.Add(new KeyValuePair<string, object>("translateArbEntries", _TranslateArbEntries));
+      BindableChildren.Add(new KeyValuePair<string, object>("getArbKeys", _GetArbKeys));
     }
     //secondary constructor
     internal ArbModel (
@@ -102,16 +108,19 @@ namespace JetBrains.Rider.Model
       new RdCall<ArbNewKey, bool>(ArbNewKey.Read, ArbNewKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbRemoveKey, bool>(ArbRemoveKey.Read, ArbRemoveKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbNewLocale, bool>(ArbNewLocale.Read, ArbNewLocale.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
-      new RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest.Read, ArbTranslateRequest.Write, ArbTranslateResponse.Read, ArbTranslateResponse.Write)
+      new RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest.Read, ArbTranslateRequest.Write, ArbTranslateResponse.Read, ArbTranslateResponse.Write),
+      new RdCall<string, List<ArbKeyInfo>>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString, ReadArbKeyInfoList, WriteArbKeyInfoList)
     ) {}
     //deconstruct trait
     //statics
     
     public static CtxReadDelegate<List<ArbLocaleData>> ReadArbLocaleDataList = ArbLocaleData.Read.List();
+    public static CtxReadDelegate<List<ArbKeyInfo>> ReadArbKeyInfoList = ArbKeyInfo.Read.List();
     
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
+    public static  CtxWriteDelegate<List<ArbKeyInfo>> WriteArbKeyInfoList = ArbKeyInfo.Write.List();
     
-    protected override long SerializationHash => 1250713055647364370L;
+    protected override long SerializationHash => -7577675158314463945L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -139,6 +148,7 @@ namespace JetBrains.Rider.Model
         printer.Print("removeArbKey = "); _RemoveArbKey.PrintEx(printer); printer.Println();
         printer.Print("addArbLocale = "); _AddArbLocale.PrintEx(printer); printer.Println();
         printer.Print("translateArbEntries = "); _TranslateArbEntries.PrintEx(printer); printer.Println();
+        printer.Print("getArbKeys = "); _GetArbKeys.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }
@@ -352,6 +362,125 @@ namespace JetBrains.Rider.Model
         printer.Print("locale = "); Locale.PrintEx(printer); printer.Println();
         printer.Print("key = "); Key.PrintEx(printer); printer.Println();
         printer.Print("value = "); Value.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:97</p>
+  /// </summary>
+  public sealed class ArbKeyInfo : IPrintable, IEquatable<ArbKeyInfo>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Key {get; private set;}
+    public bool IsParametric {get; private set;}
+    [CanBeNull] public string Description {get; private set;}
+    [CanBeNull] public string ArbFilePath {get; private set;}
+    public int LineNumber {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbKeyInfo(
+      [NotNull] string key,
+      bool isParametric,
+      [CanBeNull] string description,
+      [CanBeNull] string arbFilePath,
+      int lineNumber
+    )
+    {
+      if (key == null) throw new ArgumentNullException("key");
+      
+      Key = key;
+      IsParametric = isParametric;
+      Description = description;
+      ArbFilePath = arbFilePath;
+      LineNumber = lineNumber;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string key, out bool isParametric, [CanBeNull] out string description, [CanBeNull] out string arbFilePath, out int lineNumber)
+    {
+      key = Key;
+      isParametric = IsParametric;
+      description = Description;
+      arbFilePath = ArbFilePath;
+      lineNumber = LineNumber;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbKeyInfo> Read = (ctx, reader) => 
+    {
+      var key = reader.ReadString();
+      var isParametric = reader.ReadBool();
+      var description = ReadStringNullable(ctx, reader);
+      var arbFilePath = ReadStringNullable(ctx, reader);
+      var lineNumber = reader.ReadInt();
+      var _result = new ArbKeyInfo(key, isParametric, description, arbFilePath, lineNumber);
+      return _result;
+    };
+    public static CtxReadDelegate<string> ReadStringNullable = JetBrains.Rd.Impl.Serializers.ReadString.NullableClass();
+    
+    public static CtxWriteDelegate<ArbKeyInfo> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Key);
+      writer.Write(value.IsParametric);
+      WriteStringNullable(ctx, writer, value.Description);
+      WriteStringNullable(ctx, writer, value.ArbFilePath);
+      writer.Write(value.LineNumber);
+    };
+    public static  CtxWriteDelegate<string> WriteStringNullable = JetBrains.Rd.Impl.Serializers.WriteString.NullableClass();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbKeyInfo) obj);
+    }
+    public bool Equals(ArbKeyInfo other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Key == other.Key && IsParametric == other.IsParametric && Equals(Description, other.Description) && Equals(ArbFilePath, other.ArbFilePath) && LineNumber == other.LineNumber;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Key.GetHashCode();
+        hash = hash * 31 + IsParametric.GetHashCode();
+        hash = hash * 31 + (Description != null ? Description.GetHashCode() : 0);
+        hash = hash * 31 + (ArbFilePath != null ? ArbFilePath.GetHashCode() : 0);
+        hash = hash * 31 + LineNumber.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbKeyInfo (");
+      using (printer.IndentCookie()) {
+        printer.Print("key = "); Key.PrintEx(printer); printer.Println();
+        printer.Print("isParametric = "); IsParametric.PrintEx(printer); printer.Println();
+        printer.Print("description = "); Description.PrintEx(printer); printer.Println();
+        printer.Print("arbFilePath = "); ArbFilePath.PrintEx(printer); printer.Println();
+        printer.Print("lineNumber = "); LineNumber.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }
