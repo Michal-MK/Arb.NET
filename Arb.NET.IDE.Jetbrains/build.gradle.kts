@@ -2,6 +2,7 @@ import com.jetbrains.plugin.structure.base.utils.isFile
 import groovy.ant.FileNameFinder
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.intellij.platform.gradle.Constants
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.ByteArrayOutputStream
 
 plugins {
@@ -54,8 +55,13 @@ sourceSets {
     }
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 tasks.compileKotlin {
-    kotlinOptions { jvmTarget = "17" }
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
 }
 
 val setBuildTool by tasks.registering {
