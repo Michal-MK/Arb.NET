@@ -38,6 +38,12 @@
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <MauiXamlInflator>SourceGen</MauiXamlInflator>
+        <DefineConstants>$(DefineConstants);MauiAllowImplicitXmlnsDeclaration</DefineConstants>
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    </PropertyGroup>
+
     <ItemGroup>
         <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4"/>
     </ItemGroup>
