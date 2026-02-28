@@ -120,7 +120,7 @@ namespace JetBrains.Rider.Model
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     public static  CtxWriteDelegate<List<ArbKeyInfo>> WriteArbKeyInfoList = ArbKeyInfo.Write.List();
     
-    protected override long SerializationHash => -7577675158314463945L;
+    protected override long SerializationHash => 6280947667756541107L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -387,6 +387,7 @@ namespace JetBrains.Rider.Model
     [CanBeNull] public string Description {get; private set;}
     [CanBeNull] public string ArbFilePath {get; private set;}
     public int LineNumber {get; private set;}
+    [CanBeNull] public string XmlDoc {get; private set;}
     
     //private fields
     //primary constructor
@@ -395,7 +396,8 @@ namespace JetBrains.Rider.Model
       bool isParametric,
       [CanBeNull] string description,
       [CanBeNull] string arbFilePath,
-      int lineNumber
+      int lineNumber,
+      [CanBeNull] string xmlDoc
     )
     {
       if (key == null) throw new ArgumentNullException("key");
@@ -405,16 +407,18 @@ namespace JetBrains.Rider.Model
       Description = description;
       ArbFilePath = arbFilePath;
       LineNumber = lineNumber;
+      XmlDoc = xmlDoc;
     }
     //secondary constructor
     //deconstruct trait
-    public void Deconstruct([NotNull] out string key, out bool isParametric, [CanBeNull] out string description, [CanBeNull] out string arbFilePath, out int lineNumber)
+    public void Deconstruct([NotNull] out string key, out bool isParametric, [CanBeNull] out string description, [CanBeNull] out string arbFilePath, out int lineNumber, [CanBeNull] out string xmlDoc)
     {
       key = Key;
       isParametric = IsParametric;
       description = Description;
       arbFilePath = ArbFilePath;
       lineNumber = LineNumber;
+      xmlDoc = XmlDoc;
     }
     //statics
     
@@ -425,7 +429,8 @@ namespace JetBrains.Rider.Model
       var description = ReadStringNullable(ctx, reader);
       var arbFilePath = ReadStringNullable(ctx, reader);
       var lineNumber = reader.ReadInt();
-      var _result = new ArbKeyInfo(key, isParametric, description, arbFilePath, lineNumber);
+      var xmlDoc = ReadStringNullable(ctx, reader);
+      var _result = new ArbKeyInfo(key, isParametric, description, arbFilePath, lineNumber, xmlDoc);
       return _result;
     };
     public static CtxReadDelegate<string> ReadStringNullable = JetBrains.Rd.Impl.Serializers.ReadString.NullableClass();
@@ -437,6 +442,7 @@ namespace JetBrains.Rider.Model
       WriteStringNullable(ctx, writer, value.Description);
       WriteStringNullable(ctx, writer, value.ArbFilePath);
       writer.Write(value.LineNumber);
+      WriteStringNullable(ctx, writer, value.XmlDoc);
     };
     public static  CtxWriteDelegate<string> WriteStringNullable = JetBrains.Rd.Impl.Serializers.WriteString.NullableClass();
     
@@ -456,7 +462,7 @@ namespace JetBrains.Rider.Model
     {
       if (ReferenceEquals(null, other)) return false;
       if (ReferenceEquals(this, other)) return true;
-      return Key == other.Key && IsParametric == other.IsParametric && Equals(Description, other.Description) && Equals(ArbFilePath, other.ArbFilePath) && LineNumber == other.LineNumber;
+      return Key == other.Key && IsParametric == other.IsParametric && Equals(Description, other.Description) && Equals(ArbFilePath, other.ArbFilePath) && LineNumber == other.LineNumber && Equals(XmlDoc, other.XmlDoc);
     }
     //hash code trait
     public override int GetHashCode()
@@ -468,6 +474,7 @@ namespace JetBrains.Rider.Model
         hash = hash * 31 + (Description != null ? Description.GetHashCode() : 0);
         hash = hash * 31 + (ArbFilePath != null ? ArbFilePath.GetHashCode() : 0);
         hash = hash * 31 + LineNumber.GetHashCode();
+        hash = hash * 31 + (XmlDoc != null ? XmlDoc.GetHashCode() : 0);
         return hash;
       }
     }
@@ -481,6 +488,7 @@ namespace JetBrains.Rider.Model
         printer.Print("description = "); Description.PrintEx(printer); printer.Println();
         printer.Print("arbFilePath = "); ArbFilePath.PrintEx(printer); printer.Println();
         printer.Print("lineNumber = "); LineNumber.PrintEx(printer); printer.Println();
+        printer.Print("xmlDoc = "); XmlDoc.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }

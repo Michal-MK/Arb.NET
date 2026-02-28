@@ -1,0 +1,4 @@
+﻿arb-dir: Resources/arbs
+template-arb-file: en.arb
+output-class: AppLocale
+output-namespace: Arb.NET.ExampleFour.Localizations

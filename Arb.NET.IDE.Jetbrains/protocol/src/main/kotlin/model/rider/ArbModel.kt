@@ -100,6 +100,7 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("description", string.nullable)  // from @key metadata block in template .arb; null if absent
         field("arbFilePath", string.nullable)  // absolute path to the template .arb file; null if unavailable
         field("lineNumber", int)               // 0-based line index of the key; -1 if unknown
+        field("xmlDoc", string.nullable)       // raw inner content of <summary> from generated Dispatcher; null if unavailable
     }
 
     init {

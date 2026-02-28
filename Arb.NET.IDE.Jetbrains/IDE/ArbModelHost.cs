@@ -165,7 +165,7 @@ public class ArbModelHost {
         model.GetArbKeys.SetSync((_, projectDir) => {
             return ArbKeyService.GetKeys(projectDir)
                 .Select(k => new JetBrains.Rider.Model.ArbKeyInfo(
-                    k.Key, k.IsParametric, k.Description, k.ArbFilePath, k.LineNumber))
+                    k.Key, k.IsParametric, k.Description, k.ArbFilePath, k.LineNumber, k.XmlDoc))
                 .ToList();
         });
 

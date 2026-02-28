@@ -1,5 +1,5 @@
-﻿{
-    "@@locale": "en",
-    "appTitle": "Arb.NET Example Five Localized",
-    "greeting": "Hello, {name}!",
+{
+  "@@locale": "en",
+  "appTitle": "Arb.NET Example Five Localized",
+  "greeting": "Hello, {name}!"
 }

@@ -55,7 +55,7 @@ class ArbModel private constructor(
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         private val __ArbKeyInfoListSerializer = ArbKeyInfo.list()
         
-        const val serializationHash = -7577675158314463945L
+        const val serializationHash = 6280947667756541107L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -284,7 +284,8 @@ data class ArbKeyInfo (
     val isParametric: Boolean,
     val description: String?,
     val arbFilePath: String?,
-    val lineNumber: Int
+    val lineNumber: Int,
+    val xmlDoc: String?
 ) : IPrintable {
     //companion
     
@@ -299,7 +300,8 @@ data class ArbKeyInfo (
             val description = buffer.readNullable { buffer.readString() }
             val arbFilePath = buffer.readNullable { buffer.readString() }
             val lineNumber = buffer.readInt()
-            return ArbKeyInfo(key, isParametric, description, arbFilePath, lineNumber)
+            val xmlDoc = buffer.readNullable { buffer.readString() }
+            return ArbKeyInfo(key, isParametric, description, arbFilePath, lineNumber, xmlDoc)
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbKeyInfo)  {
@@ -308,6 +310,7 @@ data class ArbKeyInfo (
             buffer.writeNullable(value.description) { buffer.writeString(it) }
             buffer.writeNullable(value.arbFilePath) { buffer.writeString(it) }
             buffer.writeInt(value.lineNumber)
+            buffer.writeNullable(value.xmlDoc) { buffer.writeString(it) }
         }
         
         
@@ -328,6 +331,7 @@ data class ArbKeyInfo (
         if (description != other.description) return false
         if (arbFilePath != other.arbFilePath) return false
         if (lineNumber != other.lineNumber) return false
+        if (xmlDoc != other.xmlDoc) return false
         
         return true
     }
@@ -339,6 +343,7 @@ data class ArbKeyInfo (
         __r = __r*31 + if (description != null) description.hashCode() else 0
         __r = __r*31 + if (arbFilePath != null) arbFilePath.hashCode() else 0
         __r = __r*31 + lineNumber.hashCode()
+        __r = __r*31 + if (xmlDoc != null) xmlDoc.hashCode() else 0
         return __r
     }
     //pretty print
@@ -350,6 +355,7 @@ data class ArbKeyInfo (
             print("description = "); description.print(printer); println()
             print("arbFilePath = "); arbFilePath.print(printer); println()
             print("lineNumber = "); lineNumber.print(printer); println()
+            print("xmlDoc = "); xmlDoc.print(printer); println()
         }
         printer.print(")")
     }

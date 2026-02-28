@@ -21,7 +21,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
-<PackageReference Include="System.Text.Json" Version="10.0.3" />
+        <PackageReference Include="System.Text.Json" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,7 +35,6 @@
         <!--
             Include Arb.NET source files directly into the generator assembly so that
             the compiler host can find them without needing to load a separate DLL.
-            This is the standard pattern for generator-private helper libraries.
         -->
         <Compile Include="..\Arb.NET\ArbParser.cs"/>
         <Compile Include="..\Arb.NET\ArbCodeGenerator.cs"/>

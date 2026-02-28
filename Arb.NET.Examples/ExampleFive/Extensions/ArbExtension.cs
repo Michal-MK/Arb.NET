@@ -4,7 +4,7 @@ namespace ExampleFive.Extensions;
 
 [ContentProperty(nameof(Text))]
 public class ArbExtension : IMarkupExtension {
-    public string Text { get; set; }
+    public string? Text { get; set; }
 
     public object ProvideValue(IServiceProvider serviceProvider) {
         AppLocale locale = new(new CultureInfo("en"));

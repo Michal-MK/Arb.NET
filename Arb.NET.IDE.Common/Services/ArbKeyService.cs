@@ -18,6 +18,10 @@ public static class ArbKeyService {
     private static readonly Regex PUBLIC_METHOD_REGEX =
         new(@"^\s+public\s+string\s+(\w+)\s*\(", RegexOptions.Multiline | RegexOptions.Compiled);
 
+    // Matches a run of XML doc-comment lines immediately before a `public string KeyName` declaration.
+    private static readonly Regex XML_DOC_BLOCK_REGEX =
+        new(@"((?:[ \t]*/// .*\r?\n)+)[ \t]*public string (\w+)", RegexOptions.Multiline | RegexOptions.Compiled);
+
     private static readonly ConcurrentDictionary<string, CacheEntry> CACHE =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -118,6 +122,36 @@ public static class ArbKeyService {
         return result;
     }
 
+    /// <summary>
+    /// Scans the generated dispatcher file content and returns a map of PascalCase key name →
+    /// raw inner content of the &lt;summary&gt; XML doc tag (with leading <c>/// </c> prefixes stripped).
+    /// </summary>
+    private static Dictionary<string, string> ExtractXmlDocs(string content) {
+        Dictionary<string, string> result = new(StringComparer.Ordinal);
+        foreach (Match m in XML_DOC_BLOCK_REGEX.Matches(content)) {
+            string docBlock = m.Groups[1].Value;
+            string keyName = m.Groups[2].Value;
+
+            // Strip the leading `    /// ` (or similar) prefix from each line
+            string[] lines = docBlock.Split('\n');
+            IEnumerable<string> stripped = lines
+                .Select(l => Regex.Replace(l, @"^[ \t]*/// ?", "").TrimEnd('\r'))
+                .Where(l => l.Length > 0);
+            string joined = string.Join("\n", stripped);
+
+            // Extract content between <summary> and </summary>
+            int start = joined.IndexOf("<summary>", StringComparison.Ordinal);
+            int end = joined.IndexOf("</summary>", StringComparison.Ordinal);
+            if (start < 0 || end < 0 || end <= start) continue;
+
+            string inner = joined.Substring(start + "<summary>".Length, end - start - "<summary>".Length).Trim();
+            if (!string.IsNullOrEmpty(inner)) {
+                result[keyName] = inner;
+            }
+        }
+        return result;
+    }
+
     private static List<ArbKeyInfo> TryGetKeysFromGeneratedFile(string projectDir, string outputClass, string arbPath) {
         // Build PascalCase → description/rawKey and PascalCase → lineNumber lookups from the template .arb
         Dictionary<string, string?> descriptions = new();
@@ -161,6 +195,7 @@ public static class ArbKeyService {
         foreach (string filePath in candidates) {
             try {
                 string content = File.ReadAllText(filePath);
+                Dictionary<string, string> xmlDocs = ExtractXmlDocs(content);
                 List<ArbKeyInfo> result = [];
 
                 // Properties → non-parametric
@@ -171,7 +206,8 @@ public static class ArbKeyService {
                     descriptions.TryGetValue(name, out string? desc);
                     rawKeys.TryGetValue(name, out string? rawKey);
                     int ln = pascalLineNumbers.TryGetValue(name, out int lineNum) ? lineNum : -1;
-                    result.Add(new ArbKeyInfo(name, false, desc, resolvedArbPath, rawKey, ln));
+                    xmlDocs.TryGetValue(name, out string? xmlDoc);
+                    result.Add(new ArbKeyInfo(name, false, desc, resolvedArbPath, rawKey, ln, xmlDoc));
                 }
 
                 // Methods → parametric (skip constructors)
@@ -183,7 +219,8 @@ public static class ArbKeyService {
                     descriptions.TryGetValue(name, out string? desc);
                     rawKeys.TryGetValue(name, out string? rawKey);
                     int ln = pascalLineNumbers.TryGetValue(name, out int lineNum) ? lineNum : -1;
-                    result.Add(new ArbKeyInfo(name, true, desc, resolvedArbPath, rawKey, ln));
+                    xmlDocs.TryGetValue(name, out string? xmlDoc);
+                    result.Add(new ArbKeyInfo(name, true, desc, resolvedArbPath, rawKey, ln, xmlDoc));
                 }
 
                 if (result.Count > 0) {

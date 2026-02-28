@@ -1,0 +1,5 @@
+{
+  "@@locale": "cs",
+  "appTitle": "Arb.NET Příklad 5 Přeloženo!",
+  "greeting": "Ahoj, {name}!"
+}

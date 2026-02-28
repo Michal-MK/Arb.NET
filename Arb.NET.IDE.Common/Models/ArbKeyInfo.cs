@@ -9,7 +9,8 @@ public sealed class ArbKeyInfo(
     string? description,
     string? arbFilePath,
     string? rawKey,
-    int lineNumber = -1)
+    int lineNumber = -1,
+    string? xmlDoc = null)
 {
     /// <summary>PascalCase key name (as it appears in the generated dispatcher).</summary>
     public string Key { get; } = key;
@@ -28,4 +29,7 @@ public sealed class ArbKeyInfo(
 
     /// <summary>0-based line index of the key in the .arb file, or -1 when unknown.</summary>
     public int LineNumber { get; } = lineNumber;
+
+    /// <summary>Raw inner content of the &lt;summary&gt; XML doc tag from the generated dispatcher, or null when unavailable.</summary>
+    public string? XmlDoc { get; } = xmlDoc;
 }
