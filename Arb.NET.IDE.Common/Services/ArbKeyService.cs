@@ -84,7 +84,7 @@ public static class ArbKeyService {
 
         List<ArbKeyInfo> keys = TryGetKeysFromGeneratedFile(projectDir, outputClass, arbPath);
         if (keys.Count == 0) {
-            keys = GetKeysFromArbFile(config, arbPath);
+            keys = GetKeysFromArbFile(arbPath);
         }
 
         CACHE[projectDir] = new CacheEntry(localizationStamp, arbStamp, keys);
@@ -156,12 +156,12 @@ public static class ArbKeyService {
             return [];
         }
 
+        string? resolvedArbPath = File.Exists(arbPath) ? arbPath : null;
+
         foreach (string filePath in candidates) {
             try {
                 string content = File.ReadAllText(filePath);
                 List<ArbKeyInfo> result = [];
-
-                string? resolvedArbPath = File.Exists(arbPath) ? arbPath : null;
 
                 // Properties → non-parametric
                 foreach (Match m in PUBLIC_PROPERTY_REGEX.Matches(content)) {
@@ -202,8 +202,8 @@ public static class ArbKeyService {
         return [];
     }
 
-    private static List<ArbKeyInfo> GetKeysFromArbFile(L10nConfig config, string arbPath) {
-        if (string.IsNullOrWhiteSpace(config.TemplateArbFile)) return [];
+    private static List<ArbKeyInfo> GetKeysFromArbFile(string arbPath) {
+        if (string.IsNullOrWhiteSpace(arbPath)) return [];
         if (!File.Exists(arbPath)) return [];
 
         try {
@@ -228,7 +228,6 @@ public static class ArbKeyService {
         }
     }
 
-    // TODO(helpers)
     private static DateTime SafeLastWriteUtc(string path) {
         try {
             return File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;

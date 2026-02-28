@@ -107,9 +107,14 @@ public class ArbModelHost {
                 foreach (string key in parsed.Document.Entries.Keys) allKeys.Add(key);
             }
 
-            ArbDocument newDoc = new() { Locale = payload.Locale };
+            ArbDocument newDoc = new() {
+                Locale = payload.Locale
+            };
             foreach (string key in allKeys) {
-                newDoc.Entries[key] = new ArbEntry { Key = key, Value = "" };
+                newDoc.Entries[key] = new ArbEntry {
+                    Key = key,
+                    Value = ""
+                };
             }
 
             File.WriteAllText(newFilePath, ArbSerializer.Serialize(newDoc));
@@ -157,6 +162,13 @@ public class ArbModelHost {
             return anyChanged;
         });
 
+        model.GetArbKeys.SetSync((_, projectDir) => {
+            return ArbKeyService.GetKeys(projectDir)
+                .Select(k => new JetBrains.Rider.Model.ArbKeyInfo(
+                    k.Key, k.IsParametric, k.Description, k.ArbFilePath, k.LineNumber))
+                .ToList();
+        });
+
         model.TranslateArbEntries.SetAsync(async (_, request) => {
             ITranslator provider = string.Equals(request.Provider, "Google", StringComparison.OrdinalIgnoreCase)
                 ? new GoogleTranslator()
@@ -192,11 +204,13 @@ public class ArbModelHost {
             }
 
             try {
-                List<AzureTranslationItem> apiItems = [..validItems.Select(item => new AzureTranslationItem {
-                    Key = item.Key,
-                    SourceText = item.SourceText,
-                    Description = item.Description
-                })];
+                List<AzureTranslationItem> apiItems = [
+                    ..validItems.Select(item => new AzureTranslationItem {
+                        Key = item.Key,
+                        SourceText = item.SourceText,
+                        Description = item.Description
+                    })
+                ];
 
                 IReadOnlyList<string> translated = await provider.TranslateBatchAsync(
                     request.SourceLocale,

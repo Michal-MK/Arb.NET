@@ -8,20 +8,63 @@
 
   <description>
 <![CDATA[
-<p>Sample description</p>
+<p>Arb.NET Rider extension</p>
+<p>Contains an ARB editor, XAML markup support etc..</p>
 ]]>
   </description>
 
   <extensions defaultExtensionNs="com.intellij">
-    <fileEditorProvider implementation="com.jetbrains.rider.plugins.arbnet.ArbEditorProvider"/>
-    <fileType name="ARB"
-              implementationClass="com.jetbrains.rider.plugins.arbnet.ArbFileType"
-              fieldName="INSTANCE"
-              language="JSON"
-              extensions="arb"/>
+    <fileEditorProvider
+        implementation="com.jetbrains.rider.plugins.arbnet.ArbEditorProvider" />
+    <fileType 
+        language="JSON"
+        implementationClass="com.jetbrains.rider.plugins.arbnet.ArbFileType"
+        name="ARB"
+        extensions="arb"
+        fieldName="INSTANCE" />
+
+    <completion.contributor
+        language="Xaml"
+        implementationClass="com.jetbrains.rider.plugins.arbnet.ArbKeyCompletionContributor"
+        order="first" />
+
+    <!-- Colors the key name inside {*:Arb KeyName} using the instance-field highlight style.
+         Uses ExternalAnnotator because Rider XAML (RiderFileImpl) only delivers
+         LeafPsiElement/RiderFileImpl to annotators — never XmlAttribute. ExternalAnnotator
+         works on the raw file text and is not filtered by PSI element type. -->
+    <externalAnnotator
+        language="Xaml"
+        implementationClass="com.jetbrains.rider.plugins.arbnet.ArbKeyAnnotator" />
+
+    <!-- On-hover quick-doc showing the ARB key description.
+         getCustomDocumentationElement() is the entry point Rider XAML actually calls for hover. -->
+    <lang.documentationProvider
+        language="Xaml"
+        implementationClass="com.jetbrains.rider.plugins.arbnet.ArbKeyDocumentationProvider"
+        order="first" />
+
+    <localInspection
+        language="Xaml"
+        implementationClass="com.jetbrains.rider.plugins.arbnet.ArbKeyInspection"
+        shortName="ArbKeyInspection"
+        displayName="Invalid ARB key in markup extension"
+        groupName="Arb.NET"
+        enabledByDefault="true"
+        level="WARNING" />
+
+    <!-- Register via the extension point that Rider's action dispatcher actually consults for XAML.
+         Rider's own plugin.xml registers backend.actions.support language="Xaml" with the base
+         RiderActionSupportPolicy (returns BACKEND_ONLY). With order="first" our policy is consulted
+         first and can return FRONTEND_ONLY when the caret is inside {*:Arb ...}, allowing
+         ArbGotoDeclarationActionOverride to run instead of the backend R# dispatcher. -->
+    <backend.actions.support 
+        language="Xaml"
+        implementationClass="com.jetbrains.rider.plugins.arbnet.ArbXamlActionCallPolicy"
+        order="first" />
   </extensions>
 
   <actions>
+    <!-- TODO: this action is grayed out initially and then disappears — investigate why -->
     <action id="GetAssemblyInfo"
             class="com.jetbrains.rider.plugins.arbnet.GetAssemblyInfoAction"
             text="Arb.NET: Assembly Info"
@@ -39,6 +82,13 @@
             text="Open Arb.NET Editor"
             description="Open the Arb.NET smart editor for the selected .arb file or folder">
     </action>
+
+    <!-- When caret is inside {*:Arb KeyName} in XAML, opens the Arb.NET editor.
+         backend.actions.support (above) routes the action to the frontend first;
+         this override then intercepts GotoDeclaration before Rider's backend dispatcher. -->
+    <action id="GotoDeclaration"
+            class="com.jetbrains.rider.plugins.arbnet.ArbGotoDeclarationActionOverride"
+            overrides="true"/>
 
     <group id="ArbNet.ContextMenuGroup" popup="false">
       <reference ref="OpenArbEditorFromFolder"/>
