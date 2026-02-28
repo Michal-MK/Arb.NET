@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Arb.NET.IDE.Common.Services;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Text.Editor;
@@ -53,12 +54,12 @@ internal sealed class ArbXamlValidationTagger : ITagger<ErrorTag>
             yield break;
         }
 
-        string? projectDir = ArbKeyIndex.FindProjectDirFromFilePath(document.FilePath);
+        string? projectDir = ArbKeyService.FindProjectDirFromFilePath(document.FilePath);
         if (string.IsNullOrWhiteSpace(projectDir)) {
             yield break;
         }
 
-        HashSet<string> validKeys = ArbKeyIndex.GetKeys(projectDir!)
+        HashSet<string> validKeys = ArbKeyService.GetKeys(projectDir!)
             .Select(it => it.Key)
             .ToHashSet(StringComparer.Ordinal);
 

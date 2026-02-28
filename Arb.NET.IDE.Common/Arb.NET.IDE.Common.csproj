@@ -19,6 +19,10 @@
   </Target>
 
   <ItemGroup>
+    <Reference Include="Arb.NET">
+      <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\Arb.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <Reference Include="System.Text.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51">
       <HintPath>..\Arb.NET\bin\IDE\netstandard2.0\System.Text.Json.dll</HintPath>
       <SpecificVersion>true</SpecificVersion>

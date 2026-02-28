@@ -3,16 +3,15 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Arb.NET.IDE.VisualStudio.Tool.CodeCompletion.Models;
+using Arb.NET.IDE.Common.Models;
+using Arb.NET.IDE.Common.Services;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 
@@ -96,10 +95,10 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
         if (!textView.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument document) &&
             !documentBuffer.Properties.TryGetProperty(typeof(ITextDocument), out document)) return false;
 
-        string? projectDir = ArbKeyIndex.FindProjectDirFromFilePath(document.FilePath);
+        string? projectDir = ArbKeyService.FindProjectDirFromFilePath(document.FilePath);
         if (string.IsNullOrWhiteSpace(projectDir)) return false;
 
-        ArbCompletionItem? keyInfo = ArbKeyIndex.GetKeys(projectDir!)
+        ArbKeyInfo? keyInfo = ArbKeyService.GetKeys(projectDir!)
             .FirstOrDefault(it => string.Equals(it.Key, key, StringComparison.Ordinal));
         if (keyInfo?.ArbFilePath == null) return false;
 
