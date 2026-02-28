@@ -12,7 +12,31 @@ RESX files suck:
 
 2. Does not even support pluralization
 
-This is a work in progress! Proof of concept!
+## How to:
+
+1. Install the packge of your choice. (Arb.NET.Generator for automatic source generated approach or Arb.NET.Tool for manual generation)
+
+2. Create a `l10n.yaml` file in the root of your project with the following content:
+```yaml
+arb-dir: arbs # [REQUIRED] relative path to the directory containing your .arb files
+template-arb-file: en.arb # [REQUIRED] the template .arb file (primary locale) that contains all the keys
+output-class: L # [REQUIRED] the name of the generated C# class that will contain the localization members
+output-namespace: MyProject.Locale # [REQUIRED] the namespace of the generated C# class
+```
+
+3. Create your .arb files in the specified directory (e.g. `arbs/en.arb`, `arbs/cs.arb`, etc.) with the following content:
+```json
+{
+  "@@locale": "en", # [REQUIRED] the locale of this .arb file
+  "KeyName": "Localized Value" # entries in this format
+  "ParametricKey": "Value with {param} placeholder" # for parametric keys, use {<name>} syntax
+  "PluralKey": "{count, plural, one {One item} other {{count} items}}" # for pluralization, use ICU syntax
+}
+```
+
+4. If using `Arb.NET.Generator`, the code will be generated automatically at build time. If using `Arb.NET.Tool`, run the tool to generate the code manually.
+
+5. Profit!
 
 ## Projects:
 

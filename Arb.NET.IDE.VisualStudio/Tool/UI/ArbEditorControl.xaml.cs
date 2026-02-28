@@ -7,14 +7,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 using Arb.NET.IDE.VisualStudio.Tool.UI.Converters;
+using System.ComponentModel;
+using System.Windows.Data;
 
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
@@ -32,6 +32,7 @@ public partial class ArbEditorControl : UserControl {
 
     private List<string> currentLangCodes = [];
     private ObservableCollection<ArbRow> currentRows = [];
+    private ObservableCollection<ArbRow> filteredRows = [];
     private string? currentDirectory;
     private bool suppressSave;
     private readonly List<(DependencyPropertyDescriptor Dpd, DataGridColumn Col, EventHandler Handler)> widthListeners = [];
@@ -121,6 +122,8 @@ public partial class ArbEditorControl : UserControl {
         if (match == null) {
             return;
         }
+
+        FilterTextBox.Text = string.Empty;
 
         ArbGrid.SelectedItem = match;
         ArbGrid.CurrentItem = match;
@@ -244,7 +247,8 @@ public partial class ArbEditorControl : UserControl {
             });
         }
 
-        ArbGrid.ItemsSource = currentRows;
+        filteredRows = new ObservableCollection<ArbRow>(currentRows);
+        ArbGrid.ItemsSource = filteredRows;
         suppressSave = false;
 
         // Attach width-change listeners after suppressSave is cleared so the initial layout fires are ignored.
@@ -278,8 +282,25 @@ public partial class ArbEditorControl : UserControl {
 
     private void DirectoryCombo_OnSelectionChanged(object sender, SelectionChangedEventArgs e) {
         if (DirectoryCombo.SelectedItem is string dir) {
+            FilterTextBox.Text = string.Empty;
             BuildTable(dir);
         }
+    }
+
+    private void ApplyFilter() {
+        string filter = FilterTextBox.Text;
+        filteredRows.Clear();
+        foreach (ArbRow row in currentRows) {
+            if (string.IsNullOrEmpty(filter)
+                || row.Key.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0
+                || row.Values.Values.Any(v => v.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)) {
+                filteredRows.Add(row);
+            }
+        }
+    }
+
+    private void FilterTextBox_OnTextChanged(object sender, TextChangedEventArgs e) {
+        ApplyFilter();
     }
 
     private void ArbGrid_OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) {

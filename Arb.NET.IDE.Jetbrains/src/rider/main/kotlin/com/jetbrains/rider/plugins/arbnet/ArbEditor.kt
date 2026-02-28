@@ -13,6 +13,7 @@ import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.jetbrains.rd.ide.model.ArbEntryUpdate
 import com.jetbrains.rd.ide.model.ArbKeyRename
@@ -39,9 +40,13 @@ import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
 import javax.swing.KeyStroke
+import javax.swing.RowFilter
 import javax.swing.SwingUtilities
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 import javax.swing.event.TableModelEvent
 import javax.swing.table.DefaultTableModel
+import javax.swing.table.TableRowSorter
 
 class ArbEditor(private val project: Project, private val file: VirtualFile) : UserDataHolderBase(), FileEditor {
 
@@ -106,6 +111,8 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     // Mutable state owned by the editor; written on the EDT only.
     private var dirCombo: JComboBox<String>? = null
     private var tableHolder: JPanel? = null
+    private var filterField: JBTextField? = null
+    private var filterListener: DocumentListener? = null
     private var initialised = false
     // The translate action is updated each time buildTable() runs to capture the current directory data.
     private var openTranslateDialog: (() -> Unit)? = null
@@ -164,8 +171,16 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     val translateButton = JButton("Translate...")
                     val aiSettingsButton = JButton("AI Settings...")
 
+                    val searchField = JBTextField().apply {
+                        emptyText.text = "Filter…"
+                        preferredSize = java.awt.Dimension(160, preferredSize.height)
+                    }
+                    filterField = searchField
+
                     val topPanel = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 4))
                     topPanel.add(combo)
+                    topPanel.add(JLabel("Filter:"))
+                    topPanel.add(searchField)
                     topPanel.add(addLocaleButton)
                     topPanel.add(addKeyButton)
                     topPanel.add(removeKeyButton)
@@ -232,6 +247,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
                     combo.addActionListener {
                         val selected = combo.selectedItem as? String ?: return@addActionListener
+                        filterField?.text = ""
                         refresh()
                     }
 
@@ -329,8 +345,10 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         }
 
         // Shared rename action reused by both the keyboard shortcut and the context menu.
-        fun doRenameRow(table: JBTable, row: Int) {
-            val oldKey = tableModel.getValueAt(row, 0) as? String ?: return
+        // `viewRow` is a view-index (from table.selectedRow / rowAtPoint).
+        fun doRenameRow(table: JBTable, viewRow: Int) {
+            val modelRow = table.convertRowIndexToModel(viewRow)
+            val oldKey = tableModel.getValueAt(modelRow, 0) as? String ?: return
             val newKey = Messages.showInputDialog(
                 project,
                 "Rename key '$oldKey' in all locale files:",
@@ -344,7 +362,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                 lifetime, ArbKeyRename(directory, oldKey, newKey)
             )
             // Update the table model so the UI reflects the rename immediately.
-            tableModel.setValueAt(newKey, row, 0)
+            tableModel.setValueAt(newKey, modelRow, 0)
         }
 
         val table = JBTable(tableModel).apply {
@@ -384,7 +402,8 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     val menu = JPopupMenu()
                     val translateItem = JMenuItem("Translate Selected")
                     translateItem.addActionListener {
-                        val selectedIndices = this@apply.selectedRows.toList()
+                        val selectedIndices = this@apply.selectedRows
+                            .map { convertRowIndexToModel(it) }
                         openTranslateDialogForRows(selectedIndices.ifEmpty { null })
                     }
                     menu.add(translateItem)
@@ -402,12 +421,35 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             })
         }
 
+        // Attach row-level text filter wired to the persistent filter field.
+        val sorter = TableRowSorter(tableModel)
+        table.rowSorter = sorter
+        fun applyFilter(text: String) {
+            if (text.isEmpty()) {
+                sorter.rowFilter = null
+            } else {
+                sorter.rowFilter = RowFilter.regexFilter("(?i)${Regex.escape(text)}")
+            }
+        }
+        val currentFilter = filterField?.text ?: ""
+        applyFilter(currentFilter)
+        // Remove the previous listener (from the prior buildTable call) before adding a new one.
+        filterListener?.let { filterField?.document?.removeDocumentListener(it) }
+        val listener = object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) = applyFilter(filterField?.text ?: "")
+            override fun removeUpdate(e: DocumentEvent) = applyFilter(filterField?.text ?: "")
+            override fun changedUpdate(e: DocumentEvent) = applyFilter(filterField?.text ?: "")
+        }
+        filterListener = listener
+        filterField?.document?.addDocumentListener(listener)
+
         // Wire the top-toolbar "Translate..." button to open the dialog for all rows.
         openTranslateDialog = { openTranslateDialogForRows(null) }
 
         // Wire the top-toolbar "Remove Key" button to remove the currently selected row.
         removeSelectedKey = remove@{
-            val row = table.selectedRow.takeIf { it >= 0 } ?: return@remove
+            val viewRow = table.selectedRow.takeIf { it >= 0 } ?: return@remove
+            val row = table.convertRowIndexToModel(viewRow)
             val key = tableModel.getValueAt(row, 0) as? String ?: return@remove
             val confirm = Messages.showYesNoDialog(
                 project,
