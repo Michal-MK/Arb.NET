@@ -38,7 +38,7 @@ public class ArbCodeGenerator {
     public void GenerateClassFile(string arbFilePath, string outputPath, string className, string namespaceName) {
         ArbParseResult result = new ArbParser().Parse(arbFilePath);
         if (!result.ValidationResults.IsValid) {
-            // TODO
+            // TODO(handle)
             return;
         }
         string source = GenerateClass(result.Document!, className, namespaceName);

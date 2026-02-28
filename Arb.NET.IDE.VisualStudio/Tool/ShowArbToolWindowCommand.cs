@@ -60,7 +60,7 @@ internal sealed class ShowArbToolWindowCommand {
                 await arbWindow.SetupIfNeededAsync(columnSettingsService, arbService, translationSettingsService);
             }
 
-            // TODO handle unsubscribe
+            // TODO(handle) unsubscription
         });
     }
 }
