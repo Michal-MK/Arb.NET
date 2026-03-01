@@ -3,7 +3,7 @@
   <!-- Shared NuGet package metadata for all packable projects in this repo. -->
   <PropertyGroup>
     <Version>0.1.0</Version>
-    <Authors>Michal Hazdra</Authors>
+    <Authors>Michal-MK</Authors>
     <RepositoryUrl>https://github.com/Michal-MK/Arb.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

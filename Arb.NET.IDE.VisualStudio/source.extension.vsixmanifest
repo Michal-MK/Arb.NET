@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Arb.NET.IDE.VisualStudio.f5dec756-a270-41bd-8d4e-fe0f3f3afdb6" Version="1.0" Language="en-US" Publisher="Michal Hazdra" />
-    <DisplayName>Arb.NET.IDE.VisualStudio</DisplayName>
-    <Description>Empty VSIX Project.</Description>
+    <Identity Id="Arb.NET.f5dec756-a270-41bd-8d4e-fe0f3f3afdb6" Version="1.0" Language="en-US" Publisher="Michal-MK" />
+    <DisplayName>Arb.NET</DisplayName>
+    <Description>Tool for editing .arb files from Visual Studio. Part of Arb.NET</Description>
+    <Preview>true</Preview>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, )">
