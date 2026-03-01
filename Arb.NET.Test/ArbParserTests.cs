@@ -103,5 +103,25 @@ public class ArbParserTests {
         Assert.That(document.Entries.ContainsKey("appTitle"), Is.True);
 
         Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My {} Application"));
+    } 
+    
+    [Test]
+    public void ParseContent_Escaping() {
+        var arbContent = """
+                         {
+                           "@@locale": "en",
+                           "appTitle": "My \" Application"
+                         }
+                         """;
+
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
+
+        Assert.That(document.Locale, Is.EqualTo("en"));
+        Assert.That(document.Entries, Has.Count.EqualTo(1));
+
+        // Lang strings
+        Assert.That(document.Entries.ContainsKey("appTitle"), Is.True);
+
+        Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My \" Application"));
     }    
 }

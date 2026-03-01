@@ -12,6 +12,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
@@ -64,9 +65,19 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         internal const val SETTINGS_PROMPT = "arb.net.ai.prompt"
         internal const val SETTINGS_TEMPERATURE = "arb.net.ai.temperature"
 
+        // One stable LightVirtualFile per project — reusing the same object lets
+        // FileEditorManager reuse the existing editor tab instead of opening a new one.
+        private val singletonFiles = java.util.concurrent.ConcurrentHashMap<Project, LightVirtualFile>()
+
+        fun getOrCreateFile(project: Project): LightVirtualFile =
+            singletonFiles.getOrPut(project) { LightVirtualFile(FILE_NAME) }
+
         // Keys are scoped by directory so different directories don't share state.
         private fun widthKey(directory: String, header: String) = "$COL_WIDTH_PREFIX$directory:$header"
         private fun orderKey(directory: String) = "$COL_ORDER_PREFIX$directory"
+
+        /** Normalise a filesystem path for comparison: forward slashes, lowercase. */
+        fun normPath(p: String): String = p.replace('\\', '/').lowercase()
     }
 
     private fun loadColumnWidth(directory: String, header: String): Int {
@@ -106,9 +117,10 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         ?.toSet()
         ?: emptySet()
 
-    private val hintDir = file.getUserData(INITIAL_DIR_KEY) ?: file.parent?.path ?: ""
+    private var hintDir = file.getUserData(INITIAL_DIR_KEY) ?: ""
 
     // Mutable state owned by the editor; written on the EDT only.
+    private var lastByDirectory: Map<String, List<ArbLocaleData>> = emptyMap()
     private var dirCombo: JComboBox<String>? = null
     private var tableHolder: JPanel? = null
     private var filterField: JBTextField? = null
@@ -145,6 +157,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             val directories = byDirectory.keys.toList()
 
             SwingUtilities.invokeLater {
+                lastByDirectory = byDirectory
                 if (!initialised) {
                     // First call: build chrome (combo + button + table holder).
                     panel.removeAll()
@@ -193,7 +206,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     panel.add(topPanel, BorderLayout.NORTH)
                     panel.add(holder, BorderLayout.CENTER)
 
-                    val initialDir = directories.firstOrNull { it == hintDir }
+                    val initialDir = directories.firstOrNull { normPath(it) == normPath(hintDir) }
                         ?: directories.firstOrNull()
 
                     if (initialDir != null) {
@@ -485,6 +498,33 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         holder.add(JBScrollPane(table), BorderLayout.CENTER)
         holder.revalidate()
         holder.repaint()
+    }
+
+    /**
+     * Switch the editor to the given directory. If the editor is already initialised, selects the
+     * directory in the combo (silently, without triggering a backend refresh) and rebuilds the
+     * table from cached data. If still loading, updates [hintDir] so the next [refresh] picks it up.
+     */
+    fun navigateTo(dir: String) {
+        hintDir = dir
+        val combo = dirCombo ?: return  // not yet initialised — hintDir will be used on first refresh
+        if (!initialised) return
+
+        val match = (0 until combo.itemCount)
+            .map { combo.getItemAt(it) as String }
+            .firstOrNull { normPath(it) == normPath(dir) }
+            ?: return
+
+        if (combo.selectedItem == match) return  // already showing the right directory
+
+        // Update combo silently — remove the listener to avoid triggering a backend refresh.
+        val listeners = combo.actionListeners.toList()
+        listeners.forEach { combo.removeActionListener(it) }
+        combo.selectedItem = match
+        listeners.forEach { combo.addActionListener(it) }
+
+        // Rebuild the table from the last fetched data — no round-trip needed.
+        buildTable(match, lastByDirectory)
     }
 
     init {

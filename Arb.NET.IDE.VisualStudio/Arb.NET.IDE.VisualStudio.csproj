@@ -65,6 +65,7 @@
     <Compile Include="Tool\Services\Persistence\ColumnSettingsService.cs" />
     <Compile Include="Tool\Services\Persistence\TranslationSettingsService.cs" />
     <Compile Include="Tool\ShowArbToolWindowCommand.cs" />
+    <Compile Include="Tool\OpenArbEditorFromContextMenuCommand.cs" />
     <Compile Include="Tool\UI\ArbEditorControl.xaml.cs">
       <DependentUpon>ArbEditorControl.xaml</DependentUpon>
     </Compile>

@@ -27,7 +27,6 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
     /// <summary>
     /// Called by VS after the window has been fully sited — on both user-open and session restore.
     /// Resolves services from the package and initializes the control.
-    /// This is somehow called before the constructor above!
     /// </summary>
     public override void OnToolWindowCreated() {
         base.OnToolWindowCreated();
@@ -36,12 +35,9 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
     }
 
     private async Task SetupFromPackageAsync() {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
         await SetupIfNeededAsync(package.ColumnSettingsService, package.ArbService, package.TranslationSettingsService);
     }
 
-    [SuppressMessage("ReSharper", "ParameterHidesMember")]
     public async Task SetupIfNeededAsync(
         ColumnSettingsService? columnSettingsService,
         ArbService? arbService,
@@ -54,7 +50,7 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
 
         if (columnSettingsService is null || arbService is null || translationSettingsService is null) return;
 
-        control.Initialize(package, columnSettingsService, arbService, translationSettingsService);
+        await control.InitializeAsync(package, columnSettingsService, arbService, translationSettingsService);
 
         // Subscribe to global selection events so we can detect when our tool window frame
         // becomes the active window frame (triggers RefreshData).
@@ -70,6 +66,11 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
                 solution.AdviseSolutionEvents(this, out solutionEventsCookie);
             }
         }
+    }
+
+    public async Task NavigateToDirectoryAsync(string directory) {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        await control.NavigateToDirectoryAsync(directory);
     }
 
     public async Task NavigateToArbKeyAsync(string arbFilePath, string key) {

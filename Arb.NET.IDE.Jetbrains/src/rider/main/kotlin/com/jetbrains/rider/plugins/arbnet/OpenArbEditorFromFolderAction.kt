@@ -6,26 +6,35 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.testFramework.LightVirtualFile
 
 class OpenArbEditorFromFolderAction : AnAction("Open Arb.NET Editor") {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
-    private fun AnActionEvent.resolveDir(): VirtualFile? {
-        val vf = getData(CommonDataKeys.VIRTUAL_FILE)
-            ?: getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.firstOrNull()
-            ?: return null
-        return if (vf.isDirectory) vf else vf.parent
-    }
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val dir = e.resolveDir() ?: return
-        val lightFile = LightVirtualFile(ArbEditor.FILE_NAME).apply {
-            putUserData(ArbEditor.INITIAL_DIR_KEY, dir.path)
+        val vf = e.getData(CommonDataKeys.VIRTUAL_FILE)
+            ?: e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.firstOrNull()
+            ?: return
+
+        val dirPath: String = if (vf.name == "l10n.yaml") {
+            val parentPath = vf.parent?.path ?: return
+            resolveArbDirectory(parentPath)
+        } else {
+            (if (vf.isDirectory) vf else vf.parent)?.path ?: return
         }
-        FileEditorManager.getInstance(project).openFile(lightFile, true)
+
+        val singletonFile = ArbEditor.getOrCreateFile(project)
+        val editorManager = FileEditorManager.getInstance(project)
+        val existingEditor = editorManager.getEditors(singletonFile).filterIsInstance<ArbEditor>().firstOrNull()
+
+        if (existingEditor != null) {
+            existingEditor.navigateTo(dirPath)
+            editorManager.openFile(singletonFile, true)
+        } else {
+            singletonFile.putUserData(ArbEditor.INITIAL_DIR_KEY, dirPath)
+            editorManager.openFile(singletonFile, true)
+        }
     }
 
     override fun update(e: AnActionEvent) {
@@ -34,10 +43,11 @@ class OpenArbEditorFromFolderAction : AnAction("Open Arb.NET Editor") {
         val vf = e.getData(CommonDataKeys.VIRTUAL_FILE)
             ?: e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.firstOrNull()
             ?: return
-        val show = if (vf.isDirectory) {
-            try { vf.children.any { it.extension == "arb" } } catch (_: Exception) { false }
-        } else {
-            vf.extension == "arb" || try {
+        val show = when {
+            vf.name == "l10n.yaml" -> true
+            vf.isDirectory -> try { vf.children.any { it.extension == "arb" } } catch (_: Exception) { false }
+            vf.extension == "arb" -> true
+            else -> try {
                 vf.parent?.children?.any { it.extension == "arb" } == true
             } catch (_: Exception) { false }
         }

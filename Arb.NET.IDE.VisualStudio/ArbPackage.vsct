@@ -9,6 +9,14 @@
       <Group guid="guidArbCmdSet" id="ArbGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_VIEW"/>
       </Group>
+      <!-- Context menu group for Solution Explorer folder nodes -->
+      <Group guid="guidArbContextCmdSet" id="ArbContextGroup" priority="0x0700">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_FOLDERNODE"/>
+      </Group>
+      <!-- Context menu group for Solution Explorer file item nodes -->
+      <Group guid="guidArbContextCmdSet" id="ArbContextGroupItem" priority="0x0700">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+      </Group>
     </Groups>
 
     <Buttons>
@@ -18,14 +26,35 @@
           <ButtonText>Arb.NET Tool Window</ButtonText>
         </Strings>
       </Button>
+      <!-- Context menu button; visibility controlled at runtime via BeforeQueryStatus -->
+      <Button guid="guidArbContextCmdSet" id="OpenArbEditorFromFolderCommand" priority="0x0100" type="Button">
+        <Parent guid="guidArbContextCmdSet" id="ArbContextGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Open Arb.NET Editor</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
+
+  <!-- Place the same button in the file item context menu as well -->
+  <CommandPlacements>
+    <CommandPlacement guid="guidArbContextCmdSet" id="OpenArbEditorFromFolderCommand" priority="0x0100">
+      <Parent guid="guidArbContextCmdSet" id="ArbContextGroupItem"/>
+    </CommandPlacement>
+  </CommandPlacements>
 
   <Symbols>
     <GuidSymbol name="guidArbPackage" value="{3191a384-5cf6-4e40-bd0f-3a6dcd5dc05f}" />
     <GuidSymbol name="guidArbCmdSet" value="{d8c8b3e1-2f3c-4b6c-9d4e-1f2b3c4d5e6f}">
       <IDSymbol name="ArbGroup" value="0x1020"/>
       <IDSymbol name="ArbToolWindowCommand" value="0x0100"/>
+    </GuidSymbol>
+    <!-- GUID matches OpenArbEditorFromContextMenuCommand.COMMAND_SET -->
+    <GuidSymbol name="guidArbContextCmdSet" value="{a1b2c3d4-e5f6-7890-abcd-ef1234567890}">
+      <IDSymbol name="ArbContextGroup" value="0x1030"/>
+      <IDSymbol name="ArbContextGroupItem" value="0x1031"/>
+      <IDSymbol name="OpenArbEditorFromFolderCommand" value="0x0101"/>
     </GuidSymbol>
   </Symbols>
 

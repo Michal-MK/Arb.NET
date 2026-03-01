@@ -73,6 +73,7 @@ public sealed class ArbPackage : AsyncPackage {
         TranslationSettingsService = new TranslationSettingsService(this);
 
         await ShowArbToolWindowCommand.InitializeAsync(this, ColumnSettingsService, ArbService, TranslationSettingsService);
+        await OpenArbEditorFromContextMenuCommand.InitializeAsync(this);
 
         // If VS restored the tool window before InitializeAsync ran (window was open in the
         // previous session), OnToolWindowCreated will have fired but found null services.

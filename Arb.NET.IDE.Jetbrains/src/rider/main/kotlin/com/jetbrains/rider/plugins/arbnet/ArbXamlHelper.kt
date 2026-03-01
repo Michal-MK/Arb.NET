@@ -60,7 +60,7 @@ fun resolveArbDirectory(projectDir: String): String {
         if (!l10n.exists()) return projectDir
 
         val arbDirLine = l10n.readLines()
-            .map { it.trim() }
+            .map { it.trim().trimStart('\uFEFF') }
             .firstOrNull { it.startsWith("arb-dir:") }
             ?: return projectDir
 
