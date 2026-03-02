@@ -31,10 +31,17 @@ class ArbGotoDeclarationActionOverride : AnAction() {
         val editor = e.project?.let { FileEditorManager.getInstance(it).selectedTextEditor }
         val context = editor?.let { findArbContextInEditor(it) }
         if (context != null) {
-            val lightFile = LightVirtualFile(ArbEditor.FILE_NAME).apply {
-                putUserData(ArbEditor.INITIAL_DIR_KEY, context.arbDir)
+            val editorManager = FileEditorManager.getInstance(context.project)
+            val singletonFile = ArbEditor.getOrCreateFile(context.project)
+            val existingEditor = editorManager.getEditors(singletonFile).filterIsInstance<ArbEditor>().firstOrNull()
+            if (existingEditor != null) {
+                existingEditor.navigateTo(context.arbDir, context.keyName)
+                editorManager.openFile(singletonFile, true)
+            } else {
+                singletonFile.putUserData(ArbEditor.INITIAL_DIR_KEY, context.arbDir)
+                singletonFile.putUserData(ArbEditor.INITIAL_FILTER_KEY, context.keyName)
+                editorManager.openFile(singletonFile, true)
             }
-            FileEditorManager.getInstance(context.project).openFile(lightFile, true)
             return
         }
 

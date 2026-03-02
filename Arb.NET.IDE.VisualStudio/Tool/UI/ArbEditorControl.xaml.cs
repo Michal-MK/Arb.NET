@@ -38,6 +38,7 @@ public partial class ArbEditorControl : UserControl {
     private readonly List<(DependencyPropertyDescriptor Dpd, DataGridColumn Col, EventHandler Handler)> widthListeners = [];
 
     private volatile bool loadingData;
+    private Task? loadingTask;
 
     private readonly ArbParser parser = new();
 
@@ -55,9 +56,13 @@ public partial class ArbEditorControl : UserControl {
         return LoadDataAsync();
     }
 
-    internal async Task LoadDataAsync() {
-        if (loadingData) return;
+    internal Task LoadDataAsync() {
+        if (loadingData) return loadingTask!;
+        loadingTask = DoLoadDataAsync();
+        return loadingTask;
+    }
 
+    private async Task DoLoadDataAsync() {
         loadingData = true;
         try {
             arbScanResult = await arbService.ScanArbFilesAsync();
@@ -153,7 +158,8 @@ public partial class ArbEditorControl : UserControl {
             return;
         }
 
-        FilterTextBox.Text = string.Empty;
+        FilterTextBox.Text = key;
+        ApplyFilter();
 
         ArbGrid.SelectedItem = match;
         ArbGrid.CurrentItem = match;
@@ -162,36 +168,44 @@ public partial class ArbEditorControl : UserControl {
     }
 
     private async Task RefreshDataAsync() {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        if (loadingData) return;
 
-        arbScanResult = await arbService.ScanArbFilesAsync();
-        UpdateRelativePathConverter();
+        loadingData = true;
+        try {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-        if (arbScanResult.SolutionNotLoaded) {
-            LoadingLabel.Text = "No solution open. Open a solution and reopen this window.";
-            return;
+            arbScanResult = await arbService.ScanArbFilesAsync();
+            UpdateRelativePathConverter();
+
+            if (arbScanResult.SolutionNotLoaded) {
+                LoadingLabel.Text = "No solution open. Open a solution and reopen this window.";
+                return;
+            }
+
+            if (arbScanResult.ArbErrors.Count > 0) {
+                MessageBox.Show($"Completed refresh with {arbScanResult.ArbErrors.Count} errors:\n" +
+                                string.Join("\n", arbScanResult.ArbErrors.Select(ex => $"  {ex.Message}")),
+                                "Arb.NET - Refresh Errors", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            if (arbScanResult.DirGroupedArbFiles.Count == 0) {
+                LoadingLabel.Text = "No .arb files found in this solution.";
+                return;
+            }
+
+            List<string> refreshedDirs = arbScanResult.DirGroupedArbFiles.Keys.OrderBy(d => d).ToList();
+            string selectedDir = DirectoryCombo.SelectedItem is string currentDir && arbScanResult.DirGroupedArbFiles.ContainsKey(currentDir)
+                ? currentDir
+                : refreshedDirs[0];
+
+            DirectoryCombo.ItemsSource = refreshedDirs;
+            DirectoryCombo.SelectedItem = selectedDir;
+
+            BuildTable(selectedDir);
         }
-
-        if (arbScanResult.ArbErrors.Count > 0) {
-            MessageBox.Show($"Completed refresh with {arbScanResult.ArbErrors.Count} errors:\n" +
-                            string.Join("\n", arbScanResult.ArbErrors.Select(ex => $"  {ex.Message}")),
-                            "Arb.NET - Refresh Errors", MessageBoxButton.OK, MessageBoxImage.Warning);
+        finally {
+            loadingData = false;
         }
-
-        if (arbScanResult.DirGroupedArbFiles.Count == 0) {
-            LoadingLabel.Text = "No .arb files found in this solution.";
-            return;
-        }
-
-        List<string> refreshedDirs = arbScanResult.DirGroupedArbFiles.Keys.OrderBy(d => d).ToList();
-        string selectedDir = DirectoryCombo.SelectedItem is string currentDir && arbScanResult.DirGroupedArbFiles.ContainsKey(currentDir)
-            ? currentDir
-            : refreshedDirs[0];
-
-        DirectoryCombo.ItemsSource = refreshedDirs;
-        DirectoryCombo.SelectedItem = selectedDir;
-
-        BuildTable(selectedDir);
     }
 
     private void BuildTable(string directory) {
@@ -282,6 +296,8 @@ public partial class ArbEditorControl : UserControl {
         ArbGrid.ItemsSource = filteredRows;
         suppressSave = false;
 
+        ApplyFilter();
+
         // Attach width-change listeners after suppressSave is cleared so the initial layout fires are ignored.
         foreach (DataGridColumn col in ArbGrid.Columns) {
 
@@ -312,6 +328,7 @@ public partial class ArbEditorControl : UserControl {
     }
 
     private void DirectoryCombo_OnSelectionChanged(object sender, SelectionChangedEventArgs e) {
+        if (loadingData) return;
         if (DirectoryCombo.SelectedItem is string dir) {
             FilterTextBox.Text = string.Empty;
             BuildTable(dir);

@@ -54,6 +54,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     companion object {
         const val FILE_NAME = "Arb.NET Editor"
         val INITIAL_DIR_KEY: Key<String> = Key.create("arb.initialDir")
+        val INITIAL_FILTER_KEY: Key<String> = Key.create("arb.initialFilter")
 
         private const val COL_WIDTH_PREFIX = "arb.net.colWidth."
         private const val COL_ORDER_PREFIX = "arb.net.colOrder."
@@ -118,6 +119,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         ?: emptySet()
 
     private var hintDir = file.getUserData(INITIAL_DIR_KEY) ?: ""
+    private var hintFilter = file.getUserData(INITIAL_FILTER_KEY) ?: ""
 
     // Mutable state owned by the editor; written on the EDT only.
     private var lastByDirectory: Map<String, List<ArbLocaleData>> = emptyMap()
@@ -212,6 +214,10 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     if (initialDir != null) {
                         combo.selectedItem = initialDir
                         buildTable(initialDir, byDirectory)
+                        if (hintFilter.isNotEmpty()) {
+                            filterField?.text = hintFilter
+                            hintFilter = ""
+                        }
                     }
 
                     addKeyButton.addActionListener {
@@ -501,13 +507,15 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     }
 
     /**
-     * Switch the editor to the given directory. If the editor is already initialised, selects the
-     * directory in the combo (silently, without triggering a backend refresh) and rebuilds the
-     * table from cached data. If still loading, updates [hintDir] so the next [refresh] picks it up.
+     * Switch the editor to the given directory, optionally pre-populating the filter field.
+     * If the editor is already initialised, selects the directory in the combo (silently, without
+     * triggering a backend refresh) and rebuilds the table from cached data.
+     * If still loading, updates [hintDir]/[hintFilter] so the next [refresh] picks them up.
      */
-    fun navigateTo(dir: String) {
+    fun navigateTo(dir: String, filter: String = "") {
         hintDir = dir
-        val combo = dirCombo ?: return  // not yet initialised — hintDir will be used on first refresh
+        hintFilter = filter
+        val combo = dirCombo ?: return  // not yet initialised — hints will be used on first refresh
         if (!initialised) return
 
         val match = (0 until combo.itemCount)
@@ -515,16 +523,21 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             .firstOrNull { normPath(it) == normPath(dir) }
             ?: return
 
-        if (combo.selectedItem == match) return  // already showing the right directory
+        val dirChanged = combo.selectedItem != match
+        if (dirChanged) {
+            // Update combo silently — remove the listener to avoid triggering a backend refresh.
+            val listeners = combo.actionListeners.toList()
+            listeners.forEach { combo.removeActionListener(it) }
+            combo.selectedItem = match
+            listeners.forEach { combo.addActionListener(it) }
 
-        // Update combo silently — remove the listener to avoid triggering a backend refresh.
-        val listeners = combo.actionListeners.toList()
-        listeners.forEach { combo.removeActionListener(it) }
-        combo.selectedItem = match
-        listeners.forEach { combo.addActionListener(it) }
+            // Rebuild the table from the last fetched data — no round-trip needed.
+            buildTable(match, lastByDirectory)
+        }
 
-        // Rebuild the table from the last fetched data — no round-trip needed.
-        buildTable(match, lastByDirectory)
+        if (filter.isNotEmpty()) {
+            filterField?.text = filter
+        }
     }
 
     init {

@@ -52,9 +52,9 @@ output-namespace: MyProject.Locale # [REQUIRED] the namespace of the generated C
 
 ### IDE support (WIP):
 
-`Arb.NET.IDE.Jetbrains` - a plugin for Rider and Resharper
+`Arb.NET.IDE.Jetbrains` - a plugin for Rider
 
-`Arb.NET.IDE.VisualStudio` - a plugin for Visual Studio
+`Arb.NET.IDE.VisualStudio` - an extension for Visual Studio
 
 
 ## Future:
