@@ -1,5 +1,5 @@
 Param(
-    $Version = "9999.0.0"
+    $Version = "0.0.1"
 )
 
 Set-StrictMode -Version Latest

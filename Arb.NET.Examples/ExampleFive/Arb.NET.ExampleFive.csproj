@@ -39,7 +39,6 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <MauiXamlInflator>SourceGen</MauiXamlInflator>
         <DefineConstants>$(DefineConstants);MauiAllowImplicitXmlnsDeclaration</DefineConstants>
         <EnablePreviewFeatures>true</EnablePreviewFeatures>
     </PropertyGroup>

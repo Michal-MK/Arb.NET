@@ -174,12 +174,12 @@ tasks.patchPluginXml {
 tasks.prepareSandbox {
     dependsOn(compileDotNet)
 
-    val outputFolder = "${rootDir}/IDE/bin/${DotnetPluginId}.Rider/${BuildConfiguration}"
+    val outputFolder = "${rootDir}/IDE/bin/${DotnetPluginId}.IDE.Jetbrains.Rider/${BuildConfiguration}"
     val dllFiles = listOf(
-            "$outputFolder/${DotnetPluginId}.Common.dll",
-            "$outputFolder/${DotnetPluginId}.Common.pdb",
-            "$outputFolder/${DotnetPluginId}.Rider.dll",
-            "$outputFolder/${DotnetPluginId}.Rider.pdb",
+            "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Common.dll",
+            "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Common.pdb",
+            "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Rider.dll",
+            "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Rider.pdb",
             "$outputFolder/Arb.NET.IDE.Common.dll",
             "$outputFolder/Arb.NET.IDE.Common.pdb",
             "$outputFolder/Arb.NET.dll",

@@ -1,5 +1,5 @@
-$PluginId = "Arb.NET.IDE.Jetbrains"
-$ResharperProjectName = "Arb.NET.IDE.Jetbrains.Resharper"
+$PluginId = "Arb.NET"
+$ResharperProjectName = "Arb.NET.Resharper"
 $SolutionPath = "$PSScriptRoot\..\Arb.NET.sln"
 $SourceBasePath = "$PSScriptRoot\IDE"
 
