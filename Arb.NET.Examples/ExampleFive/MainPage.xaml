@@ -7,7 +7,11 @@
                          Spacing="25"
                          VerticalOptions="Center"
                          HorizontalOptions="Center">
-        <Label Text="Raw String" FontSize="64" TextColor="White" />
-        <Label Text="{ext:Arb AppTitle}" FontSize="64" TextColor="White" />
+        <Label Text="Raw String" FontSize="32" TextColor="White" />
+        <Label Text="{ext:Arb AppTitle}" FontSize="32" TextColor="White" />
+        <HorizontalStackLayout Spacing="16" HorizontalOptions="Center">
+            <Button Text="EN" Clicked="OnEnClicked" />
+            <Button Text="CS" Clicked="OnCsClicked" />
+        </HorizontalStackLayout>
     </VerticalStackLayout>
 </ContentPage>

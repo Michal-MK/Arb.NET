@@ -16,7 +16,8 @@
         <!-- Roslyn source generators must be packaged under analyzers/dotnet/cs/, not lib/. -->
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <!-- NU5128: expected for analyzer packages — no lib/ folder by design -->
-        <NoWarn>$(NoWarn);NU5128</NoWarn>
+        <!-- CS0436: Arb.NET types are inlined as sources AND referenced as a package for nuspec dependency purposes -->
+        <NoWarn>$(NoWarn);NU5128;CS0436</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -29,13 +30,18 @@
         <None Include="..\README.MD" Pack="true" PackagePath="\" />
         <!-- Package the generator DLL in the location Roslyn expects for source generators. -->
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
     </ItemGroup>
 
     <ItemGroup>
         <!--
-            Include Arb.NET source files directly into the generator assembly so that
-            the compiler host can find them without needing to load a separate DLL.
+            Inline Arb.NET source files into the generator assembly so the Roslyn isolated
+            host needs no additional DLLs. ARB_GENERATOR is defined so JsonSchema.Net-dependent
+            code paths are compiled out (see #if !ARB_GENERATOR guards in each file).
+            Arb.NET is declared as a separate nuspec dependency (see PackageReference below)
+            so consumers still get IArbLocale at runtime without referencing it manually.
         -->
+        <Compile Include="..\Arb.NET\IArbLocale.cs"/>
         <Compile Include="..\Arb.NET\ArbParser.cs"/>
         <Compile Include="..\Arb.NET\ArbCodeGenerator.cs"/>
         <Compile Include="..\Arb.NET\Helpers\StringHelper.cs"/>
@@ -48,6 +54,16 @@
         <Compile Include="..\Arb.NET\Models\EnumLocalizationInfo.cs"/>
         <Compile Include="..\Arb.NET\Models\L10nConfig.cs"/>
         <Compile Include="..\Arb.NET\ArbSerializer.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+            Declare Arb.NET as a nuspec dependency so consumers get IArbLocale transitively.
+            ExcludeAssets="all" keeps the DLL out of this project's compile graph (types are
+            already inlined above); PrivateAssets="none" writes it into the published .nuspec.
+            NOTE: "runtime" must be included (not excluded) for NuGet to emit the dependency.
+        -->
+        <PackageReference Include="Arb.NET" Version="0.1.0" PrivateAssets="none" />
     </ItemGroup>
 
 </Project>

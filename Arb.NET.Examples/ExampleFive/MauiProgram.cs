@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Arb.NET;
+using Microsoft.Extensions.Logging;
 
 namespace ExampleFive;
 
@@ -11,6 +12,10 @@ public static class MauiProgram {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
+
+        builder.Services.AddSingleton<LocaleService>();
+        builder.Services.AddSingleton<IArbLocale>(sp => sp.GetRequiredService<LocaleService>());
+        builder.Services.AddTransient<MainPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();
