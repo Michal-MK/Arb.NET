@@ -26,7 +26,9 @@ class ArbModel private constructor(
     private val _removeArbKey: RdCall<ArbRemoveKey, Boolean>,
     private val _addArbLocale: RdCall<ArbNewLocale, Boolean>,
     private val _translateArbEntries: RdCall<ArbTranslateRequest, ArbTranslateResponse>,
-    private val _getArbKeys: RdCall<String, List<ArbKeyInfo>>
+    private val _getArbKeys: RdCall<String, List<ArbKeyInfo>>,
+    private val _openArbEditor: RdSignal<ArbOpenEditor>,
+    private val _arbKeysChanged: RdSignal<String>
 ) : RdExtBase() {
     //companion
     
@@ -47,6 +49,7 @@ class ArbModel private constructor(
             serializers.register(LazyCompanionMarshaller(RdId(-6163743818377381401), classLoader, "com.jetbrains.rd.ide.model.ArbTranslatedItem"))
             serializers.register(LazyCompanionMarshaller(RdId(-5201584046087783919), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateResponse"))
             serializers.register(LazyCompanionMarshaller(RdId(17391508275880079), classLoader, "com.jetbrains.rd.ide.model.ArbKeyInfo"))
+            serializers.register(LazyCompanionMarshaller(RdId(1601703604575690805), classLoader, "com.jetbrains.rd.ide.model.ArbOpenEditor"))
         }
         
         
@@ -55,7 +58,7 @@ class ArbModel private constructor(
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         private val __ArbKeyInfoListSerializer = ArbKeyInfo.list()
         
-        const val serializationHash = 6280947667756541107L
+        const val serializationHash = -8146834234892139901L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -70,6 +73,8 @@ class ArbModel private constructor(
     val addArbLocale: IRdCall<ArbNewLocale, Boolean> get() = _addArbLocale
     val translateArbEntries: IRdCall<ArbTranslateRequest, ArbTranslateResponse> get() = _translateArbEntries
     val getArbKeys: IRdCall<String, List<ArbKeyInfo>> get() = _getArbKeys
+    val openArbEditor: ISignal<ArbOpenEditor> get() = _openArbEditor
+    val arbKeysChanged: ISignal<String> get() = _arbKeysChanged
     //methods
     //initializer
     init {
@@ -81,6 +86,8 @@ class ArbModel private constructor(
         bindableChildren.add("addArbLocale" to _addArbLocale)
         bindableChildren.add("translateArbEntries" to _translateArbEntries)
         bindableChildren.add("getArbKeys" to _getArbKeys)
+        bindableChildren.add("openArbEditor" to _openArbEditor)
+        bindableChildren.add("arbKeysChanged" to _arbKeysChanged)
     }
     
     //secondary constructor
@@ -93,7 +100,9 @@ class ArbModel private constructor(
         RdCall<ArbRemoveKey, Boolean>(ArbRemoveKey, FrameworkMarshallers.Bool),
         RdCall<ArbNewLocale, Boolean>(ArbNewLocale, FrameworkMarshallers.Bool),
         RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest, ArbTranslateResponse),
-        RdCall<String, List<ArbKeyInfo>>(FrameworkMarshallers.String, __ArbKeyInfoListSerializer)
+        RdCall<String, List<ArbKeyInfo>>(FrameworkMarshallers.String, __ArbKeyInfoListSerializer),
+        RdSignal<ArbOpenEditor>(ArbOpenEditor),
+        RdSignal<String>(FrameworkMarshallers.String)
     )
     
     //equals trait
@@ -110,6 +119,8 @@ class ArbModel private constructor(
             print("addArbLocale = "); _addArbLocale.print(printer); println()
             print("translateArbEntries = "); _translateArbEntries.print(printer); println()
             print("getArbKeys = "); _getArbKeys.print(printer); println()
+            print("openArbEditor = "); _openArbEditor.print(printer); println()
+            print("arbKeysChanged = "); _arbKeysChanged.print(printer); println()
         }
         printer.print(")")
     }
@@ -123,7 +134,9 @@ class ArbModel private constructor(
             _removeArbKey.deepClonePolymorphic(),
             _addArbLocale.deepClonePolymorphic(),
             _translateArbEntries.deepClonePolymorphic(),
-            _getArbKeys.deepClonePolymorphic()
+            _getArbKeys.deepClonePolymorphic(),
+            _openArbEditor.deepClonePolymorphic(),
+            _arbKeysChanged.deepClonePolymorphic()
         )
     }
     //contexts
@@ -634,6 +647,71 @@ data class ArbNewLocale (
         printer.indent {
             print("directory = "); directory.print(printer); println()
             print("locale = "); locale.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:107]
+ */
+data class ArbOpenEditor (
+    val arbDir: String,
+    val keyFilter: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbOpenEditor> {
+        override val _type: KClass<ArbOpenEditor> = ArbOpenEditor::class
+        override val id: RdId get() = RdId(1601703604575690805)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbOpenEditor  {
+            val arbDir = buffer.readString()
+            val keyFilter = buffer.readString()
+            return ArbOpenEditor(arbDir, keyFilter)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbOpenEditor)  {
+            buffer.writeString(value.arbDir)
+            buffer.writeString(value.keyFilter)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbOpenEditor
+        
+        if (arbDir != other.arbDir) return false
+        if (keyFilter != other.keyFilter) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + arbDir.hashCode()
+        __r = __r*31 + keyFilter.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbOpenEditor (")
+        printer.indent {
+            print("arbDir = "); arbDir.print(printer); println()
+            print("keyFilter = "); keyFilter.print(printer); println()
         }
         printer.print(")")
     }

@@ -108,21 +108,20 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
             if (configTexts.IsEmpty) return;
 
-            // Key: baseClassName → list of (document, className, namespace, defaultLang)
+            // Key: baseClassName → list of (document, className, namespace, defaultLang, outputDir)
             // Accumulated across all l10n.yaml files before dispatcher emission.
-            Dictionary<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode)>> groups = [];
+            Dictionary<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, string OutputDir)>> groups = [];
 
             IReadOnlyList<EnumLocalizationInfo>? enumForDispatcher = enumInfos.IsEmpty
                 ? null
-                : [
-                    .. enumInfos
-                        .Select(e => new EnumLocalizationInfo {
-                            FullName = e.FullName,
-                            SimpleName = e.SimpleName,
-                            Members = e.Members,
-                            Description = e.Description
-                        })
-                ];
+                : enumInfos
+                    .Select(e => new EnumLocalizationInfo {
+                        FullName = e.FullName,
+                        SimpleName = e.SimpleName,
+                        Members = e.Members,
+                        Description = e.Description
+                    })
+                    .ToList();
 
             // ── Process each l10n.yaml independently ─────────────────────────────────────
             foreach (AdditionalText configText in configTexts) {
@@ -132,15 +131,17 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                 L10nConfig config = L10nConfig.Parse(yaml!);
                 string configDir = Path.GetDirectoryName(configText.Path)!;
 
+                // ── Output directory for generated .g.cs files (visible in Solution Explorer) ─
+                string outputDir = Path.Combine(configDir, config.ArbDir);
+
                 // ── Filter .arb files to this config's arb-dir ───────────────────────────
                 string arbDirAbsolute = Path.GetFullPath(Path.Combine(configDir, config.ArbDir))
                                             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                                         + Path.DirectorySeparatorChar;
 
-                List<AdditionalText> relevantArbs = [
-                    .. arbPairs
-                        .Where(f => f.Path.StartsWith(arbDirAbsolute, StringComparison.OrdinalIgnoreCase))
-                ];
+                List<AdditionalText> relevantArbs = arbPairs
+                    .Where(f => f.Path.StartsWith(arbDirAbsolute, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
                 // ── Resolve namespace ─────────────────────────────────────────────────────
                 string namespaceName = FirstNonEmpty(
@@ -283,28 +284,30 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                                     + "Localizations";
                     }
 
-                    // Emit the locale-specific class
+                    // Write locale-specific class to disk (Generated/) — compilation is handled
+                    // by the <Compile> glob in Arb.NET.Generators.targets, not ctx.AddSource.
                     string source = new ArbCodeGenerator().GenerateClass(document, className, namespaceName);
-                    ctx.AddSource($"{fileNameWithoutExt}.g.cs", source);
+                    WriteGeneratedFile(outputDir, $"{fileNameWithoutExt}.g.cs", source);
 
                     // Accumulate for dispatcher generation
                     if (!string.IsNullOrWhiteSpace(baseClass)) {
-                        if (!groups.TryGetValue(baseClass!, out List<(ArbDocument, string, string, string)>? list)) {
+                        if (!groups.TryGetValue(baseClass!, out List<(ArbDocument, string, string, string, string)>? list)) {
                             list = [];
                             groups[baseClass!] = list;
                         }
-                        list.Add((document, className, namespaceName, defaultLangCode ?? string.Empty));
+                        list.Add((document, className, namespaceName, defaultLangCode ?? string.Empty, outputDir));
                     }
                 }
             }
 
             // ── Step 3: emit dispatcher classes (one per output-class group) ─────────────
-            foreach (KeyValuePair<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode)>> groupPair in groups) {
+            foreach (KeyValuePair<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, string OutputDir)>> groupPair in groups) {
                 string? baseClassName = groupPair.Key;
-                List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode)>? entries = groupPair.Value;
+                List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, string OutputDir)>? entries = groupPair.Value;
 
                 string? groupDefaultLangCode = entries.FirstOrDefault(e => !string.IsNullOrEmpty(e.DefaultLangCode)).DefaultLangCode;
                 string? groupNamespace = entries[0].NamespaceName;
+                string groupOutputDir = entries[0].OutputDir;
 
                 ArbDocument? defaultDocument = null;
                 if (!string.IsNullOrWhiteSpace(groupDefaultLangCode)) {
@@ -328,7 +331,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     enumForDispatcher
                 );
 
-                ctx.AddSource($"{baseClassName}Dispatcher.g.cs", dispatcher);
+                WriteGeneratedFile(groupOutputDir, $"{baseClassName}Dispatcher.g.cs", dispatcher);
             }
         });
     }
@@ -345,6 +348,17 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
     }
 
 #pragma warning disable RS1035
+    private static void WriteGeneratedFile(string outputDir, string fileName, string content) {
+        try {
+            Directory.CreateDirectory(outputDir);
+            File.WriteAllText(Path.Combine(outputDir, fileName), content, System.Text.Encoding.UTF8);
+        }
+        catch {
+            // TODO Handle
+            // Best-effort; don't crash the build if the file cannot be written.
+        }
+    }
+
     private static void WriteArbFileToDisk(string path, string content) {
         try {
             File.WriteAllText(path, content, System.Text.Encoding.UTF8);

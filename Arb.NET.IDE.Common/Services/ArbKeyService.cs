@@ -79,10 +79,13 @@ public static class ArbKeyService {
 
         DateTime localizationStamp = SafeLastWriteUtc(localizationPath);
         DateTime arbStamp = string.IsNullOrWhiteSpace(arbPath) ? DateTime.MinValue : SafeLastWriteUtc(arbPath);
+        string? dispatcherPath = FindDispatcherFile(projectDir, outputClass);
+        DateTime dispatcherStamp = SafeLastWriteUtc(dispatcherPath);
 
         if (CACHE.TryGetValue(projectDir, out CacheEntry? cached)
             && cached.LocalizationStamp == localizationStamp
-            && cached.ArbStamp == arbStamp) {
+            && cached.ArbStamp == arbStamp
+            && cached.DispatcherStamp == dispatcherStamp) {
             return cached.Keys;
         }
 
@@ -91,7 +94,7 @@ public static class ArbKeyService {
             keys = GetKeysFromArbFile(arbPath);
         }
 
-        CACHE[projectDir] = new CacheEntry(localizationStamp, arbStamp, keys);
+        CACHE[projectDir] = new CacheEntry(localizationStamp, arbStamp, dispatcherStamp, keys);
         return keys;
     }
 
@@ -224,6 +227,18 @@ public static class ArbKeyService {
                 }
 
                 if (result.Count > 0) {
+                    // Also include keys that exist in the .arb file but are not yet in the generated
+                    // file (e.g. added since the last build). This keeps validation squiggles accurate
+                    // even before the source generator has regenerated the dispatcher.
+                    HashSet<string> generatedKeys = result.Select(k => k.Key).ToHashSet(StringComparer.Ordinal);
+                    foreach (KeyValuePair<string, string> kv in rawKeys) {
+                        if (!generatedKeys.Contains(kv.Key)) {
+                            descriptions.TryGetValue(kv.Key, out string? desc);
+                            int ln = pascalLineNumbers.TryGetValue(kv.Key, out int lineNum) ? lineNum : -1;
+                            result.Add(new ArbKeyInfo(kv.Key, false, desc, resolvedArbPath, kv.Value, ln, null));
+                        }
+                    }
+
                     return result
                         .GroupBy(x => x.Key, StringComparer.Ordinal)
                         .Select(g => g.First())
@@ -265,7 +280,73 @@ public static class ArbKeyService {
         }
     }
 
-    private static DateTime SafeLastWriteUtc(string path) {
+    /// <summary>
+    /// Enumerates all <c>.arb</c> files that are declared by a <c>l10n.yaml</c> file somewhere
+    /// under <paramref name="rootDir"/>. Only files that live inside the <c>arb-dir</c>
+    /// directory specified by their owning <c>l10n.yaml</c> are returned.
+    /// </summary>
+    public static IEnumerable<string> FindArbFiles(string rootDir) {
+        IEnumerable<string> yamlFiles;
+        try {
+            yamlFiles = Directory.EnumerateFiles(rootDir, "l10n.yaml", SearchOption.AllDirectories);
+        }
+        catch {
+            yield break;
+        }
+
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string yamlPath in yamlFiles) {
+            string projectDir = Path.GetDirectoryName(yamlPath)!;
+            string arbDir;
+            try {
+                L10nConfig config = L10nConfig.Parse(File.ReadAllText(yamlPath));
+                arbDir = string.IsNullOrWhiteSpace(config.ArbDir)
+                    ? projectDir
+                    : Path.GetFullPath(Path.Combine(projectDir, config.ArbDir));
+            }
+            catch {
+                continue;
+            }
+
+            if (!Directory.Exists(arbDir)) continue;
+
+            IEnumerable<string> candidates;
+            try {
+                candidates = Directory.EnumerateFiles(arbDir, "*.arb");
+            }
+            catch {
+                continue;
+            }
+
+            foreach (string filePath in candidates) {
+                if (seen.Add(filePath)) {
+                    yield return filePath;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Removes the cached key list for <paramref name="projectDir"/>, forcing a fresh
+    /// discovery on the next call to <see cref="GetKeys"/>. Call this after programmatically
+    /// adding a key to .arb files so subsequent validations reflect the change.
+    /// </summary>
+    public static void InvalidateCache(string projectDir) {
+        CACHE.TryRemove(projectDir, out _);
+    }
+
+    private static string? FindDispatcherFile(string projectDir, string outputClass) {
+        try {
+            return Directory.EnumerateFiles(
+                projectDir, $"{outputClass}Dispatcher.g.cs", SearchOption.AllDirectories)
+                .FirstOrDefault();
+        }
+        catch {
+            return null;
+        }
+    }
+
+    private static DateTime SafeLastWriteUtc(string? path) {
         try {
             return File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
         }
@@ -274,9 +355,10 @@ public static class ArbKeyService {
         }
     }
 
-    private sealed class CacheEntry(DateTime localizationStamp, DateTime arbStamp, List<ArbKeyInfo> keys) {
+    private sealed class CacheEntry(DateTime localizationStamp, DateTime arbStamp, DateTime dispatcherStamp, List<ArbKeyInfo> keys) {
         public DateTime LocalizationStamp { get; } = localizationStamp;
         public DateTime ArbStamp { get; } = arbStamp;
+        public DateTime DispatcherStamp { get; } = dispatcherStamp;
         public List<ArbKeyInfo> Keys { get; } = keys;
     }
 }

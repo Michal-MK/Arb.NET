@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,6 +10,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
+using Arb.NET;
+using Arb.NET.IDE.Common.Services;
+using Arb.NET.IDE.VisualStudio.Tool.CodeCompletion;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
@@ -150,21 +154,19 @@ public partial class ArbEditorControl : UserControl {
 
         ArbRow? match = currentRows.FirstOrDefault(r => string.Equals(r.Key, key, StringComparison.Ordinal));
         if (match == null && key.Length > 0) {
-            string normalized = char.ToLowerInvariant(key[0]) + key.Substring(1);
+            string normalized = StringHelper.ToCamelCase(key);
             match = currentRows.FirstOrDefault(r => string.Equals(r.Key, normalized, StringComparison.Ordinal));
-        }
-
-        if (match == null) {
-            return;
         }
 
         FilterTextBox.Text = key;
         ApplyFilter();
 
-        ArbGrid.SelectedItem = match;
-        ArbGrid.CurrentItem = match;
-        ArbGrid.ScrollIntoView(match);
-        ArbGrid.Focus();
+        if (match != null) {
+            ArbGrid.SelectedItem = match;
+            ArbGrid.CurrentItem = match;
+            ArbGrid.ScrollIntoView(match);
+            ArbGrid.Focus();
+        }
     }
 
     private async Task RefreshDataAsync() {
@@ -402,6 +404,7 @@ public partial class ArbEditorControl : UserControl {
             });
         }
 
+        RunArbGenerate(directory);
         BuildTable(directory);
     }
 
@@ -472,7 +475,10 @@ public partial class ArbEditorControl : UserControl {
         }
 
         if (anyChanged) {
+            ArbKeyService.InvalidateCache(directory);
+            RunArbGenerate(directory);
             BuildTable(directory);
+            ArbXamlValidationTagger.InvalidateAll();
         }
     }
 
@@ -482,11 +488,12 @@ public partial class ArbEditorControl : UserControl {
         ArbFile? arb = localeFiles.FirstOrDefault(f => string.Equals(f.LangCode, locale, StringComparison.Ordinal));
         if (arb == null) return;
 
-        ModifyArbFile(arb, doc => {
+        bool changed = ModifyArbFile(arb, doc => {
             if (doc.Entries.TryGetValue(key, out ArbEntry entry)) {
                 entry.Value = newValue;
             }
         });
+        if (changed) RunArbGenerate(directory);
     }
 
     private void TryRenameSelectedRow() {
@@ -523,7 +530,12 @@ public partial class ArbEditorControl : UserControl {
             });
         }
 
-        if (anyChanged) BuildTable(directory);
+        if (anyChanged) {
+            ArbKeyService.InvalidateCache(directory);
+            RunArbGenerate(directory);
+            BuildTable(directory);
+            ArbXamlValidationTagger.InvalidateAll();
+        }
     }
 
     private void TranslateButton_OnClick(object sender, RoutedEventArgs e) {
@@ -549,7 +561,35 @@ public partial class ArbEditorControl : UserControl {
         dialog.ShowDialog();
 
         if (dialog.AppliedChanges) {
+            RunArbGenerate(directory);
             BuildTable(directory);
+        }
+    }
+
+    private static void RunArbGenerate(string arbDirectory) {
+        string? projectDir = FindProjectDir(arbDirectory);
+        if (projectDir == null) return;
+
+        try {
+            Process.Start(new ProcessStartInfo {
+                FileName = "arb",
+                Arguments = $"generate \"{projectDir}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+        }
+        catch {
+            // Best-effort; do not surface errors to the user for a background task.
+        }
+    }
+
+    private static string? FindProjectDir(string startDir) {
+        string dir = startDir;
+        while (true) {
+            if (File.Exists(Path.Combine(dir, "l10n.yaml"))) return dir;
+            string? parent = Path.GetDirectoryName(dir);
+            if (parent == null || parent == dir) return null;
+            dir = parent;
         }
     }
 }

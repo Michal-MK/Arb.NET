@@ -103,6 +103,12 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("xmlDoc", string.nullable)       // raw inner content of <summary> from generated Dispatcher; null if unavailable
     }
 
+    // Payload for opening the ARB editor at a specific key — sent from C# backend to Kotlin frontend.
+    val ArbOpenEditor = structdef {
+        field("arbDir", string)
+        field("keyFilter", string)
+    }
+
     init {
         // Call: Kotlin asks C# to scan the solution and return all ARB data.
         // Returns one ArbLocaleData per .arb file found.
@@ -136,5 +142,14 @@ object ArbModel : Ext(SolutionModel.Solution) {
         // for a given project directory. Falls back to parsing the template .arb file if the
         // class is not yet generated. Returns key names with parametric flag.
         call("getArbKeys", string, immutableList(ArbKeyInfo))
+
+        // Signal: C# backend asks Kotlin frontend to open the ARB editor at a key.
+        // Fired after a "Generate ARB key" quick fix writes the key to .arb files.
+        signal("openArbEditor", ArbOpenEditor)
+
+        // Signal: C# backend notifies Kotlin frontend that ARB keys have changed
+        // (add, remove, rename). The payload is the arb directory path.
+        // Kotlin uses this to re-run annotations on open XAML files.
+        signal("arbKeysChanged", string)
     }
 }

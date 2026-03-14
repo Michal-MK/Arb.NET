@@ -17,6 +17,14 @@ Contains an ARB editor and XAML markup support.
   </description>
 
   <extensions defaultExtensionNs="com.intellij">
+    <postStartupActivity implementation="com.jetbrains.rider.plugins.arbnet.ArbModelListener"/>
+
+    <intentionAction>
+      <language>C#</language>
+      <className>com.jetbrains.rider.plugins.arbnet.ArbCSharpGenerateKeyIntention</className>
+      <category>Arb.NET</category>
+    </intentionAction>
+
     <fileEditorProvider
         implementation="com.jetbrains.rider.plugins.arbnet.ArbEditorProvider" />
     <fileType 
@@ -45,15 +53,6 @@ Contains an ARB editor and XAML markup support.
         language="Xaml"
         implementationClass="com.jetbrains.rider.plugins.arbnet.ArbKeyDocumentationProvider"
         order="first" />
-
-    <localInspection
-        language="Xaml"
-        implementationClass="com.jetbrains.rider.plugins.arbnet.ArbKeyInspection"
-        shortName="ArbKeyInspection"
-        displayName="Invalid ARB key in markup extension"
-        groupName="Arb.NET"
-        enabledByDefault="true"
-        level="WARNING" />
 
     <!-- Register via the extension point that Rider's action dispatcher actually consults for XAML.
          Rider's own plugin.xml registers backend.actions.support language="Xaml" with the base

@@ -61,10 +61,10 @@ private class ArbKeyCompletionProvider : CompletionProvider<CompletionParameters
         // Walk up from the virtual file directly — avoids PSI virtualFile being null on Rider XAML nodes
         val projectDir = findProjectDirFromVFile(virtualFile) ?: return
 
-        val cache = ArbKeyCache.getInstance(parameters.position.project)
+        val keyRetrievalService = ArbKeyRetrievalService.getInstance(parameters.position.project)
         // Use blocking fetch so completions appear on the first Ctrl+Space.
         // CompletionProviders run on a background thread, so blocking is safe here.
-        val keys = cache.getKeysBlocking(projectDir, Lifetime.Eternal, timeoutMs = 500)
+        val keys = keyRetrievalService.getKeysBlocking(projectDir, Lifetime.Eternal, timeoutMs = 500)
         if (keys.isEmpty()) return
 
         // We have ARB results — suppress backend XAML suggestions to keep popup clean.

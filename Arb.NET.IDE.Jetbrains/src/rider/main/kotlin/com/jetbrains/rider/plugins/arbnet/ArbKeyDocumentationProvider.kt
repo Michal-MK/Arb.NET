@@ -10,7 +10,6 @@ import com.intellij.psi.impl.FakePsiElement
 import com.jetbrains.rd.util.lifetime.Lifetime
 import org.w3c.dom.Element
 import org.w3c.dom.Node
-import org.w3c.dom.NodeList
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
@@ -53,15 +52,16 @@ class ArbKeyDocumentationProvider : DocumentationProvider {
         val key = match.groupValues[1]
 
         val projectDir = findProjectDirFromVFile(vFile) ?: return null
-        val cache = ArbKeyCache.getInstance(file.project)
-        val keys = cache.getKeysBlocking(projectDir, Lifetime.Eternal, timeoutMs = 1000)
+        val keyRetrievalService = ArbKeyRetrievalService.getInstance(file.project)
+        val keys = keyRetrievalService.getKeysBlocking(projectDir, Lifetime.Eternal, timeoutMs = 1000)
         val keyInfo = keys.find { it.key == key }
+            ?: return null  // unknown key — don't show a custom tooltip
 
         // Build the doc HTML here so generateDoc just returns it without another cache hit.
-        val html = if (keyInfo?.xmlDoc != null) {
+        val html = if (keyInfo.xmlDoc != null) {
             renderXmlDocToHtml(keyInfo.xmlDoc, key, keyInfo.isParametric)
         } else {
-            buildFallbackDocHtml(key, keyInfo?.description, keyInfo?.isParametric ?: false)
+            buildFallbackDocHtml(key, keyInfo.description, keyInfo.isParametric)
         }
         return ArbKeyElement(file, key, html)
     }
@@ -178,11 +178,13 @@ class ArbKeyDocumentationProvider : DocumentationProvider {
         sb.append("<b>$key</b>")
         if (isParametric) sb.append("&nbsp;<i>(parametric)</i>")
         sb.append(DocumentationMarkup.DEFINITION_END)
+        sb.append(DocumentationMarkup.CONTENT_START)
         if (!description.isNullOrBlank()) {
-            sb.append(DocumentationMarkup.CONTENT_START)
             sb.append(description)
-            sb.append(DocumentationMarkup.CONTENT_END)
+        } else {
+            sb.append("<i>Full documentation available once the source generator has run (If using Roslyn).</i>")
         }
+        sb.append(DocumentationMarkup.CONTENT_END)
         return sb.toString()
     }
 }

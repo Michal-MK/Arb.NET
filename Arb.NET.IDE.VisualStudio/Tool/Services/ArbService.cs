@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Arb.NET.IDE.Common.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
@@ -33,7 +34,7 @@ public class ArbService(ArbPackage package) {
             Dictionary<string, List<ArbFile>> byDir = new(StringComparer.OrdinalIgnoreCase);
             List<Exception> errors = [];
 
-            foreach (string filePath in Directory.EnumerateFiles(solutionDir, "*.arb", SearchOption.AllDirectories)) {
+            foreach (string filePath in ArbKeyService.FindArbFiles(solutionDir)) {
                 try {
                     string content = File.ReadAllText(filePath);
                     ArbParseResult result = parser.ParseContent(content);

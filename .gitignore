@@ -27,7 +27,16 @@ local.properties
 
 # Executables
 Arb.NET.IDE.Jetbrains/tools/nuget.exe
+
+# Publishing output
+VERSIONING.md
+publishing/
+
+publish-rider.ps1
+publish-vs.ps1
+publish-all.ps1
 publish-local.ps1
+publish-tool-local.ps1
 
 # AI files
 .claude

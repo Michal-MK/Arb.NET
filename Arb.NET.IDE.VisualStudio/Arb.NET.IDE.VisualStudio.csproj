@@ -57,6 +57,8 @@
     <Compile Include="Tool\CodeCompletion\ArbXamlValidationTagging.cs" />
     <Compile Include="Tool\CodeCompletion\ArbXamlCompletion.cs" />
     <Compile Include="Tool\CodeCompletion\XamlEditorIntegration.cs" />
+    <Compile Include="Tool\CodeCompletion\ArbXamlSuggestedActions.cs" />
+    <Compile Include="Tool\CodeCompletion\ArbCSharpSuggestedActions.cs" />
     <Compile Include="Tool\Models\ArbFile.cs" />
     <Compile Include="Tool\Models\ArbRow.cs" />
     <Compile Include="Tool\Models\ArbScanResult.cs" />

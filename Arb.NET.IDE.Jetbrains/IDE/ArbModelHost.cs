@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -43,6 +44,8 @@ public class ArbModelHost {
 
             entry.Value = update.Value;
             File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
+            ArbKeyService.InvalidateCache(update.Directory);
+            RunArbGenerate(update.Directory);
             return true;
         });
 
@@ -51,7 +54,12 @@ public class ArbModelHost {
 
             IEnumerable<string> dirFiles = localeToFilePath
                 .Where(kv => kv.Key.StartsWith(payload.Directory + "|"))
-                .Select(kv => kv.Value);
+                .Select(kv => kv.Value)
+                .ToList();
+
+            if (!dirFiles.Any() && Directory.Exists(payload.Directory)) {
+                dirFiles = Directory.EnumerateFiles(payload.Directory, "*.arb");
+            }
 
             foreach (string filePath in dirFiles) {
                 string content = File.ReadAllText(filePath);
@@ -67,6 +75,11 @@ public class ArbModelHost {
                 anyChanged = true;
             }
 
+            if (anyChanged) {
+                ArbKeyService.InvalidateCache(payload.Directory);
+                RunArbGenerate(payload.Directory);
+                model.ArbKeysChanged.Fire(payload.Directory);
+            }
             return anyChanged;
         });
 
@@ -87,6 +100,11 @@ public class ArbModelHost {
                 anyChanged = true;
             }
 
+            if (anyChanged) {
+                ArbKeyService.InvalidateCache(payload.Directory);
+                RunArbGenerate(payload.Directory);
+                model.ArbKeysChanged.Fire(payload.Directory);
+            }
             return anyChanged;
         });
 
@@ -159,6 +177,11 @@ public class ArbModelHost {
                 anyChanged = true;
             }
 
+            if (anyChanged) {
+                ArbKeyService.InvalidateCache(rename.Directory);
+                RunArbGenerate(rename.Directory);
+                model.ArbKeysChanged.Fire(rename.Directory);
+            }
             return anyChanged;
         });
 
@@ -260,11 +283,44 @@ public class ArbModelHost {
         return descriptions;
     }
 
+    /// <summary>
+    /// Fires-and-forgets <c>arb generate &lt;projectDir&gt;</c> so generated .g.cs
+    /// files are refreshed after every ARB mutation.
+    /// </summary>
+    private static void RunArbGenerate(string arbDirectory) {
+        string? projectDir = FindProjectDir(arbDirectory);
+        if (projectDir == null) return;
+
+        try {
+            Process.Start(new ProcessStartInfo {
+                FileName = "arb",
+                Arguments = $"generate \"{projectDir}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = false,
+                RedirectStandardError = false
+            });
+        }
+        catch {
+            // TODO Handle
+        }
+    }
+
+    private static string? FindProjectDir(string startDir) {
+        string dir = startDir;
+        while (true) {
+            if (File.Exists(Path.Combine(dir, "l10n.yaml"))) return dir;
+            string? parent = Path.GetDirectoryName(dir);
+            if (parent == null || parent == dir) return null;
+            dir = parent;
+        }
+    }
+
     private List<ArbLocaleData> CollectArbData(ISolution solution) {
         localeToFilePath.Clear();
 
         string solutionDir = solution.SolutionFilePath.Directory.FullPath;
-        IEnumerable<string> arbFiles = Directory.EnumerateFiles(solutionDir, "*.arb", SearchOption.AllDirectories);
+        IEnumerable<string> arbFiles = ArbKeyService.FindArbFiles(solutionDir);
 
         List<ArbLocaleData> result = [];
         ArbParser parser = new();

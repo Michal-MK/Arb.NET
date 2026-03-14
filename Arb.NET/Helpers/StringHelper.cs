@@ -17,6 +17,11 @@ public static class StringHelper {
         return char.ToUpperInvariant(key[0]) + key.Substring(1);
     }
 
+    public static string ToCamelCase(string key) {
+        if (string.IsNullOrEmpty(key)) return key;
+        return char.ToLowerInvariant(key[0]) + key.Substring(1);
+    }
+
     public static string NormalizeLocale(string? locale) {
         return string.IsNullOrWhiteSpace(locale)
             ? string.Empty
@@ -28,9 +33,7 @@ public static class StringHelper {
     }
     
     public static string ArbKeyForEnumMember(string enumSimpleName, string memberName) {
-        string camelEnum = char.ToLowerInvariant(enumSimpleName[0]) + enumSimpleName.Substring(1);
-        string pascalMember = char.ToUpperInvariant(memberName[0]) + memberName.Substring(1);
-        return camelEnum + pascalMember;
+        return ToCamelCase(enumSimpleName) + ToPascalCase(memberName);
     }
 
     public static string XmlEscape(string value) {

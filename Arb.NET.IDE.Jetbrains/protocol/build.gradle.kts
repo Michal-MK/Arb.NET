@@ -22,7 +22,7 @@ val DotnetPluginId: String by rootProject
 val RiderPluginId: String by rootProject
 
 rdgen {
-    val csOutput = File(rootDir, "src/dotnet/${DotnetPluginId}.Rider")
+    val csOutput = File(rootDir, "src/dotnet/${DotnetPluginId}.IDE.Jetbrains.Rider")
     val ktOutput = File(rootDir, "src/rider/main/kotlin")
 
     verbose = true

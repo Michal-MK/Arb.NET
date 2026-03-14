@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Arb.NET;
 using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.Common.Services;
 using Microsoft.VisualStudio;
@@ -104,7 +105,7 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
 
         string rawKey = !string.IsNullOrWhiteSpace(keyInfo.RawKey)
             ? keyInfo.RawKey!
-            : char.ToLowerInvariant(keyInfo.Key[0]) + keyInfo.Key.Substring(1);
+            : StringHelper.ToCamelCase(keyInfo.Key);
 
         ArbNavigation.OpenToolWindowAtKey(keyInfo.ArbFilePath, rawKey);
         return true;

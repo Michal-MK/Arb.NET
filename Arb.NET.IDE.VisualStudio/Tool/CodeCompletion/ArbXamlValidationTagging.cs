@@ -35,11 +35,23 @@ internal sealed class ArbXamlValidationTagger : ITagger<ErrorTag>
     private readonly ITextView textView;
     private readonly ITextBuffer textBuffer;
 
+    /// <summary>
+    /// Raised by <see cref="InvalidateAll"/> to force all live taggers to re-evaluate.
+    /// </summary>
+    public static event EventHandler? GlobalInvalidate;
+
+    /// <summary>
+    /// Forces all live <see cref="ArbXamlValidationTagger"/> instances to discard their
+    /// cached results and re-tag. Call this after writing new keys to .arb files.
+    /// </summary>
+    public static void InvalidateAll() => GlobalInvalidate?.Invoke(null, EventArgs.Empty);
+
     public ArbXamlValidationTagger(ITextView textView, ITextBuffer textBuffer)
     {
         this.textView = textView;
         this.textBuffer = textBuffer;
         this.textBuffer.Changed += OnBufferChanged;
+        GlobalInvalidate += OnGlobalInvalidate;
     }
 
     public event EventHandler<SnapshotSpanEventArgs>? TagsChanged;
@@ -105,5 +117,12 @@ internal sealed class ArbXamlValidationTagger : ITagger<ErrorTag>
     {
         SnapshotSpan changedSpan = new(e.After, 0, e.After.Length);
         TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(changedSpan));
+    }
+
+    private void OnGlobalInvalidate(object? sender, EventArgs e)
+    {
+        ITextSnapshot snapshot = textBuffer.CurrentSnapshot;
+        SnapshotSpan wholeDocument = new(snapshot, 0, snapshot.Length);
+        TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(wholeDocument));
     }
 }

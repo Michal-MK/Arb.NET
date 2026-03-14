@@ -50,6 +50,8 @@ namespace JetBrains.Rider.Model
     [NotNull] public IRdEndpoint<ArbNewLocale, bool> AddArbLocale => _AddArbLocale;
     [NotNull] public IRdEndpoint<ArbTranslateRequest, ArbTranslateResponse> TranslateArbEntries => _TranslateArbEntries;
     [NotNull] public IRdEndpoint<string, List<ArbKeyInfo>> GetArbKeys => _GetArbKeys;
+    [NotNull] public ISignal<ArbOpenEditor> OpenArbEditor => _OpenArbEditor;
+    [NotNull] public ISignal<string> ArbKeysChanged => _ArbKeysChanged;
     
     //private fields
     [NotNull] private readonly RdCall<Unit, List<ArbLocaleData>> _GetArbData;
@@ -60,6 +62,8 @@ namespace JetBrains.Rider.Model
     [NotNull] private readonly RdCall<ArbNewLocale, bool> _AddArbLocale;
     [NotNull] private readonly RdCall<ArbTranslateRequest, ArbTranslateResponse> _TranslateArbEntries;
     [NotNull] private readonly RdCall<string, List<ArbKeyInfo>> _GetArbKeys;
+    [NotNull] private readonly RdSignal<ArbOpenEditor> _OpenArbEditor;
+    [NotNull] private readonly RdSignal<string> _ArbKeysChanged;
     
     //primary constructor
     private ArbModel(
@@ -70,7 +74,9 @@ namespace JetBrains.Rider.Model
       [NotNull] RdCall<ArbRemoveKey, bool> removeArbKey,
       [NotNull] RdCall<ArbNewLocale, bool> addArbLocale,
       [NotNull] RdCall<ArbTranslateRequest, ArbTranslateResponse> translateArbEntries,
-      [NotNull] RdCall<string, List<ArbKeyInfo>> getArbKeys
+      [NotNull] RdCall<string, List<ArbKeyInfo>> getArbKeys,
+      [NotNull] RdSignal<ArbOpenEditor> openArbEditor,
+      [NotNull] RdSignal<string> arbKeysChanged
     )
     {
       if (getArbData == null) throw new ArgumentNullException("getArbData");
@@ -81,6 +87,8 @@ namespace JetBrains.Rider.Model
       if (addArbLocale == null) throw new ArgumentNullException("addArbLocale");
       if (translateArbEntries == null) throw new ArgumentNullException("translateArbEntries");
       if (getArbKeys == null) throw new ArgumentNullException("getArbKeys");
+      if (openArbEditor == null) throw new ArgumentNullException("openArbEditor");
+      if (arbKeysChanged == null) throw new ArgumentNullException("arbKeysChanged");
       
       _GetArbData = getArbData;
       _SaveArbEntry = saveArbEntry;
@@ -90,6 +98,8 @@ namespace JetBrains.Rider.Model
       _AddArbLocale = addArbLocale;
       _TranslateArbEntries = translateArbEntries;
       _GetArbKeys = getArbKeys;
+      _OpenArbEditor = openArbEditor;
+      _ArbKeysChanged = arbKeysChanged;
       BindableChildren.Add(new KeyValuePair<string, object>("getArbData", _GetArbData));
       BindableChildren.Add(new KeyValuePair<string, object>("saveArbEntry", _SaveArbEntry));
       BindableChildren.Add(new KeyValuePair<string, object>("renameArbKey", _RenameArbKey));
@@ -98,6 +108,8 @@ namespace JetBrains.Rider.Model
       BindableChildren.Add(new KeyValuePair<string, object>("addArbLocale", _AddArbLocale));
       BindableChildren.Add(new KeyValuePair<string, object>("translateArbEntries", _TranslateArbEntries));
       BindableChildren.Add(new KeyValuePair<string, object>("getArbKeys", _GetArbKeys));
+      BindableChildren.Add(new KeyValuePair<string, object>("openArbEditor", _OpenArbEditor));
+      BindableChildren.Add(new KeyValuePair<string, object>("arbKeysChanged", _ArbKeysChanged));
     }
     //secondary constructor
     internal ArbModel (
@@ -109,7 +121,9 @@ namespace JetBrains.Rider.Model
       new RdCall<ArbRemoveKey, bool>(ArbRemoveKey.Read, ArbRemoveKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbNewLocale, bool>(ArbNewLocale.Read, ArbNewLocale.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest.Read, ArbTranslateRequest.Write, ArbTranslateResponse.Read, ArbTranslateResponse.Write),
-      new RdCall<string, List<ArbKeyInfo>>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString, ReadArbKeyInfoList, WriteArbKeyInfoList)
+      new RdCall<string, List<ArbKeyInfo>>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString, ReadArbKeyInfoList, WriteArbKeyInfoList),
+      new RdSignal<ArbOpenEditor>(ArbOpenEditor.Read, ArbOpenEditor.Write),
+      new RdSignal<string>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString)
     ) {}
     //deconstruct trait
     //statics
@@ -120,7 +134,7 @@ namespace JetBrains.Rider.Model
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     public static  CtxWriteDelegate<List<ArbKeyInfo>> WriteArbKeyInfoList = ArbKeyInfo.Write.List();
     
-    protected override long SerializationHash => 6280947667756541107L;
+    protected override long SerializationHash => -8146834234892139901L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -149,6 +163,8 @@ namespace JetBrains.Rider.Model
         printer.Print("addArbLocale = "); _AddArbLocale.PrintEx(printer); printer.Println();
         printer.Print("translateArbEntries = "); _TranslateArbEntries.PrintEx(printer); printer.Println();
         printer.Print("getArbKeys = "); _GetArbKeys.PrintEx(printer); printer.Println();
+        printer.Print("openArbEditor = "); _OpenArbEditor.PrintEx(printer); printer.Println();
+        printer.Print("arbKeysChanged = "); _ArbKeysChanged.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }
@@ -894,6 +910,100 @@ namespace JetBrains.Rider.Model
       using (printer.IndentCookie()) {
         printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
         printer.Print("locale = "); Locale.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:107</p>
+  /// </summary>
+  public sealed class ArbOpenEditor : IPrintable, IEquatable<ArbOpenEditor>
+  {
+    //fields
+    //public fields
+    [NotNull] public string ArbDir {get; private set;}
+    [NotNull] public string KeyFilter {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbOpenEditor(
+      [NotNull] string arbDir,
+      [NotNull] string keyFilter
+    )
+    {
+      if (arbDir == null) throw new ArgumentNullException("arbDir");
+      if (keyFilter == null) throw new ArgumentNullException("keyFilter");
+      
+      ArbDir = arbDir;
+      KeyFilter = keyFilter;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string arbDir, [NotNull] out string keyFilter)
+    {
+      arbDir = ArbDir;
+      keyFilter = KeyFilter;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbOpenEditor> Read = (ctx, reader) => 
+    {
+      var arbDir = reader.ReadString();
+      var keyFilter = reader.ReadString();
+      var _result = new ArbOpenEditor(arbDir, keyFilter);
+      return _result;
+    };
+    
+    public static CtxWriteDelegate<ArbOpenEditor> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.ArbDir);
+      writer.Write(value.KeyFilter);
+    };
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbOpenEditor) obj);
+    }
+    public bool Equals(ArbOpenEditor other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return ArbDir == other.ArbDir && KeyFilter == other.KeyFilter;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + ArbDir.GetHashCode();
+        hash = hash * 31 + KeyFilter.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbOpenEditor (");
+      using (printer.IndentCookie()) {
+        printer.Print("arbDir = "); ArbDir.PrintEx(printer); printer.Println();
+        printer.Print("keyFilter = "); KeyFilter.PrintEx(printer); printer.Println();
       }
       printer.Print(")");
     }

@@ -19,7 +19,8 @@ public class ArbExtension : IMarkupExtension {
                 if (weakTarget.TryGetTarget(out BindableObject? t)) {
                     string key = Text ?? string.Empty;
                     MainThread.BeginInvokeOnMainThread(
-                        () => t.SetValue(property, localeService[key] ?? "<MISSING>"));
+                        () => t.SetValue(property, localeService[key] ?? $"<MISSING '{key}'>")
+                    );
                 } else {
                     localeService.CultureChanged -= handler;
                 }
@@ -27,6 +28,6 @@ public class ArbExtension : IMarkupExtension {
             localeService.CultureChanged += handler;
         }
 
-        return localeService?[Text] ?? "<MISSING>";
+        return localeService?[Text] ?? $"<MISSING '{Text}'>";
     }
 }

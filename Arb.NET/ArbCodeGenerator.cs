@@ -344,8 +344,7 @@ public class ArbCodeGenerator {
         sb.AppendLine($"        return value switch {{");
 
         foreach (string member in members) {
-            string camelKey = char.ToLowerInvariant(enumSimpleName[0]) + enumSimpleName.Substring(1)
-                              + char.ToUpperInvariant(member[0]) + member.Substring(1);
+            string camelKey = StringHelper.ToCamelCase(enumSimpleName) + StringHelper.ToPascalCase(member);
             sb.AppendLine($"            {enumFullName}.{member} => {StringHelper.ToPascalCase(camelKey)},");
         }
 

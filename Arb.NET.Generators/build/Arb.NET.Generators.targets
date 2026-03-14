@@ -17,4 +17,15 @@
     <CompilerVisibleProperty Include="RootNamespace" />
   </ItemGroup>
 
+  <Target Name="ArbGenerateBootstrap"
+          BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_ArbGeneratedFiles Include="$(MSBuildProjectDirectory)\**\*.g.cs" />
+    </ItemGroup>
+    <Exec Command="arb generate &quot;$(MSBuildProjectDirectory)&quot;"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          ContinueOnError="true"
+          IgnoreExitCode="true"
+          Condition="'@(_ArbGeneratedFiles)' == ''" />
+  </Target>
 </Project>

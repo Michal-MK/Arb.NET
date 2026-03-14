@@ -17,12 +17,36 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <!-- NU5128: expected for analyzer packages — no lib/ folder by design -->
         <!-- CS0436: Arb.NET types are inlined as sources AND referenced as a package for nuspec dependency purposes -->
-        <NoWarn>$(NoWarn);NU5128;CS0436</NoWarn>
+        <!-- NU1605: System.Text.Json is pinned to 8.x for Rider Roslyn host compat; Arb.NET (nuspec dep) wants 10.x
+                    but that reference is compile-excluded (ExcludeAssets=all) so the pin is intentional. -->
+        <NoWarn>$(NoWarn);NU5128;CS0436;NU1605</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
-        <PackageReference Include="System.Text.Json" Version="10.0.3" />
+        <!--
+            Pin to Roslyn 4.x: Roslyn 5.0.0 (stable NuGet) requires System.Collections.Immutable 10.x,
+            which Rider 2025.x's Roslyn isolated host does not provide (it ships Immutable 8.x).
+            Roslyn 4.8.0 is the latest 4.x release and uses Immutable 8.x — fully compatible.
+            The generator compiles against 4.8 API but runs in whatever Roslyn version the host provides.
+        -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+        <!--
+            Pin System.Text.Json to 8.x so the generator assembly is compatible with the
+            Roslyn isolated host in Rider 2025.x, which ships System.Text.Json 8.0 and
+            System.Collections.Immutable 8.0.  Newer versions of System.Text.Json pull in
+            System.Collections.Immutable 10.x which Rider's host cannot provide.
+            PrivateAssets="all" keeps this out of the nuspec — consumers get System.Text.Json
+            from the .NET runtime they are already targeting.
+        -->
+        <PackageReference Include="System.Text.Json" Version="8.0.5" PrivateAssets="all" />
+        <!--
+            Force System.Collections.Immutable to 8.x so the generator DLL is loadable by
+            Rider's Roslyn isolated host (which ships Immutable 8.x). Without this pin,
+            Arb.NET → JsonSchema.Net → Json.More.Net pulls in Immutable 10.x which the host
+            cannot provide, crashing the generator on Initialize.
+            PrivateAssets="all" keeps this pin out of the consumer nuspec.
+        -->
+        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
@@ -30,7 +54,9 @@
         <None Include="..\README.MD" Pack="true" PackagePath="\" />
         <!-- Package the generator DLL in the location Roslyn expects for source generators. -->
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-
+        <!-- Also package the analyzer DLL so consumers get ARB002 diagnostics from the same NuGet.
+             The path uses the same Configuration/platform as this project (both target netstandard2.0). -->
+        <None Include="..\Arb.NET.Analyzers\bin\$(Configuration)\netstandard2.0\Arb.NET.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
@@ -54,6 +80,14 @@
         <Compile Include="..\Arb.NET\Models\EnumLocalizationInfo.cs"/>
         <Compile Include="..\Arb.NET\Models\L10nConfig.cs"/>
         <Compile Include="..\Arb.NET\ArbSerializer.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Build Arb.NET.Analyzers before packing so its DLL is available to include above.
+             ReferenceOutputAssembly=false: we only need the build order, not a compile reference. -->
+        <ProjectReference Include="..\Arb.NET.Analyzers\Arb.NET.Analyzers.csproj"
+                          ReferenceOutputAssembly="false"
+                          PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>

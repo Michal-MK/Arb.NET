@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Arb.NET.Tool.Generate;
 using Arb.NET.Tool.Migration;
 
 RootCommand rootCommand = new("Arb.NET Tool — utilities for working with .arb localization files.");
@@ -67,6 +68,49 @@ migrateCommand.SetAction(parseResult => {
     return 0;
 });
 
+// ── generate command ──────────────────────────────────────────────────────────
+
+Argument<DirectoryInfo> generatePathArg = new("project-dir") {
+    Description = "Directory containing l10n.yaml (walks up if omitted or not found there).",
+    Arity = ArgumentArity.ZeroOrOne
+};
+
+Command generateCommand = new("generate", "Generate .g.cs files from .arb files and l10n.yaml.") {
+    generatePathArg
+};
+
+generateCommand.SetAction(parseResult => {
+    DirectoryInfo? dir = parseResult.GetValue(generatePathArg);
+    string projectDir = dir?.FullName ?? Directory.GetCurrentDirectory();
+
+    if (!Directory.Exists(projectDir)) {
+        Console.Error.WriteLine($"Error: directory not found: {projectDir}");
+        return 1;
+    }
+
+    Console.WriteLine($"Generating from: {projectDir}");
+
+    ArbGenerator.Result result = ArbGenerator.Generate(projectDir);
+
+    if (result.WrittenFiles.Count > 0) {
+        Console.WriteLine($"\nWrote {result.WrittenFiles.Count} file(s):");
+        foreach (string f in result.WrittenFiles) {
+            Console.WriteLine($"  {f}");
+        }
+    }
+
+    if (result.HasErrors) {
+        Console.Error.WriteLine($"\n{result.Errors.Count} error(s):");
+        foreach (string e in result.Errors) {
+            Console.Error.WriteLine($"  {e}");
+        }
+        return 2;
+    }
+
+    return 0;
+});
+
 rootCommand.Subcommands.Add(migrateCommand);
+rootCommand.Subcommands.Add(generateCommand);
 
 return rootCommand.Parse(args).Invoke();

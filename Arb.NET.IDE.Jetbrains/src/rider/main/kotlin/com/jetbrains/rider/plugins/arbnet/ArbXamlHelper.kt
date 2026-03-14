@@ -2,6 +2,7 @@ package com.jetbrains.rider.plugins.arbnet
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -71,6 +72,24 @@ fun resolveArbDirectory(projectDir: String): String {
         if (arbDir.exists()) arbDir.absolutePath.replace('\\', '/') else projectDir
     } catch (_: Throwable) {
         projectDir
+    }
+}
+
+/**
+ * Opens (or focuses) the singleton ARB editor and navigates to [keyFilter].
+ * Must be called on the EDT.
+ */
+fun openArbEditorAtKey(project: Project, arbDir: String, keyFilter: String) {
+    val editorManager = FileEditorManager.getInstance(project)
+    val singletonFile = ArbEditor.getOrCreateFile(project)
+    val existing = editorManager.getEditors(singletonFile).filterIsInstance<ArbEditor>().firstOrNull()
+    if (existing != null) {
+        existing.navigateTo(arbDir, keyFilter)
+        editorManager.openFile(singletonFile, true)
+    } else {
+        singletonFile.putUserData(ArbEditor.INITIAL_DIR_KEY, arbDir)
+        singletonFile.putUserData(ArbEditor.INITIAL_FILTER_KEY, keyFilter)
+        editorManager.openFile(singletonFile, true)
     }
 }
 
