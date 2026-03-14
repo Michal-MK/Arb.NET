@@ -68,6 +68,7 @@
             so consumers still get IArbLocale at runtime without referencing it manually.
         -->
         <Compile Include="..\Arb.NET\IArbLocale.cs"/>
+        <Compile Include="..\Arb.NET\Constants.cs"/>
         <Compile Include="..\Arb.NET\ArbParser.cs"/>
         <Compile Include="..\Arb.NET\ArbCodeGenerator.cs"/>
         <Compile Include="..\Arb.NET\Helpers\StringHelper.cs"/>

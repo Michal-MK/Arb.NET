@@ -140,7 +140,7 @@ internal sealed class GenerateArbKeySuggestedAction(string key, string projectDi
         string arbDir = LocalizationYamlService.ResolveArbDirectory(projectDir);
 
         // Add the empty key to all .arb files in the directory
-        foreach (string arbFilePath in Directory.EnumerateFiles(arbDir, "*.arb")) {
+        foreach (string arbFilePath in Directory.EnumerateFiles(arbDir, Constants.ANY_ARB)) {
             try {
                 string content = File.ReadAllText(arbFilePath);
                 ArbParseResult parsed = new ArbParser().ParseContent(content);
@@ -149,7 +149,7 @@ internal sealed class GenerateArbKeySuggestedAction(string key, string projectDi
 
                 parsed.Document.Entries[arbKey] = new ArbEntry {
                     Key = arbKey,
-                    Value = ""
+                    Value = string.Empty
                 };
                 File.WriteAllText(arbFilePath, ArbSerializer.Serialize(parsed.Document));
             }

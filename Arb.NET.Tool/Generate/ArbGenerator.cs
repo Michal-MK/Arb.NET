@@ -22,14 +22,14 @@ public static class ArbGenerator {
     public static Result Generate(string projectDir) {
         Result result = new();
 
-        string? l10nPath = FindL10nYaml(projectDir);
-        if (l10nPath == null) {
-            result.Errors.Add($"No l10n.yaml found in '{projectDir}' or any parent directory.");
+        string? localizationFile = FindLocalizationYaml(projectDir);
+        if (localizationFile == null) {
+            result.Errors.Add($"No {Constants.LOCALIZATION_FILE} found in '{projectDir}' or any parent directory.");
             return result;
         }
 
-        string configDir = Path.GetDirectoryName(l10nPath)!;
-        string yaml = File.ReadAllText(l10nPath);
+        string configDir = Path.GetDirectoryName(localizationFile)!;
+        string yaml = File.ReadAllText(localizationFile);
         L10nConfig config = L10nConfig.Parse(yaml);
 
         string arbDirAbsolute = Path.GetFullPath(Path.Combine(configDir, config.ArbDir));
@@ -38,9 +38,9 @@ public static class ArbGenerator {
             return result;
         }
 
-        string[] arbFiles = Directory.GetFiles(arbDirAbsolute, "*.arb");
+        string[] arbFiles = Directory.GetFiles(arbDirAbsolute, Constants.ANY_ARB);
         if (arbFiles.Length == 0) {
-            result.Errors.Add($"No .arb files found in '{arbDirAbsolute}'.");
+            result.Errors.Add($"No {Constants.ARB_FILE_EXT} files found in '{arbDirAbsolute}'.");
             return result;
         }
 
@@ -150,10 +150,10 @@ public static class ArbGenerator {
         }
     }
 
-    private static string? FindL10nYaml(string startDir) {
+    private static string? FindLocalizationYaml(string startDir) {
         string dir = startDir;
         while (true) {
-            string candidate = Path.Combine(dir, "l10n.yaml");
+            string candidate = Path.Combine(dir, Constants.LOCALIZATION_FILE);
             if (File.Exists(candidate)) return candidate;
 
             string? parent = Path.GetDirectoryName(dir);

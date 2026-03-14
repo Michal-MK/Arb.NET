@@ -39,5 +39,4 @@ public static class StringHelper {
     public static string XmlEscape(string value) {
         return value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
     }
-
 }

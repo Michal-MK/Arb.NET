@@ -46,7 +46,7 @@ public sealed class ArbDispatcherCodeFix : CodeFixProvider {
 
         string arbDir = ResolveArbDirectory(projectDir);
 
-        foreach (string arbFilePath in Directory.EnumerateFiles(arbDir, "*.arb")) {
+        foreach (string arbFilePath in Directory.EnumerateFiles(arbDir, Constants.ANY_ARB)) {
             cancellationToken.ThrowIfCancellationRequested();
 
             try {
@@ -70,7 +70,7 @@ public sealed class ArbDispatcherCodeFix : CodeFixProvider {
     private static string? FindProjectDir(string filePath) {
         string? dir = Path.GetDirectoryName(filePath);
         for (int i = 0; i < 10 && dir != null; i++) {
-            if (File.Exists(Path.Combine(dir, "l10n.yaml")))
+            if (File.Exists(Path.Combine(dir, Constants.LOCALIZATION_FILE)))
                 return dir;
             dir = Path.GetDirectoryName(dir);
         }
@@ -83,7 +83,7 @@ public sealed class ArbDispatcherCodeFix : CodeFixProvider {
     /// </summary>
     private static string ResolveArbDirectory(string projectDir) {
         try {
-            string localization = Path.Combine(projectDir, "l10n.yaml");
+            string localization = Path.Combine(projectDir, Constants.LOCALIZATION_FILE);
             if (!File.Exists(localization)) return projectDir;
 
             string? line = File.ReadLines(localization)
@@ -115,7 +115,7 @@ public sealed class ArbDispatcherCodeFix : CodeFixProvider {
 
         parsed.Document.Entries[arbKey] = new ArbEntry {
             Key = arbKey,
-            Value = ""
+            Value = string.Empty
         };
         return ArbSerializer.Serialize(parsed.Document);
     }

@@ -21,6 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\Arb.NET\Constants.cs" />
         <Compile Include="..\Arb.NET\ArbParser.cs" />
         <Compile Include="..\Arb.NET\ArbSerializer.cs" />
         <Compile Include="..\Arb.NET\Helpers\StringHelper.cs" />

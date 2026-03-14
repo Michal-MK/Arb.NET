@@ -58,7 +58,7 @@ public class ArbModelHost {
                 .ToList();
 
             if (!dirFiles.Any() && Directory.Exists(payload.Directory)) {
-                dirFiles = Directory.EnumerateFiles(payload.Directory, "*.arb");
+                dirFiles = Directory.EnumerateFiles(payload.Directory, Constants.ANY_ARB);
             }
 
             foreach (string filePath in dirFiles) {
@@ -69,7 +69,7 @@ public class ArbModelHost {
 
                 parsed.Document.Entries[payload.Key] = new ArbEntry {
                     Key = payload.Key,
-                    Value = ""
+                    Value = string.Empty
                 };
                 File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
                 anyChanged = true;
@@ -109,7 +109,7 @@ public class ArbModelHost {
         });
 
         model.AddArbLocale.SetSync((_, payload) => {
-            string newFilePath = Path.Combine(payload.Directory, payload.Locale + ".arb");
+            string newFilePath = Path.Combine(payload.Directory, payload.Locale + Constants.ARB_FILE_EXT);
             if (File.Exists(newFilePath)) return false;
 
             // Collect all existing keys from files in this directory.
@@ -131,7 +131,7 @@ public class ArbModelHost {
             foreach (string key in allKeys) {
                 newDoc.Entries[key] = new ArbEntry {
                     Key = key,
-                    Value = ""
+                    Value = string.Empty
                 };
             }
 
@@ -309,7 +309,7 @@ public class ArbModelHost {
     private static string? FindProjectDir(string startDir) {
         string dir = startDir;
         while (true) {
-            if (File.Exists(Path.Combine(dir, "l10n.yaml"))) return dir;
+            if (File.Exists(Path.Combine(dir, Constants.LOCALIZATION_FILE))) return dir;
             string? parent = Path.GetDirectoryName(dir);
             if (parent == null || parent == dir) return null;
             dir = parent;

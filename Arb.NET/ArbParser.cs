@@ -53,20 +53,20 @@ public class ArbParser {
         // First pass: collect metadata keyed by their entry name
         Dictionary<string, JsonElement> metadataMap = new();
         foreach (JsonProperty property in root.EnumerateObject()) {
-            if (property.Name.StartsWith("@@")) {
-                if (property.Name == "@@locale" && property.Value.ValueKind == JsonValueKind.String)
+            if (property.Name.StartsWith(Constants.ARB_RESERVED_PREFIX)) {
+                if (property.Name == Constants.KEY_LOCALE && property.Value.ValueKind == JsonValueKind.String)
                     document.Locale = property.Value.GetString() ?? string.Empty;
-                if (property.Name == "@@context" && property.Value.ValueKind == JsonValueKind.String)
+                if (property.Name == Constants.KEY_CONTEXT && property.Value.ValueKind == JsonValueKind.String)
                     document.Context = property.Value.GetString() ?? string.Empty;
             }
-            else if (property.Name.StartsWith("@")) {
+            else if (property.Name.StartsWith(Constants.ARB_META_PREFIX)) {
                 metadataMap[property.Name.Substring(1)] = property.Value;
             }
         }
 
         // Second pass: collect actual translation entries
         foreach (JsonProperty property in root.EnumerateObject()) {
-            if (property.Name.StartsWith("@")) continue;
+            if (property.Name.StartsWith(Constants.ARB_META_PREFIX)) continue;
 
             if (property.Value.ValueKind != JsonValueKind.String) continue;
 

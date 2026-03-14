@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Arb.NET.Example.Localizations;
+﻿using Arb.NET.Example.Localizations;
 
 namespace Arb.NET.ExampleOne;
 

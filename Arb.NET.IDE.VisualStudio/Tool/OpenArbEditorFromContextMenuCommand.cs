@@ -109,12 +109,12 @@ internal sealed class OpenArbEditorFromContextMenuCommand {
     private static bool IsRelevantPath(string path) {
         if (Directory.Exists(path)) {
             // Show for folders that directly contain .arb files
-            return Directory.GetFiles(path, "*.arb", SearchOption.TopDirectoryOnly).Length > 0;
+            return Directory.GetFiles(path, Constants.ANY_ARB, SearchOption.TopDirectoryOnly).Length > 0;
         }
 
         string fileName = Path.GetFileName(path);
-        if (string.Equals(fileName, "l10n.yaml", StringComparison.OrdinalIgnoreCase)) return true;
-        if (string.Equals(Path.GetExtension(path), ".arb", StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(fileName, Constants.LOCALIZATION_FILE, StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(Path.GetExtension(path), Constants.ARB_FILE_EXT, StringComparison.OrdinalIgnoreCase)) return true;
 
         return false;
     }
@@ -123,7 +123,7 @@ internal sealed class OpenArbEditorFromContextMenuCommand {
     private static string? ResolveArbDirectory(string path) {
         // if ARB directory
         if (Directory.Exists(path)) {
-            return Directory.GetFiles(path, "*.arb", SearchOption.TopDirectoryOnly).Length > 0
+            return Directory.GetFiles(path, Constants.ANY_ARB, SearchOption.TopDirectoryOnly).Length > 0
                 ? path
                 : null;
         }
@@ -132,11 +132,11 @@ internal sealed class OpenArbEditorFromContextMenuCommand {
         if (dir == null) return null;
 
         string fileName = Path.GetFileName(path);
-        if (string.Equals(fileName, "l10n.yaml", StringComparison.OrdinalIgnoreCase)) {
+        if (string.Equals(fileName, Constants.LOCALIZATION_FILE, StringComparison.OrdinalIgnoreCase)) {
             return LocalizationYamlService.ResolveArbDirectory(dir);
         }
 
-        if (string.Equals(Path.GetExtension(path), ".arb", StringComparison.OrdinalIgnoreCase)) {
+        if (string.Equals(Path.GetExtension(path), Constants.ARB_FILE_EXT, StringComparison.OrdinalIgnoreCase)) {
             return dir;
         }
 

@@ -20,11 +20,11 @@ public static class ArbSerializer {
             writer.WriteStartObject();
 
             if (!string.IsNullOrEmpty(doc.Locale)) {
-                writer.WriteString("@@locale", doc.Locale);
+                writer.WriteString(Constants.KEY_LOCALE, doc.Locale);
             }
 
             if (!string.IsNullOrEmpty(doc.Context)) {
-                writer.WriteString("@@context", doc.Context);
+                writer.WriteString(Constants.KEY_CONTEXT, doc.Context);
             }
 
             foreach (KeyValuePair<string, ArbEntry> kvp in doc.Entries.OrderBy(e => e.Key)) {
@@ -43,18 +43,19 @@ public static class ArbSerializer {
     }
 
     private static void WriteMetadata(Utf8JsonWriter writer, string key, ArbMetadata metadata) {
-        writer.WriteStartObject("@" + key);
+        writer.WriteStartObject(Constants.ARB_META_PREFIX + key);
 
-        if (metadata.Description != null)
-            writer.WriteString("description", metadata.Description);
+        if (metadata.Description != null) {
+            writer.WriteString(Constants.ARB_META_CONTENT_DESCRIPTION, metadata.Description);
+        }
 
         if (metadata.Placeholders is { Count: > 0 }) {
-            writer.WriteStartObject("placeholders");
+            writer.WriteStartObject(Constants.ARB_MET_CONTENT_PLACEHOLDERS);
             foreach (KeyValuePair<string, ArbPlaceholder> kvp in metadata.Placeholders) {
                 string name = kvp.Key;
                 ArbPlaceholder placeholder = kvp.Value;
                 writer.WriteStartObject(name);
-                writer.WriteString("type", placeholder.Type);
+                writer.WriteString(Constants.ARB_META_CONTENT_PLACEHOLDER_TYPE, placeholder.Type);
                 writer.WriteEndObject();
             }
             writer.WriteEndObject();

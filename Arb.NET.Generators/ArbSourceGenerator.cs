@@ -54,10 +54,10 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         var arbFiles = context.AdditionalTextsProvider
-            .Where(file => file.Path.EndsWith(".arb", StringComparison.OrdinalIgnoreCase));
+            .Where(file => file.Path.EndsWith(Constants.ARB_FILE_EXT, StringComparison.OrdinalIgnoreCase));
 
         var configFiles = context.AdditionalTextsProvider
-            .Where(file => file.Path.EndsWith("l10n.yaml", StringComparison.OrdinalIgnoreCase));
+            .Where(file => file.Path.EndsWith(Constants.LOCALIZATION_FILE, StringComparison.OrdinalIgnoreCase));
 
         // Collect all .arb files and the (at most one) l10n.yaml together with global options
         var allFilesAndConfig = arbFiles.Collect()

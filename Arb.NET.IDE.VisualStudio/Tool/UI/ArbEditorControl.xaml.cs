@@ -399,7 +399,7 @@ public partial class ArbEditorControl : UserControl {
             ModifyArbFile(arb, doc => {
                 doc.Entries[newKey!] = new ArbEntry {
                     Key = newKey!,
-                    Value = ""
+                    Value = string.Empty
                 };
             });
         }
@@ -446,7 +446,7 @@ public partial class ArbEditorControl : UserControl {
         foreach (string key in allKeys) {
             newDoc.Entries[key] = new ArbEntry {
                 Key = key,
-                Value = ""
+                Value = string.Empty
             };
         }
 
@@ -586,7 +586,7 @@ public partial class ArbEditorControl : UserControl {
     private static string? FindProjectDir(string startDir) {
         string dir = startDir;
         while (true) {
-            if (File.Exists(Path.Combine(dir, "l10n.yaml"))) return dir;
+            if (File.Exists(Path.Combine(dir, Constants.LOCALIZATION_FILE))) return dir;
             string? parent = Path.GetDirectoryName(dir);
             if (parent == null || parent == dir) return null;
             dir = parent;

@@ -10,8 +10,7 @@ public sealed class ArbKeyInfo(
     string? arbFilePath,
     string? rawKey,
     int lineNumber = -1,
-    string? xmlDoc = null)
-{
+    string? xmlDoc = null) {
     /// <summary>PascalCase key name (as it appears in the generated dispatcher).</summary>
     public string Key { get; } = key;
 

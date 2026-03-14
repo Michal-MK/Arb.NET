@@ -39,7 +39,7 @@ public static class ArbKeyService {
         while (dir != null) {
             // TODO(l10n) This is naive; the l10n.yaml may exist elsewhere (e.g. a directory with the arb files)
             // TODO(magic)
-            if (File.Exists(Path.Combine(dir.FullName, "l10n.yaml"))) {
+            if (File.Exists(Path.Combine(dir.FullName, Constants.LOCALIZATION_FILE))) {
                 return dir.FullName;
             }
 
@@ -58,7 +58,7 @@ public static class ArbKeyService {
     public static List<ArbKeyInfo> GetKeys(string projectDir) {
         // TODO(l10n) This is naive; the l10n.yaml may exist elsewhere (e.g. a directory with the arb files)
         // TODO(magic)
-        string localizationPath = Path.Combine(projectDir, "l10n.yaml");
+        string localizationPath = Path.Combine(projectDir, Constants.LOCALIZATION_FILE);
         if (!File.Exists(localizationPath)) return [];
 
         L10nConfig config;
@@ -112,7 +112,7 @@ public static class ArbKeyService {
                 int closeQuote = trimmed.IndexOf('"', 1);
                 if (closeQuote <= 1) continue;
                 string candidate = trimmed.Substring(1, closeQuote - 1);
-                if (candidate.StartsWith("@")) continue;
+                if (candidate.StartsWith(Constants.ARB_META_PREFIX)) continue;
                 string afterClose = trimmed.Substring(closeQuote + 1).TrimStart();
                 if (!afterClose.StartsWith(":")) continue;
                 result[candidate] = i;
@@ -288,7 +288,8 @@ public static class ArbKeyService {
     public static IEnumerable<string> FindArbFiles(string rootDir) {
         IEnumerable<string> yamlFiles;
         try {
-            yamlFiles = Directory.EnumerateFiles(rootDir, "l10n.yaml", SearchOption.AllDirectories);
+            // TODO(l10n) This is naive; the l10n.yaml may exist elsewhere (e.g. a directory with the arb files)
+            yamlFiles = Directory.EnumerateFiles(rootDir, Constants.LOCALIZATION_FILE, SearchOption.AllDirectories);
         }
         catch {
             yield break;
@@ -312,7 +313,7 @@ public static class ArbKeyService {
 
             IEnumerable<string> candidates;
             try {
-                candidates = Directory.EnumerateFiles(arbDir, "*.arb");
+                candidates = Directory.EnumerateFiles(arbDir, Constants.ANY_ARB);
             }
             catch {
                 continue;

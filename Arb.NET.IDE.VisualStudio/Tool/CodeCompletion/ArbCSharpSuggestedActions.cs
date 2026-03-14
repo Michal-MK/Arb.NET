@@ -139,7 +139,7 @@ internal sealed class GenerateAndOpenArbKeySuggestedAction(string key, string pr
         string arbKey = StringHelper.ToCamelCase(key);
         string arbDir = LocalizationYamlService.ResolveArbDirectory(projectDir);
 
-        foreach (string arbFilePath in Directory.EnumerateFiles(arbDir, "*.arb")) {
+        foreach (string arbFilePath in Directory.EnumerateFiles(arbDir, Constants.ANY_ARB)) {
             try {
                 string content = File.ReadAllText(arbFilePath);
                 ArbParseResult parsed = new ArbParser().ParseContent(content);
@@ -148,7 +148,7 @@ internal sealed class GenerateAndOpenArbKeySuggestedAction(string key, string pr
 
                 parsed.Document.Entries[arbKey] = new ArbEntry {
                     Key = arbKey,
-                    Value = ""
+                    Value = string.Empty
                 };
                 File.WriteAllText(arbFilePath, ArbSerializer.Serialize(parsed.Document));
             }
