@@ -117,9 +117,8 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
 
 internal static class ArbXamlContext
 {
-    // TODO(naive) Fails with global implicit xaml namespaces and probably more...
     internal static readonly Regex ARB_KEY_REGEX =
-        new(@"\{[^:}]+:Arb\s+(\w+)\}?", RegexOptions.Compiled);
+        new(@"\{(?:[^:}]+:)?Arb\s+(\w+)\}?", RegexOptions.Compiled);
 
     public static bool TryGetArbKeyAtPosition(SnapshotPoint point, out string key)
     {

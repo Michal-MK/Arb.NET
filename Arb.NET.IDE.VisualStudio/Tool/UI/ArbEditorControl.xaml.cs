@@ -459,7 +459,11 @@ public partial class ArbEditorControl : UserControl {
     private void RemoveKeyMenuItem_OnClick(object sender, RoutedEventArgs e) => TryRemoveSelectedKey();
 
     private void TryRemoveSelectedKey() {
-        if ((ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is not ArbRow row) return;
+        // When exactly one row is visible (e.g. after filtering to an exact match), use it
+        // automatically without requiring explicit selection.
+        ArbRow? row = (ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) as ArbRow
+                      ?? (filteredRows.Count == 1 ? filteredRows[0] : null);
+        if (row == null) return;
         if (DirectoryCombo.SelectedItem is not string directory) return;
         if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
@@ -479,6 +483,11 @@ public partial class ArbEditorControl : UserControl {
             RunArbGenerate(directory);
             BuildTable(directory);
             ArbXamlValidationTagger.InvalidateAll();
+
+            // If the filtered view is now empty, clear the filter.
+            if (filteredRows.Count == 0 && !string.IsNullOrEmpty(FilterTextBox.Text)) {
+                FilterTextBox.Text = string.Empty;
+            }
         }
     }
 

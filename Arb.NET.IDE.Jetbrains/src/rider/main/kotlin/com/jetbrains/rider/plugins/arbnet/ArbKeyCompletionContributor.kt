@@ -11,14 +11,14 @@ import com.intellij.util.ProcessingContext
 import com.jetbrains.rd.ide.model.ArbKeyInfo
 import com.jetbrains.rd.util.lifetime.Lifetime
 
-// Matches the text before the caret inside a {*:Arb ...} expression
+// Matches the text before the caret inside a {Arb ...} or {*:Arb ...} expression.
 // e.g. in `{ext:Arb AppTitle}` with caret after "App", this matches "{ext:Arb App"
-// TODO This regex is duplicated across a lot of places and does not handle all the cases, e.g. implicit XAML namespaces.
-private val ARB_PREFIX_PATTERN = Regex("""\{[^:}]+:Arb\s+(\w*)$""")
+// Also matches `{Arb App` for implicit global XAML namespaces.
+private val ARB_PREFIX_PATTERN = Regex("""\{(?:[^:}]+:)?Arb\s+(\w*)$""")
 
 /**
  * Provides code completion for ARB key names inside XAML markup extensions of the form:
- *   Text="{ext:Arb <caret>}"
+ *   "{ext:Arb <caret>}" or "{Arb <caret>}" (implicit global namespace)
  *
  * Uses text-based detection (not PSI node types) because Rider represents .xaml files
  * as RiderFileImpl — its own stub, not a standard XmlFile.
@@ -47,7 +47,7 @@ private class ArbKeyCompletionProvider : CompletionProvider<CompletionParameters
         val virtualFile = parameters.originalFile.virtualFile ?: return
         if (virtualFile.extension?.lowercase() != "xaml") return
 
-        // Use the text to the left of the caret to detect we're inside {*:Arb ...}
+        // Use the text to the left of the caret to detect we're inside {Arb ...} or {*:Arb ...}
         val doc = parameters.editor.document
         val caretOffset = parameters.offset
         val lineStart = doc.getLineStartOffset(doc.getLineNumber(caretOffset))

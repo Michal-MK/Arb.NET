@@ -9,19 +9,19 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import java.io.File
 
-// TODO fragile: assumes explicit namespace prefix, does not handle implicit/global XAML namespaces
-
 /**
- * Matches a complete or partial `{*:Arb KeyName}` expression anywhere in a line of text
- * and captures the key name in group 1. Used for caret-position detection in goto and annotator.
+ * Matches a complete or partial `{Arb KeyName}` or `{ext:Arb KeyName}` expression anywhere in
+ * a line of text and captures the key name in group 1. Supports both explicit namespace prefixes
+ * and implicit global XAML namespaces. Used for caret-position detection in goto and annotator.
  */
-val ARB_KEY_IN_LINE = Regex("""\{[^:}]+:Arb\s+(\w+)}?""")
+val ARB_KEY_IN_LINE = Regex("""\{(?:[^:}]+:)?Arb\s+(\w+)}?""")
 
 // Requires a closing `}` so it returns null while the user is still typing the key name.
-private val ARB_KEY_CAPTURE = Regex("""^\{[^:}]+:Arb\s+(\w+)}$""")
+private val ARB_KEY_CAPTURE = Regex("""^\{(?:[^:}]+:)?Arb\s+(\w+)}$""")
 
 /**
- * Extracts the key name from a complete markup extension value like `{ext:Arb AppTitle}`.
+ * Extracts the key name from a complete markup extension value like `{Arb AppTitle}`
+ * or `{ext:Arb AppTitle}`.
  * Returns null if the value is incomplete (no closing `}`) or is not an ARB expression.
  */
 fun extractArbKey(value: String): String? =
@@ -93,7 +93,7 @@ fun openArbEditorAtKey(project: Project, arbDir: String, keyFilter: String) {
     }
 }
 
-/** Resolved context for a caret position inside a `{*:Arb KeyName}` expression in XAML. */
+/** Resolved context for a caret position inside a `{Arb KeyName}` or `{*:Arb KeyName}` expression in XAML. */
 data class ArbContext(
     val project: Project,
     val arbDir: String,
@@ -101,8 +101,8 @@ data class ArbContext(
 )
 
 /**
- * Returns [ArbContext] when the caret in [editor] is inside a `{*:Arb KeyName}` expression
- * in a XAML file, or null otherwise.
+ * Returns [ArbContext] when the caret in [editor] is inside a `{Arb KeyName}` or
+ * `{*:Arb KeyName}` expression in a XAML file, or null otherwise.
  */
 fun findArbContextInEditor(editor: Editor): ArbContext? {
     val vFile = FileDocumentManager.getInstance().getFile(editor.document) ?: return null

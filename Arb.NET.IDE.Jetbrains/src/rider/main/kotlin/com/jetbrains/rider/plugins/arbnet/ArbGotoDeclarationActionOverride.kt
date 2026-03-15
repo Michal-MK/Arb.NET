@@ -10,7 +10,7 @@ import com.intellij.testFramework.LightVirtualFile
 /**
  * Overrides the platform Go To Declaration action by id, so custom keymaps are preserved.
  *
- * If caret is inside `{*:Arb KeyName}` in XAML, opens the Arb.NET editor.
+ * If caret is inside `{Arb KeyName}` or `{*:Arb KeyName}` in XAML, opens the Arb.NET editor.
  * Otherwise delegates to the original platform goto declaration action.
  */
 class ArbGotoDeclarationActionOverride : AnAction() {

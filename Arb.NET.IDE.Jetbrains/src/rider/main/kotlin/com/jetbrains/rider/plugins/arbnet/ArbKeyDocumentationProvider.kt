@@ -15,7 +15,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 /**
  * Provides on-hover documentation for ARB key names inside XAML markup extensions.
  *
- * When the user hovers over a key like `AppTitle` in `{ext:Arb AppTitle}`, the
+ * When the user hovers over a key like `AppTitle` in `{Arb AppTitle}` or `{ext:Arb AppTitle}`, the
  * quick-doc popup shows the same rich documentation as hovering over the generated
  * C# dispatcher property — including description and a locale-value table.
  *

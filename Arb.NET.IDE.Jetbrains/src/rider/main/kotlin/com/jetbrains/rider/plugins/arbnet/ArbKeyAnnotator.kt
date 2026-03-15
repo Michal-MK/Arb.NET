@@ -64,8 +64,9 @@ data class AnnotationData(
 data class UnknownKeyInfo(val range: TextRange, val key: String, val projectDir: String)
 
 /**
- * Colors known ARB key names inside XAML markup extensions like `{ext:Arb AppTitle}`, and
- * produces ERROR annotations for unknown keys with a "Generate ARB key" quick fix.
+ * Colors known ARB key names inside XAML markup extensions like `{Arb AppTitle}` or
+ * `{ext:Arb AppTitle}`, and produces ERROR annotations for unknown keys with a
+ * "Generate ARB key" quick fix.
  *
  * Uses ExternalAnnotator instead of Annotator because Rider XAML files (RiderFileImpl)
  * only expose LeafPsiElement and RiderFileImpl to the Annotator pipeline — never

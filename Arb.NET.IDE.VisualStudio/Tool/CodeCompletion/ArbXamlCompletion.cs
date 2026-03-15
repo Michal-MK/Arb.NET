@@ -21,8 +21,7 @@ public class ArbXamlCompletionSourceProvider : ICompletionSourceProvider {
 }
 
 public class ArbXamlCompletionSource(ITextBuffer textBuffer) : ICompletionSource {
-    //  // TODO(naive) Fails with global implicit xaml namespaces and probably more...
-    private static readonly Regex ARB_PREFIX_PATTERN = new(@"\{[^:}]+:Arb\s+(\w*)$", RegexOptions.Compiled);
+    private static readonly Regex ARB_PREFIX_PATTERN = new(@"\{(?:[^:}]+:)?Arb\s+(\w*)$", RegexOptions.Compiled);
 
     public void AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
         ITextBuffer activeBuffer = session.TextView.TextDataModel.DocumentBuffer;
@@ -46,8 +45,7 @@ public class ArbXamlCompletionSource(ITextBuffer textBuffer) : ICompletionSource
         Match match = ARB_PREFIX_PATTERN.Match(textBeforeCaret);
         if (!match.Success) return;
 
-        // TODO(naive) This is naive and may produce false positives.
-        // We are inside {ext:Arb ...}: suppress default XAML completion sets.
+        // We are inside {Arb ...} or {ext:Arb ...}: suppress default XAML completion sets.
         completionSets.Clear();
 
         string typedKey = match.Groups[1].Value;

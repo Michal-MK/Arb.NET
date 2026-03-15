@@ -2,9 +2,8 @@
 
 <!-- This compiles, just Rider is having a stroke because XAML support is not good. -->
 <Shell x:Class="ExampleFive.AppShell"
-       Title="ExampleFive"
-       xmlns:exampleFive="clr-namespace:ExampleFive">
-    <ShellContent Title="{Arb AppTitle}"
-                  ContentTemplate="{DataTemplate exampleFive:MainPage}"
+       Title="ExampleFive">
+    <ShellContent Title="{Arb AppTitleTwo}"
+                  ContentTemplate="{DataTemplate MainPage}"
                   Route="MainPage" />
 </Shell>

@@ -9,7 +9,7 @@ import com.jetbrains.rider.actions.RiderActions
 
 /**
  * Routes (Go To Declaration) for XAML files:
- * - When the caret is inside an ARB markup extension (`{*:Arb KeyName}`), handle
+ * - When the caret is inside an ARB markup extension (`{Arb KeyName}` or `{*:Arb KeyName}`), handle
  *   the action on the frontend so [ArbGotoDeclarationActionOverride] intercepts it.
  * - Otherwise delegate to the backend (normal Rider XAML goto behaviour).
  */

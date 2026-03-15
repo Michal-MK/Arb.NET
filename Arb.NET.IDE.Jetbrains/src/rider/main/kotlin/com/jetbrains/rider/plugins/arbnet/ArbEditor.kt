@@ -466,8 +466,11 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         openTranslateDialog = { openTranslateDialogForRows(null) }
 
         // Wire the top-toolbar "Remove Key" button to remove the currently selected row.
+        // When exactly one row is visible (e.g. after filtering to an exact match), use it
+        // automatically without requiring explicit selection.
         removeSelectedKey = remove@{
-            val viewRow = table.selectedRow.takeIf { it >= 0 } ?: return@remove
+            val viewRow = table.selectedRow.takeIf { it >= 0 }
+                ?: if (table.rowCount == 1) 0 else return@remove
             val row = table.convertRowIndexToModel(viewRow)
             val key = tableModel.getValueAt(row, 0) as? String ?: return@remove
             val confirm = Messages.showYesNoDialog(
@@ -477,9 +480,17 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                 Messages.getQuestionIcon()
             )
             if (confirm != Messages.YES) return@remove
+            // If this was the only visible row and a filter is active, clear the filter
+            // before refreshing so the rebuilt table shows all remaining keys.
+            val shouldClearFilter = table.rowCount == 1 && filterField?.text?.isNotEmpty() == true
             project.solution.arbModel.removeArbKey.start(
                 lifetime, ArbRemoveKey(directory, key)
-            ).result.advise(lifetime) { r -> if (r.unwrap()) refresh() }
+            ).result.advise(lifetime) { r ->
+                if (r.unwrap()) {
+                    if (shouldClearFilter) filterField?.text = ""
+                    refresh()
+                }
+            }
         }
 
         // Double-click on a locale column header → open the raw .arb file in the IDE text editor.
