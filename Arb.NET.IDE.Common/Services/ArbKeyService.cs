@@ -79,7 +79,8 @@ public static class ArbKeyService {
 
         DateTime localizationStamp = SafeLastWriteUtc(localizationPath);
         DateTime arbStamp = string.IsNullOrWhiteSpace(arbPath) ? DateTime.MinValue : SafeLastWriteUtc(arbPath);
-        string? dispatcherPath = FindDispatcherFile(projectDir, outputClass);
+        string generatedDir = Path.GetFullPath(Path.Combine(projectDir, config.ArbDir));
+        string? dispatcherPath = FindDispatcherFile(generatedDir, outputClass);
         DateTime dispatcherStamp = SafeLastWriteUtc(dispatcherPath);
 
         if (CACHE.TryGetValue(projectDir, out CacheEntry? cached)
@@ -89,7 +90,7 @@ public static class ArbKeyService {
             return cached.Keys;
         }
 
-        List<ArbKeyInfo> keys = TryGetKeysFromGeneratedFile(projectDir, outputClass, arbPath);
+        List<ArbKeyInfo> keys = TryGetKeysFromGeneratedFile(dispatcherPath, outputClass, arbPath);
         if (keys.Count == 0) {
             keys = GetKeysFromArbFile(arbPath);
         }
@@ -155,7 +156,7 @@ public static class ArbKeyService {
         return result;
     }
 
-    private static List<ArbKeyInfo> TryGetKeysFromGeneratedFile(string projectDir, string outputClass, string arbPath) {
+    private static List<ArbKeyInfo> TryGetKeysFromGeneratedFile(string? dispatcherPath, string outputClass, string arbPath) {
         // Build PascalCase → description/rawKey and PascalCase → lineNumber lookups from the template .arb
         Dictionary<string, string?> descriptions = new();
         Dictionary<string, string> rawKeys = new();
@@ -181,74 +182,64 @@ public static class ArbKeyService {
             }
         }
 
-        // TODO(naive) This assumes the generated file is named exactly {OutputClass}Dispatcher.g.cs and is located
-        // somewhere under the project directory. True for the default config, but may not be in general.
-        // TODO(magic)
-        IEnumerable<string> candidates;
-        try {
-            candidates = Directory.EnumerateFiles(
-                projectDir, $"{outputClass}Dispatcher.g.cs", SearchOption.AllDirectories);
-        }
-        catch {
+        if (string.IsNullOrWhiteSpace(dispatcherPath) || !File.Exists(dispatcherPath)) {
             return [];
         }
 
         string? resolvedArbPath = File.Exists(arbPath) ? arbPath : null;
 
-        foreach (string filePath in candidates) {
-            try {
-                string content = File.ReadAllText(filePath);
-                Dictionary<string, string> xmlDocs = ExtractXmlDocs(content);
-                List<ArbKeyInfo> result = [];
+        try {
+            string content = File.ReadAllText(dispatcherPath);
+            Dictionary<string, string> xmlDocs = ExtractXmlDocs(content);
+            List<ArbKeyInfo> result = [];
 
-                // Properties → non-parametric
-                foreach (Match m in PUBLIC_PROPERTY_REGEX.Matches(content)) {
-                    string name = m.Groups[1].Value;
-                    // TODO(magic) skip compiler-generated and framework members
-                    if (name is "ResolveLocale" or "TryParent") continue;
-                    descriptions.TryGetValue(name, out string? desc);
-                    rawKeys.TryGetValue(name, out string? rawKey);
-                    int ln = pascalLineNumbers.TryGetValue(name, out int lineNum) ? lineNum : -1;
-                    xmlDocs.TryGetValue(name, out string? xmlDoc);
-                    result.Add(new ArbKeyInfo(name, false, desc, resolvedArbPath, rawKey, ln, xmlDoc));
-                }
+            // Properties → non-parametric
+            foreach (Match m in PUBLIC_PROPERTY_REGEX.Matches(content)) {
+                string name = m.Groups[1].Value;
+                // TODO(magic) skip compiler-generated and framework members
+                if (name is "ResolveLocale" or "TryParent") continue;
+                descriptions.TryGetValue(name, out string? desc);
+                rawKeys.TryGetValue(name, out string? rawKey);
+                int ln = pascalLineNumbers.TryGetValue(name, out int lineNum) ? lineNum : -1;
+                xmlDocs.TryGetValue(name, out string? xmlDoc);
+                result.Add(new ArbKeyInfo(name, false, desc, resolvedArbPath, rawKey, ln, xmlDoc));
+            }
 
-                // Methods → parametric (skip constructors)
-                foreach (Match m in PUBLIC_METHOD_REGEX.Matches(content)) {
-                    string name = m.Groups[1].Value;
-                    if (name == outputClass) continue; // constructor
-                    // TODO(magic) skip compiler-generated and framework members
-                    if (name is "ResolveLocale" or "TryParent") continue;
-                    descriptions.TryGetValue(name, out string? desc);
-                    rawKeys.TryGetValue(name, out string? rawKey);
-                    int ln = pascalLineNumbers.TryGetValue(name, out int lineNum) ? lineNum : -1;
-                    xmlDocs.TryGetValue(name, out string? xmlDoc);
-                    result.Add(new ArbKeyInfo(name, true, desc, resolvedArbPath, rawKey, ln, xmlDoc));
-                }
+            // Methods → parametric (skip constructors)
+            foreach (Match m in PUBLIC_METHOD_REGEX.Matches(content)) {
+                string name = m.Groups[1].Value;
+                if (name == outputClass) continue; // constructor
+                // TODO(magic) skip compiler-generated and framework members
+                if (name is "ResolveLocale" or "TryParent") continue;
+                descriptions.TryGetValue(name, out string? desc);
+                rawKeys.TryGetValue(name, out string? rawKey);
+                int ln = pascalLineNumbers.TryGetValue(name, out int lineNum) ? lineNum : -1;
+                xmlDocs.TryGetValue(name, out string? xmlDoc);
+                result.Add(new ArbKeyInfo(name, true, desc, resolvedArbPath, rawKey, ln, xmlDoc));
+            }
 
-                if (result.Count > 0) {
-                    // Also include keys that exist in the .arb file but are not yet in the generated
-                    // file (e.g. added since the last build). This keeps validation squiggles accurate
-                    // even before the source generator has regenerated the dispatcher.
-                    HashSet<string> generatedKeys = result.Select(k => k.Key).ToHashSet(StringComparer.Ordinal);
-                    foreach (KeyValuePair<string, string> kv in rawKeys) {
-                        if (!generatedKeys.Contains(kv.Key)) {
-                            descriptions.TryGetValue(kv.Key, out string? desc);
-                            int ln = pascalLineNumbers.TryGetValue(kv.Key, out int lineNum) ? lineNum : -1;
-                            result.Add(new ArbKeyInfo(kv.Key, false, desc, resolvedArbPath, kv.Value, ln, null));
-                        }
+            if (result.Count > 0) {
+                // Also include keys that exist in the .arb file but are not yet in the generated
+                // file (e.g. added since the last build). This keeps validation squiggles accurate
+                // even before the source generator has regenerated the dispatcher.
+                HashSet<string> generatedKeys = result.Select(k => k.Key).ToHashSet(StringComparer.Ordinal);
+                foreach (KeyValuePair<string, string> kv in rawKeys) {
+                    if (!generatedKeys.Contains(kv.Key)) {
+                        descriptions.TryGetValue(kv.Key, out string? desc);
+                        int ln = pascalLineNumbers.TryGetValue(kv.Key, out int lineNum) ? lineNum : -1;
+                        result.Add(new ArbKeyInfo(kv.Key, false, desc, resolvedArbPath, kv.Value, ln, null));
                     }
-
-                    return result
-                        .GroupBy(x => x.Key, StringComparer.Ordinal)
-                        .Select(g => g.First())
-                        .OrderBy(x => x.Key, StringComparer.Ordinal)
-                        .ToList();
                 }
+
+                return result
+                    .GroupBy(x => x.Key, StringComparer.Ordinal)
+                    .Select(g => g.First())
+                    .OrderBy(x => x.Key, StringComparer.Ordinal)
+                    .ToList();
             }
-            catch {
-                // Ignore this candidate and try next.
-            }
+        }
+        catch {
+            // Ignore and fall back to ARB parsing.
         }
 
         return [];
@@ -336,11 +327,10 @@ public static class ArbKeyService {
         CACHE.TryRemove(projectDir, out _);
     }
 
-    private static string? FindDispatcherFile(string projectDir, string outputClass) {
+    private static string? FindDispatcherFile(string generatedDir, string outputClass) {
         try {
-            return Directory.EnumerateFiles(
-                projectDir, $"{outputClass}Dispatcher.g.cs", SearchOption.AllDirectories)
-                .FirstOrDefault();
+            string dispatcherPath = Path.Combine(generatedDir, $"{outputClass}Dispatcher.g.cs");
+            return File.Exists(dispatcherPath) ? dispatcherPath : null;
         }
         catch {
             return null;

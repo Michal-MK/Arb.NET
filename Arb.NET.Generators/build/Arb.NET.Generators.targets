@@ -10,11 +10,14 @@
   </ItemGroup>
 
   <!--
-    Make RootNamespace visible to the generator as a fallback when output-namespace
+    Make namespace-related project properties visible to the generator so it can
+    mirror the same fallback precedence as the CLI/IDE path when output-namespace
     is not specified in l10n.yaml.
   -->
   <ItemGroup>
     <CompilerVisibleProperty Include="RootNamespace" />
+    <CompilerVisibleProperty Include="AssemblyName" />
+    <CompilerVisibleProperty Include="MSBuildProjectName" />
   </ItemGroup>
 
   <Target Name="ArbGenerateBootstrap"

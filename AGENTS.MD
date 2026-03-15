@@ -42,6 +42,12 @@ Prefix such logs with "[AI-DEBUG]" so that they can easily be removed after.
 - This project produces two nuget packages: `Arb.NET` and `Arb.NET.Generators`.
 - Any changes from now on must accept that we could break someone! An attempt to minimize making such changes must be made.
 
+## dotnet tool
+- The `Arb.NET.Tool` project can be installed as a dotnet tool.
+
+## Scripts
+- There are various `publish-*.ps1` scripts. Use them to validate your changes.
+
 **Write all plans into ai-ref/plans!**
 **Maintain feature parity between IDEs! When a feature is requested always assume both IDEs are affected. Unless explicitly stated otherwise.**
 

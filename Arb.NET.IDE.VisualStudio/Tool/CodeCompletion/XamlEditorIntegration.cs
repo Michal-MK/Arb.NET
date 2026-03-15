@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Arb.NET;
+using System.Threading.Tasks;
 using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.Common.Services;
 using Microsoft.VisualStudio;
@@ -32,6 +32,8 @@ internal sealed class ArbXamlTextViewCreationListener : IVsTextViewCreationListe
 
     public void VsTextViewCreated(IVsTextView textViewAdapter)
     {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
         IWpfTextView? textView = EditorAdaptersFactoryService.GetWpfTextView(textViewAdapter);
         if (textView == null) return;
 
@@ -47,6 +49,7 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
 
     public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
     {
+        ThreadHelper.ThrowIfNotOnUIThread();
         return Next?.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText) ?? VSConstants.S_OK;
     }
 
@@ -145,7 +148,12 @@ internal static class ArbNavigation
 {
     public static void OpenToolWindowAtKey(string arbFilePath, string rawKey)
     {
-        _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () => {
+        _ = OpenToolWindowAtKeyAsync(arbFilePath, rawKey);
+    }
+
+    private static async Task OpenToolWindowAtKeyAsync(string arbFilePath, string rawKey)
+    {
+        try {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             ArbPackage? package = await ArbPackage.GetOrLoadAsync();
@@ -165,6 +173,9 @@ internal static class ArbNavigation
 
             await arbWindow.SetupIfNeededAsync(package.ColumnSettingsService, package.ArbService, package.TranslationSettingsService);
             await arbWindow.NavigateToArbKeyAsync(arbFilePath, rawKey);
-        });
+        }
+        catch (OperationCanceledException) {
+            // VS is shutting down or the operation was cancelled.
+        }
     }
 }

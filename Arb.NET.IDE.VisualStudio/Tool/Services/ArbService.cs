@@ -15,8 +15,11 @@ public class ArbService(ArbPackage package) {
 
     private string? GetSolutionDirectory() {
         ThreadHelper.ThrowIfNotOnUIThread();
-        DTE? dte = ((IServiceProvider)package).GetService(typeof(DTE)) as DTE;
-        string? solutionFullPath = dte?.Solution?.FullName;
+        if (((IServiceProvider)package).GetService(typeof(DTE)) is not DTE dte) {
+            return null;
+        }
+
+        string? solutionFullPath = dte.Solution?.FullName;
         return string.IsNullOrEmpty(solutionFullPath)
             ? null
             : Path.GetDirectoryName(solutionFullPath);
@@ -26,15 +29,17 @@ public class ArbService(ArbPackage package) {
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
         string? solutionDir = GetSolutionDirectory();
 
-        if (string.IsNullOrEmpty(solutionDir)) {
+        if (solutionDir is not { Length: > 0 }) {
             return new ArbScanResult([], [], solutionNotLoaded: true);
         }
+
+        string rootDir = solutionDir;
 
         return await Task.Run(() => {
             Dictionary<string, List<ArbFile>> byDir = new(StringComparer.OrdinalIgnoreCase);
             List<Exception> errors = [];
 
-            foreach (string filePath in ArbKeyService.FindArbFiles(solutionDir)) {
+            foreach (string filePath in ArbKeyService.FindArbFiles(rootDir)) {
                 try {
                     string content = File.ReadAllText(filePath);
                     ArbParseResult result = parser.ParseContent(content);
@@ -45,13 +50,7 @@ public class ArbService(ArbPackage package) {
                         ? Path.GetFileNameWithoutExtension(filePath)
                         : doc.Locale;
 
-                    string? dir = Path.GetDirectoryName(filePath) ?? solutionDir;
-
-
-                    if (dir is null) {
-                        // TODO(handle)
-                        continue;
-                    }
+                    string dir = Path.GetDirectoryName(filePath) ?? rootDir;
 
                     if (!byDir.TryGetValue(dir, out List<ArbFile> list)) {
                         list = [];
@@ -64,7 +63,7 @@ public class ArbService(ArbPackage package) {
                 }
             }
 
-            return new ArbScanResult(byDir, errors, solutionDirectory: solutionDir);
+            return new ArbScanResult(byDir, errors, solutionDirectory: rootDir);
         });
     }
 }

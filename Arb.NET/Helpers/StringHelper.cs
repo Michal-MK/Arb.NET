@@ -22,6 +22,17 @@ public static class StringHelper {
         return char.ToLowerInvariant(key[0]) + key.Substring(1);
     }
 
+    public static string? FirstNonEmpty(params string?[] values) {
+        return values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+    }
+
+    public static string? InferLangCodeFromFilename(string fileNameWithoutExt) {
+        string[] segments = fileNameWithoutExt.Split('_');
+        return segments.Length <= 1
+            ? null
+            : string.Join("_", segments, 1, segments.Length - 1);
+    }
+
     public static string NormalizeLocale(string? locale) {
         return string.IsNullOrWhiteSpace(locale)
             ? string.Empty

@@ -80,10 +80,14 @@ internal sealed class OpenArbEditorFromContextMenuCommand {
     private string? GetSelectedItemPath() {
         ThreadHelper.ThrowIfNotOnUIThread();
 
-        DTE? dte = ((IServiceProvider)package).GetService(typeof(DTE)) as DTE;
-        if (dte?.SelectedItems == null || dte.SelectedItems.Count == 0) return null;
+        if (((IServiceProvider)package).GetService(typeof(DTE)) is not DTE dte ||
+            dte.SelectedItems == null ||
+            dte.SelectedItems.Count == 0) {
+            return null;
+        }
 
-        SelectedItem item = dte.SelectedItems.Item(1);
+        SelectedItem? item = dte.SelectedItems.Item(1);
+        if (item == null) return null;
 
         // Could be a project item (file) or a project/folder
         if (item.ProjectItem != null) {

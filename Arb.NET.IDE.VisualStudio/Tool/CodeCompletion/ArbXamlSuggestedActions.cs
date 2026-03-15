@@ -26,7 +26,10 @@ internal sealed class ArbXamlSuggestedActionsSourceProvider : ISuggestedActionsS
 
 internal sealed class ArbXamlSuggestedActionsSource(ITextView textView, ITextBuffer textBuffer) : ISuggestedActionsSource {
 
-    public event EventHandler<EventArgs>? SuggestedActionsChanged;
+    public event EventHandler<EventArgs>? SuggestedActionsChanged {
+        add { }
+        remove { }
+    }
 
     public bool TryGetTelemetryId(out Guid telemetryId) {
         telemetryId = Guid.Empty;

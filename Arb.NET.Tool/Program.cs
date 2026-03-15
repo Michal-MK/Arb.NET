@@ -1,5 +1,5 @@
 using System.CommandLine;
-using Arb.NET.Tool.Generate;
+using Arb.NET;
 using Arb.NET.Tool.Migration;
 
 RootCommand rootCommand = new("Arb.NET Tool — utilities for working with .arb localization files.");
@@ -90,7 +90,7 @@ generateCommand.SetAction(parseResult => {
 
     Console.WriteLine($"Generating from: {projectDir}");
 
-    ArbGenerator.Result result = ArbGenerator.Generate(projectDir);
+    ArbProjectGenerator.Result result = ArbProjectGenerator.Generate(projectDir);
 
     if (result.WrittenFiles.Count > 0) {
         Console.WriteLine($"\nWrote {result.WrittenFiles.Count} file(s):");

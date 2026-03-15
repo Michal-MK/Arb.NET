@@ -10,7 +10,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-      <PackageReference Include="Arb.NET.Generators" Version="0.1.0" />
+      <PackageReference Include="Arb.NET.Generators" Version="$(ArbNetPackageVersion)" />
     </ItemGroup>
 
 </Project>

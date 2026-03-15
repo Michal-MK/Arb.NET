@@ -570,17 +570,17 @@ public partial class ArbEditorControl : UserControl {
         string? projectDir = FindProjectDir(arbDirectory);
         if (projectDir == null) return;
 
-        try {
-            Process.Start(new ProcessStartInfo {
-                FileName = "arb",
-                Arguments = $"generate \"{projectDir}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            });
-        }
-        catch {
-            // Best-effort; do not surface errors to the user for a background task.
-        }
+        _ = Task.Run(() => {
+            try {
+                ArbProjectGenerator.Result result = ArbProjectGenerator.Generate(projectDir);
+                if (result.HasErrors) {
+                    Debug.WriteLine($"Arb.NET generation reported {result.Errors.Count} error(s) for '{projectDir}'.");
+                }
+            }
+            catch (Exception ex) {
+                Debug.WriteLine($"Arb.NET generation failed for '{projectDir}': {ex.Message}");
+            }
+        });
     }
 
     private static string? FindProjectDir(string startDir) {

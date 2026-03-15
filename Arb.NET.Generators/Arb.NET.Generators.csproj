@@ -71,6 +71,7 @@
         <Compile Include="..\Arb.NET\Constants.cs"/>
         <Compile Include="..\Arb.NET\ArbParser.cs"/>
         <Compile Include="..\Arb.NET\ArbCodeGenerator.cs"/>
+        <Compile Include="..\Arb.NET\ArbGeneration.cs"/>
         <Compile Include="..\Arb.NET\Helpers\StringHelper.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbDocument.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbEntry.cs"/>
@@ -98,7 +99,7 @@
             already inlined above); PrivateAssets="none" writes it into the published .nuspec.
             NOTE: "runtime" must be included (not excluded) for NuGet to emit the dependency.
         -->
-        <PackageReference Include="Arb.NET" Version="0.1.0" PrivateAssets="none" />
+        <PackageReference Include="Arb.NET" Version="$(ArbNetPackageVersion)" PrivateAssets="none" />
     </ItemGroup>
 
 </Project>

@@ -1,11 +1,12 @@
 <Project>
 
   <!--
-    Auto-import Arb.NET.Generators build targets for all projects in this repository.
+    Auto-import Arb.NET.Generators build targets for local projects that actually own l10n.yaml.
     When distributed as a NuGet package, MSBuild imports build/Arb.NET.Generators.targets
-    automatically; this file replicates that behaviour for local ProjectReference development.
+    automatically; this file replicates that behaviour for local ProjectReference development
+    without invoking Arb.NET generation for unrelated projects.
   -->
   <Import Project="$(MSBuildThisFileDirectory)Arb.NET.Generators\build\Arb.NET.Generators.targets"
-          Condition="Exists('$(MSBuildThisFileDirectory)Arb.NET.Generators\build\Arb.NET.Generators.targets')" />
+          Condition="Exists('$(MSBuildThisFileDirectory)Arb.NET.Generators\build\Arb.NET.Generators.targets') and Exists('$(MSBuildProjectDirectory)\l10n.yaml')" />
 
 </Project>

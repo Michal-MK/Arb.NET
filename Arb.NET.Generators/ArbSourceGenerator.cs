@@ -39,15 +39,17 @@ namespace Arb.NET.Generators;
 /// Namespace resolution order (first non-empty wins):
 /// <list type="number">
 ///   <item><c>output-namespace</c> in l10n.yaml</item>
-///   <item><c>RootNamespace</c> MSBuild property (always set by the SDK to the project name)</item>
+///   <item><c>RootNamespace</c> in the owning project file</item>
+///   <item>Project <c>AssemblyName</c> or project filename</item>
+///   <item><c>Arb.Generated</c></item>
 /// </list>
 /// </summary>
 [Generator]
 public sealed class ArbSourceGenerator : IIncrementalGenerator {
-    private static readonly DiagnosticDescriptor PARSE_ERROR = new(
+    private static readonly DiagnosticDescriptor GENERATION_ERROR = new(
         id: "ARB001",
-        title: "ARB parse error",
-        messageFormat: "Failed to parse '{0}': {1}",
+        title: "ARB generation error",
+        messageFormat: "{0}",
         category: "ArbGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -59,7 +61,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
         var configFiles = context.AdditionalTextsProvider
             .Where(file => file.Path.EndsWith(Constants.LOCALIZATION_FILE, StringComparison.OrdinalIgnoreCase));
 
-        // Collect all .arb files and the (at most one) l10n.yaml together with global options
+        // Collect all .arb files and the (at most one) l10n.yaml together.
         var allFilesAndConfig = arbFiles.Collect()
             .Combine(configFiles.Collect())
             .Combine(context.AnalyzerConfigOptionsProvider);
@@ -108,10 +110,6 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
             if (configTexts.IsEmpty) return;
 
-            // Key: baseClassName → list of (document, className, namespace, defaultLang, outputDir)
-            // Accumulated across all l10n.yaml files before dispatcher emission.
-            Dictionary<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, string OutputDir)>> groups = [];
-
             IReadOnlyList<EnumLocalizationInfo>? enumForDispatcher = enumInfos.IsEmpty
                 ? null
                 : enumInfos
@@ -131,9 +129,6 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                 L10nConfig config = L10nConfig.Parse(yaml!);
                 string configDir = Path.GetDirectoryName(configText.Path)!;
 
-                // ── Output directory for generated .g.cs files (visible in Solution Explorer) ─
-                string outputDir = Path.Combine(configDir, config.ArbDir);
-
                 // ── Filter .arb files to this config's arb-dir ───────────────────────────
                 string arbDirAbsolute = Path.GetFullPath(Path.Combine(configDir, config.ArbDir))
                                             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
@@ -143,34 +138,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     .Where(f => f.Path.StartsWith(arbDirAbsolute, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                // ── Resolve namespace ─────────────────────────────────────────────────────
-                string namespaceName = FirstNonEmpty(
-                    config.OutputNamespace,
-                    GetGlobalProp(globalOptionsProvider.GlobalOptions, "RootNamespace"),
-                    "Arb.Generated"
-                )!;
-
-                string? baseClass = string.IsNullOrWhiteSpace(config.OutputClass) ? null : config.OutputClass;
-
                 // ── Determine the default lang code from the template file ────────────────
-                string? defaultLangCode = null;
-                if (!string.IsNullOrWhiteSpace(config.TemplateArbFile)) {
-                    AdditionalText? templateFile = relevantArbs.FirstOrDefault(f =>
-                                                                                   string.Equals(Path.GetFileName(f.Path), config.TemplateArbFile, StringComparison.OrdinalIgnoreCase));
-
-                    if (templateFile is not null) {
-                        string? templateContent = templateFile.GetText(ctx.CancellationToken)?.ToString();
-                        if (!string.IsNullOrWhiteSpace(templateContent)) {
-                            ArbParseResult templateParse = new ArbParser().ParseContent(templateContent!);
-                            if (templateParse.ValidationResults.IsValid && templateParse.Document?.Locale is not null) {
-                                defaultLangCode = templateParse.Document.Locale;
-                            }
-                        }
-
-                        // Fall back to inferring from the filename if @@locale is absent
-                        defaultLangCode ??= InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(templateFile.Path));
-                    }
-                }
+                string? defaultLangCode = ResolveDefaultLangCode(config, relevantArbs, ctx.CancellationToken);
 
                 // ── Step 1: inject missing ARB keys for [ArbLocalize] enums ──────────────
                 if (!enumInfos.IsEmpty) {
@@ -183,8 +152,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
                         ArbDocument doc = parseResult.Document!;
 
-                        string? fileLangCode = FirstNonEmpty(
-                            InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(file.Path)),
+                        string? fileLangCode = StringHelper.FirstNonEmpty(
+                            StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(file.Path)),
                             doc.Locale,
                             defaultLangCode
                         );
@@ -235,103 +204,50 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                     }
                 }
 
-                // ── Step 2: parse ARB files and emit locale-specific C# classes ───────────
+                string namespaceName = ArbGeneration.ResolveNamespaceName(
+                    config,
+                    GetGlobalProp(globalOptionsProvider.GlobalOptions, "RootNamespace"),
+                    GetGlobalProp(globalOptionsProvider.GlobalOptions, "AssemblyName"),
+                    StringHelper.FirstNonEmpty(
+                        GetGlobalProp(globalOptionsProvider.GlobalOptions, "MSBuildProjectName"),
+                        Path.GetFileName(configDir)));
+
+                string outputDir = Path.Combine(configDir, config.ArbDir);
+                string? baseClass = string.IsNullOrWhiteSpace(config.OutputClass) ? null : config.OutputClass;
+                List<ArbGeneration.Input> generationInputs = [];
+
                 foreach (AdditionalText file in relevantArbs) {
-                    // Re-read: the file may have been updated in Step 1
-                    string? content = file.GetText(ctx.CancellationToken)?.ToString();
-
-                    string? diskContent = ReadArbFileFromDisk(file.Path);
-                    if (!string.IsNullOrWhiteSpace(diskContent)) {
-                        content = diskContent;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(content)) continue;
-
-                    ArbParseResult result = new ArbParser().ParseContent(content!);
-
-                    if (!result.ValidationResults.IsValid) {
-                        foreach (ArbValidationError error in result.ValidationResults.Errors) {
-                            ctx.ReportDiagnostic(Diagnostic.Create(PARSE_ERROR, Location.None, file.Path, error.Keyword, error.Message, error.InstanceLocation, error.SchemaPath));
-                        }
+                    string? content = ReadArbFileFromDisk(file.Path)
+                                      ?? file.GetText(ctx.CancellationToken)?.ToString();
+                    if (string.IsNullOrWhiteSpace(content)) {
                         continue;
                     }
 
-                    ArbDocument document = result.Document!;
-
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(file.Path);
-
-                    // ── Resolve language code ──
-                    string? langCode = FirstNonEmpty(
-                        InferLangCodeFromFilename(fileNameWithoutExt),
-                        document.Locale,
-                        defaultLangCode);
-
-                    if (!string.IsNullOrWhiteSpace(langCode)) {
-                        document.Locale = langCode!;
-                    }
-
-                    // ── Resolve class name ──
-                    string className;
-
-                    if (!string.IsNullOrWhiteSpace(baseClass)) {
-                        string localeSuffix = StringHelper.NormalizeLocale(document.Locale);
-                        className = string.IsNullOrWhiteSpace(localeSuffix)
-                            ? baseClass!
-                            : baseClass + "_" + localeSuffix;
-                    }
-                    else {
-                        className = string.Concat(Array.ConvertAll(fileNameWithoutExt.Split('_'), StringHelper.ToPascalCase))
-                                    + "Localizations";
-                    }
-
-                    // Write locale-specific class to disk (Generated/) — compilation is handled
-                    // by the <Compile> glob in Arb.NET.Generators.targets, not ctx.AddSource.
-                    string source = new ArbCodeGenerator().GenerateClass(document, className, namespaceName);
-                    WriteGeneratedFile(outputDir, $"{fileNameWithoutExt}.g.cs", source);
-
-                    // Accumulate for dispatcher generation
-                    if (!string.IsNullOrWhiteSpace(baseClass)) {
-                        if (!groups.TryGetValue(baseClass!, out List<(ArbDocument, string, string, string, string)>? list)) {
-                            list = [];
-                            groups[baseClass!] = list;
+                    ArbParseResult parseResult = new ArbParser().ParseContent(content!);
+                    if (!parseResult.ValidationResults.IsValid) {
+                        foreach (ArbValidationError error in parseResult.ValidationResults.Errors) {
+                            ctx.ReportDiagnostic(Diagnostic.Create(
+                                GENERATION_ERROR,
+                                Location.None,
+                                $"Failed to parse '{file.Path}': [{error.Keyword}] {error.Message}"));
                         }
-                        list.Add((document, className, namespaceName, defaultLangCode ?? string.Empty, outputDir));
+
+                        continue;
                     }
+
+                    generationInputs.Add(new ArbGeneration.Input(
+                        Path.GetFileNameWithoutExtension(file.Path),
+                        parseResult.Document!));
                 }
-            }
 
-            // ── Step 3: emit dispatcher classes (one per output-class group) ─────────────
-            foreach (KeyValuePair<string, List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, string OutputDir)>> groupPair in groups) {
-                string? baseClassName = groupPair.Key;
-                List<(ArbDocument Document, string ClassName, string NamespaceName, string DefaultLangCode, string OutputDir)>? entries = groupPair.Value;
-
-                string? groupDefaultLangCode = entries.FirstOrDefault(e => !string.IsNullOrEmpty(e.DefaultLangCode)).DefaultLangCode;
-                string? groupNamespace = entries[0].NamespaceName;
-                string groupOutputDir = entries[0].OutputDir;
-
-                ArbDocument? defaultDocument = null;
-                if (!string.IsNullOrWhiteSpace(groupDefaultLangCode)) {
-                    string normalizedDefault = StringHelper.NormalizeLocale(groupDefaultLangCode);
-                    defaultDocument = entries
-                        .FirstOrDefault(e => StringHelper.NormalizeLocale(e.Document.Locale) == normalizedDefault)
-                        .Document;
+                foreach (ArbGeneration.Output output in ArbGeneration.GenerateFiles(
+                             generationInputs,
+                             namespaceName,
+                             baseClass,
+                             defaultLangCode,
+                             enumForDispatcher)) {
+                    WriteGeneratedFile(outputDir, output.FileName, output.Content);
                 }
-                defaultDocument ??= entries[0].Document;
-
-                List<(ArbDocument Document, string ClassName)> locales = [
-                    .. entries
-                        .Select(e => (e.Document, e.ClassName))
-                ];
-
-                string dispatcher = new ArbCodeGenerator().GenerateDispatcherClass(
-                    locales,
-                    defaultDocument,
-                    baseClassName,
-                    groupNamespace,
-                    enumForDispatcher
-                );
-
-                WriteGeneratedFile(groupOutputDir, $"{baseClassName}Dispatcher.g.cs", dispatcher);
             }
         });
     }
@@ -354,7 +270,6 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
             File.WriteAllText(Path.Combine(outputDir, fileName), content, System.Text.Encoding.UTF8);
         }
         catch {
-            // TODO Handle
             // Best-effort; don't crash the build if the file cannot be written.
         }
     }
@@ -378,19 +293,30 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
     }
 #pragma warning restore RS1035
 
+    private static string? ResolveDefaultLangCode(L10nConfig config, IReadOnlyList<AdditionalText> relevantArbs, CancellationToken cancellationToken) {
+        if (string.IsNullOrWhiteSpace(config.TemplateArbFile)) {
+            return null;
+        }
+
+        AdditionalText? templateFile = relevantArbs.FirstOrDefault(f =>
+            string.Equals(Path.GetFileName(f.Path), config.TemplateArbFile, StringComparison.OrdinalIgnoreCase));
+
+        if (templateFile == null) {
+            return null;
+        }
+
+        string? templateContent = templateFile.GetText(cancellationToken)?.ToString();
+        if (!string.IsNullOrWhiteSpace(templateContent)) {
+            ArbParseResult templateParse = new ArbParser().ParseContent(templateContent!);
+            if (templateParse.ValidationResults.IsValid && templateParse.Document?.Locale is not null) {
+                return templateParse.Document.Locale;
+            }
+        }
+
+        return StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(templateFile.Path));
+    }
     private static string? GetGlobalProp(AnalyzerConfigOptions options, string key) {
         options.TryGetValue($"build_property.{key}", out string? value);
         return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
-
-    private static string? FirstNonEmpty(params string?[] values) {
-        return values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-    }
-
-    private static string? InferLangCodeFromFilename(string fileNameWithoutExt) {
-        string[] segments = fileNameWithoutExt.Split('_');
-        return segments.Length <= 1
-            ? null
-            : string.Join("_", segments, 1, segments.Length - 1);
     }
 }

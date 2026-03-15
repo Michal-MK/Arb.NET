@@ -2,7 +2,8 @@
 
   <!-- Shared NuGet package metadata for all packable projects in this repo. -->
   <PropertyGroup>
-    <Version>0.1.0</Version>
+    <ArbNetPackageVersion>0.2.0</ArbNetPackageVersion>
+    <Version>$(ArbNetPackageVersion)</Version>
     <Authors>Michal-MK</Authors>
     <RepositoryUrl>https://github.com/Michal-MK/Arb.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

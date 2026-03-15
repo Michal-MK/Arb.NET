@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -7,16 +6,19 @@ using System.Threading.Tasks;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
 using Arb.NET.IDE.VisualStudio.Tool.UI;
+using System;
 
 namespace Arb.NET.IDE.VisualStudio.Tool;
 
 [Guid("b7e3c1d1-9c1b-4f0e-9f7c-8c7b8c8e2b11")]
 public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolutionEvents {
-    private ArbPackage package;
     private readonly ArbEditorControl control;
     private bool initialized;
     private uint selectionCookie;
     private uint solutionEventsCookie;
+
+    private ArbPackage ArbPackage => Package as ArbPackage
+        ?? throw new InvalidOperationException("Arb tool window package is not available.");
 
     public ArbToolWindow() : base(null) {
         Caption = "Arb.NET";
@@ -30,11 +32,11 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
     /// </summary>
     public override void OnToolWindowCreated() {
         base.OnToolWindowCreated();
-        package = (ArbPackage)Package;
         _ = SetupFromPackageAsync();
     }
 
     private async Task SetupFromPackageAsync() {
+        ArbPackage package = ArbPackage;
         await SetupIfNeededAsync(package.ColumnSettingsService, package.ArbService, package.TranslationSettingsService);
     }
 
@@ -44,6 +46,7 @@ public sealed class ArbToolWindow : ToolWindowPane, IVsSelectionEvents, IVsSolut
         TranslationSettingsService? translationSettingsService
     ) {
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        ArbPackage package = ArbPackage;
 
         if (initialized) return;
         initialized = true;

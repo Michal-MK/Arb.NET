@@ -29,7 +29,10 @@ internal sealed class ArbCSharpSuggestedActionsSource(ITextView textView, ITextB
     // Group 1 = the member name (PascalCase assumed for ARB keys)
     private static readonly Regex MEMBER_ACCESS_REGEX = new(@"\b\w+\.([A-Z]\w*)\b", RegexOptions.Compiled);
 
-    public event EventHandler<EventArgs>? SuggestedActionsChanged;
+    public event EventHandler<EventArgs>? SuggestedActionsChanged {
+        add { }
+        remove { }
+    }
 
     public bool TryGetTelemetryId(out Guid telemetryId) {
         telemetryId = Guid.Empty;

@@ -47,7 +47,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Arb.NET.Generators" Version="0.1.0" />
+        <PackageReference Include="Arb.NET.Generators" Version="$(ArbNetPackageVersion)" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0"/>
         <!-- Workaround: Microsoft.Extensions.DependencyModel 10.0.0 (used by GenerateDepsFile) declares

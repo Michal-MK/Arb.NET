@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.Common.Services;
 using JetBrains.Application.Parts;
@@ -284,26 +284,24 @@ public class ArbModelHost {
     }
 
     /// <summary>
-    /// Fires-and-forgets <c>arb generate &lt;projectDir&gt;</c> so generated .g.cs
-    /// files are refreshed after every ARB mutation.
+    /// Fires-and-forgets in-process generation so generated .g.cs files are refreshed
+    /// after every ARB mutation.
     /// </summary>
     private static void RunArbGenerate(string arbDirectory) {
         string? projectDir = FindProjectDir(arbDirectory);
         if (projectDir == null) return;
 
-        try {
-            Process.Start(new ProcessStartInfo {
-                FileName = "arb",
-                Arguments = $"generate \"{projectDir}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = false,
-                RedirectStandardError = false
-            });
-        }
-        catch {
-            // TODO Handle
-        }
+        _ = Task.Run(() => {
+            try {
+                global::Arb.NET.ArbProjectGenerator.Result result = ArbProjectGenerator.Generate(projectDir);
+                if (result.HasErrors) {
+                    LOG.Warn($"In-process ARB generation reported {result.Errors.Count} error(s) for '{projectDir}': {string.Join(" | ", result.Errors.Take(3))}");
+                }
+            }
+            catch (Exception ex) {
+                LOG.Warn($"In-process ARB generation failed for '{projectDir}': {ex.Message}");
+            }
+        });
     }
 
     private static string? FindProjectDir(string startDir) {
