@@ -26,6 +26,9 @@ class ArbModel private constructor(
     private val _removeArbKey: RdCall<ArbRemoveKey, Boolean>,
     private val _addArbLocale: RdCall<ArbNewLocale, Boolean>,
     private val _translateArbEntries: RdCall<ArbTranslateRequest, ArbTranslateResponse>,
+    private val _previewArbCsvImport: RdCall<ArbCsvPreviewRequest, ArbCsvPreviewResponse>,
+    private val _applyArbCsvImport: RdCall<ArbCsvImportRequest, ArbCsvImportResponse>,
+    private val _exportArbCsv: RdCall<String, ArbCsvExportResponse>,
     private val _getArbKeys: RdCall<String, List<ArbKeyInfo>>,
     private val _openArbEditor: RdSignal<ArbOpenEditor>,
     private val _arbKeysChanged: RdSignal<String>
@@ -48,6 +51,12 @@ class ArbModel private constructor(
             serializers.register(LazyCompanionMarshaller(RdId(-1952961815073205569), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateRequest"))
             serializers.register(LazyCompanionMarshaller(RdId(-6163743818377381401), classLoader, "com.jetbrains.rd.ide.model.ArbTranslatedItem"))
             serializers.register(LazyCompanionMarshaller(RdId(-5201584046087783919), classLoader, "com.jetbrains.rd.ide.model.ArbTranslateResponse"))
+            serializers.register(LazyCompanionMarshaller(RdId(1021191144752783279), classLoader, "com.jetbrains.rd.ide.model.ArbCsvPreviewRequest"))
+            serializers.register(LazyCompanionMarshaller(RdId(561016179811538), classLoader, "com.jetbrains.rd.ide.model.ArbCsvRow"))
+            serializers.register(LazyCompanionMarshaller(RdId(-5236562660029887711), classLoader, "com.jetbrains.rd.ide.model.ArbCsvPreviewResponse"))
+            serializers.register(LazyCompanionMarshaller(RdId(3921998836132476962), classLoader, "com.jetbrains.rd.ide.model.ArbCsvImportRequest"))
+            serializers.register(LazyCompanionMarshaller(RdId(-7545244595807141618), classLoader, "com.jetbrains.rd.ide.model.ArbCsvImportResponse"))
+            serializers.register(LazyCompanionMarshaller(RdId(-4317418795365506531), classLoader, "com.jetbrains.rd.ide.model.ArbCsvExportResponse"))
             serializers.register(LazyCompanionMarshaller(RdId(17391508275880079), classLoader, "com.jetbrains.rd.ide.model.ArbKeyInfo"))
             serializers.register(LazyCompanionMarshaller(RdId(1601703604575690805), classLoader, "com.jetbrains.rd.ide.model.ArbOpenEditor"))
         }
@@ -58,7 +67,7 @@ class ArbModel private constructor(
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         private val __ArbKeyInfoListSerializer = ArbKeyInfo.list()
         
-        const val serializationHash = -8146834234892139901L
+        const val serializationHash = -520730573180913457L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -72,6 +81,9 @@ class ArbModel private constructor(
     val removeArbKey: IRdCall<ArbRemoveKey, Boolean> get() = _removeArbKey
     val addArbLocale: IRdCall<ArbNewLocale, Boolean> get() = _addArbLocale
     val translateArbEntries: IRdCall<ArbTranslateRequest, ArbTranslateResponse> get() = _translateArbEntries
+    val previewArbCsvImport: IRdCall<ArbCsvPreviewRequest, ArbCsvPreviewResponse> get() = _previewArbCsvImport
+    val applyArbCsvImport: IRdCall<ArbCsvImportRequest, ArbCsvImportResponse> get() = _applyArbCsvImport
+    val exportArbCsv: IRdCall<String, ArbCsvExportResponse> get() = _exportArbCsv
     val getArbKeys: IRdCall<String, List<ArbKeyInfo>> get() = _getArbKeys
     val openArbEditor: ISignal<ArbOpenEditor> get() = _openArbEditor
     val arbKeysChanged: ISignal<String> get() = _arbKeysChanged
@@ -85,6 +97,9 @@ class ArbModel private constructor(
         bindableChildren.add("removeArbKey" to _removeArbKey)
         bindableChildren.add("addArbLocale" to _addArbLocale)
         bindableChildren.add("translateArbEntries" to _translateArbEntries)
+        bindableChildren.add("previewArbCsvImport" to _previewArbCsvImport)
+        bindableChildren.add("applyArbCsvImport" to _applyArbCsvImport)
+        bindableChildren.add("exportArbCsv" to _exportArbCsv)
         bindableChildren.add("getArbKeys" to _getArbKeys)
         bindableChildren.add("openArbEditor" to _openArbEditor)
         bindableChildren.add("arbKeysChanged" to _arbKeysChanged)
@@ -100,6 +115,9 @@ class ArbModel private constructor(
         RdCall<ArbRemoveKey, Boolean>(ArbRemoveKey, FrameworkMarshallers.Bool),
         RdCall<ArbNewLocale, Boolean>(ArbNewLocale, FrameworkMarshallers.Bool),
         RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest, ArbTranslateResponse),
+        RdCall<ArbCsvPreviewRequest, ArbCsvPreviewResponse>(ArbCsvPreviewRequest, ArbCsvPreviewResponse),
+        RdCall<ArbCsvImportRequest, ArbCsvImportResponse>(ArbCsvImportRequest, ArbCsvImportResponse),
+        RdCall<String, ArbCsvExportResponse>(FrameworkMarshallers.String, ArbCsvExportResponse),
         RdCall<String, List<ArbKeyInfo>>(FrameworkMarshallers.String, __ArbKeyInfoListSerializer),
         RdSignal<ArbOpenEditor>(ArbOpenEditor),
         RdSignal<String>(FrameworkMarshallers.String)
@@ -118,6 +136,9 @@ class ArbModel private constructor(
             print("removeArbKey = "); _removeArbKey.print(printer); println()
             print("addArbLocale = "); _addArbLocale.print(printer); println()
             print("translateArbEntries = "); _translateArbEntries.print(printer); println()
+            print("previewArbCsvImport = "); _previewArbCsvImport.print(printer); println()
+            print("applyArbCsvImport = "); _applyArbCsvImport.print(printer); println()
+            print("exportArbCsv = "); _exportArbCsv.print(printer); println()
             print("getArbKeys = "); _getArbKeys.print(printer); println()
             print("openArbEditor = "); _openArbEditor.print(printer); println()
             print("arbKeysChanged = "); _arbKeysChanged.print(printer); println()
@@ -134,6 +155,9 @@ class ArbModel private constructor(
             _removeArbKey.deepClonePolymorphic(),
             _addArbLocale.deepClonePolymorphic(),
             _translateArbEntries.deepClonePolymorphic(),
+            _previewArbCsvImport.deepClonePolymorphic(),
+            _applyArbCsvImport.deepClonePolymorphic(),
+            _exportArbCsv.deepClonePolymorphic(),
             _getArbKeys.deepClonePolymorphic(),
             _openArbEditor.deepClonePolymorphic(),
             _arbKeysChanged.deepClonePolymorphic()
@@ -145,6 +169,456 @@ class ArbModel private constructor(
 }
 val Solution.arbModel get() = getOrCreateExtension("arbModel", ::ArbModel)
 
+
+
+/**
+ * #### Generated from [ArbModel.kt:128]
+ */
+data class ArbCsvExportResponse (
+    val success: Boolean,
+    val errorMessage: String?,
+    val csvContent: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbCsvExportResponse> {
+        override val _type: KClass<ArbCsvExportResponse> = ArbCsvExportResponse::class
+        override val id: RdId get() = RdId(-4317418795365506531)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbCsvExportResponse  {
+            val success = buffer.readBool()
+            val errorMessage = buffer.readNullable { buffer.readString() }
+            val csvContent = buffer.readString()
+            return ArbCsvExportResponse(success, errorMessage, csvContent)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvExportResponse)  {
+            buffer.writeBool(value.success)
+            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
+            buffer.writeString(value.csvContent)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbCsvExportResponse
+        
+        if (success != other.success) return false
+        if (errorMessage != other.errorMessage) return false
+        if (csvContent != other.csvContent) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + success.hashCode()
+        __r = __r*31 + if (errorMessage != null) errorMessage.hashCode() else 0
+        __r = __r*31 + csvContent.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbCsvExportResponse (")
+        printer.indent {
+            print("success = "); success.print(printer); println()
+            print("errorMessage = "); errorMessage.print(printer); println()
+            print("csvContent = "); csvContent.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:113]
+ */
+data class ArbCsvImportRequest (
+    val directory: String,
+    val csvContent: String,
+    val mappings: List<String>,
+    val mode: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbCsvImportRequest> {
+        override val _type: KClass<ArbCsvImportRequest> = ArbCsvImportRequest::class
+        override val id: RdId get() = RdId(3921998836132476962)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbCsvImportRequest  {
+            val directory = buffer.readString()
+            val csvContent = buffer.readString()
+            val mappings = buffer.readList { buffer.readString() }
+            val mode = buffer.readString()
+            return ArbCsvImportRequest(directory, csvContent, mappings, mode)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvImportRequest)  {
+            buffer.writeString(value.directory)
+            buffer.writeString(value.csvContent)
+            buffer.writeList(value.mappings) { v -> buffer.writeString(v) }
+            buffer.writeString(value.mode)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbCsvImportRequest
+        
+        if (directory != other.directory) return false
+        if (csvContent != other.csvContent) return false
+        if (mappings != other.mappings) return false
+        if (mode != other.mode) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + directory.hashCode()
+        __r = __r*31 + csvContent.hashCode()
+        __r = __r*31 + mappings.hashCode()
+        __r = __r*31 + mode.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbCsvImportRequest (")
+        printer.indent {
+            print("directory = "); directory.print(printer); println()
+            print("csvContent = "); csvContent.print(printer); println()
+            print("mappings = "); mappings.print(printer); println()
+            print("mode = "); mode.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:120]
+ */
+data class ArbCsvImportResponse (
+    val success: Boolean,
+    val errorMessage: String?,
+    val importedKeyCount: Int,
+    val affectedLocaleCount: Int,
+    val createdLocaleCount: Int
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbCsvImportResponse> {
+        override val _type: KClass<ArbCsvImportResponse> = ArbCsvImportResponse::class
+        override val id: RdId get() = RdId(-7545244595807141618)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbCsvImportResponse  {
+            val success = buffer.readBool()
+            val errorMessage = buffer.readNullable { buffer.readString() }
+            val importedKeyCount = buffer.readInt()
+            val affectedLocaleCount = buffer.readInt()
+            val createdLocaleCount = buffer.readInt()
+            return ArbCsvImportResponse(success, errorMessage, importedKeyCount, affectedLocaleCount, createdLocaleCount)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvImportResponse)  {
+            buffer.writeBool(value.success)
+            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
+            buffer.writeInt(value.importedKeyCount)
+            buffer.writeInt(value.affectedLocaleCount)
+            buffer.writeInt(value.createdLocaleCount)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbCsvImportResponse
+        
+        if (success != other.success) return false
+        if (errorMessage != other.errorMessage) return false
+        if (importedKeyCount != other.importedKeyCount) return false
+        if (affectedLocaleCount != other.affectedLocaleCount) return false
+        if (createdLocaleCount != other.createdLocaleCount) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + success.hashCode()
+        __r = __r*31 + if (errorMessage != null) errorMessage.hashCode() else 0
+        __r = __r*31 + importedKeyCount.hashCode()
+        __r = __r*31 + affectedLocaleCount.hashCode()
+        __r = __r*31 + createdLocaleCount.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbCsvImportResponse (")
+        printer.indent {
+            print("success = "); success.print(printer); println()
+            print("errorMessage = "); errorMessage.print(printer); println()
+            print("importedKeyCount = "); importedKeyCount.print(printer); println()
+            print("affectedLocaleCount = "); affectedLocaleCount.print(printer); println()
+            print("createdLocaleCount = "); createdLocaleCount.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:94]
+ */
+data class ArbCsvPreviewRequest (
+    val directory: String,
+    val csvContent: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbCsvPreviewRequest> {
+        override val _type: KClass<ArbCsvPreviewRequest> = ArbCsvPreviewRequest::class
+        override val id: RdId get() = RdId(1021191144752783279)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbCsvPreviewRequest  {
+            val directory = buffer.readString()
+            val csvContent = buffer.readString()
+            return ArbCsvPreviewRequest(directory, csvContent)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvPreviewRequest)  {
+            buffer.writeString(value.directory)
+            buffer.writeString(value.csvContent)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbCsvPreviewRequest
+        
+        if (directory != other.directory) return false
+        if (csvContent != other.csvContent) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + directory.hashCode()
+        __r = __r*31 + csvContent.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbCsvPreviewRequest (")
+        printer.indent {
+            print("directory = "); directory.print(printer); println()
+            print("csvContent = "); csvContent.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:103]
+ */
+data class ArbCsvPreviewResponse (
+    val success: Boolean,
+    val errorMessage: String?,
+    val headers: List<String>,
+    val rows: List<ArbCsvRow>,
+    val suggestedMappings: List<String>,
+    val availableLocaleMappings: List<String>,
+    val defaultLocale: String?
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbCsvPreviewResponse> {
+        override val _type: KClass<ArbCsvPreviewResponse> = ArbCsvPreviewResponse::class
+        override val id: RdId get() = RdId(-5236562660029887711)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbCsvPreviewResponse  {
+            val success = buffer.readBool()
+            val errorMessage = buffer.readNullable { buffer.readString() }
+            val headers = buffer.readList { buffer.readString() }
+            val rows = buffer.readList { ArbCsvRow.read(ctx, buffer) }
+            val suggestedMappings = buffer.readList { buffer.readString() }
+            val availableLocaleMappings = buffer.readList { buffer.readString() }
+            val defaultLocale = buffer.readNullable { buffer.readString() }
+            return ArbCsvPreviewResponse(success, errorMessage, headers, rows, suggestedMappings, availableLocaleMappings, defaultLocale)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvPreviewResponse)  {
+            buffer.writeBool(value.success)
+            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
+            buffer.writeList(value.headers) { v -> buffer.writeString(v) }
+            buffer.writeList(value.rows) { v -> ArbCsvRow.write(ctx, buffer, v) }
+            buffer.writeList(value.suggestedMappings) { v -> buffer.writeString(v) }
+            buffer.writeList(value.availableLocaleMappings) { v -> buffer.writeString(v) }
+            buffer.writeNullable(value.defaultLocale) { buffer.writeString(it) }
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbCsvPreviewResponse
+        
+        if (success != other.success) return false
+        if (errorMessage != other.errorMessage) return false
+        if (headers != other.headers) return false
+        if (rows != other.rows) return false
+        if (suggestedMappings != other.suggestedMappings) return false
+        if (availableLocaleMappings != other.availableLocaleMappings) return false
+        if (defaultLocale != other.defaultLocale) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + success.hashCode()
+        __r = __r*31 + if (errorMessage != null) errorMessage.hashCode() else 0
+        __r = __r*31 + headers.hashCode()
+        __r = __r*31 + rows.hashCode()
+        __r = __r*31 + suggestedMappings.hashCode()
+        __r = __r*31 + availableLocaleMappings.hashCode()
+        __r = __r*31 + if (defaultLocale != null) defaultLocale.hashCode() else 0
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbCsvPreviewResponse (")
+        printer.indent {
+            print("success = "); success.print(printer); println()
+            print("errorMessage = "); errorMessage.print(printer); println()
+            print("headers = "); headers.print(printer); println()
+            print("rows = "); rows.print(printer); println()
+            print("suggestedMappings = "); suggestedMappings.print(printer); println()
+            print("availableLocaleMappings = "); availableLocaleMappings.print(printer); println()
+            print("defaultLocale = "); defaultLocale.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:99]
+ */
+data class ArbCsvRow (
+    val cells: List<String>
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbCsvRow> {
+        override val _type: KClass<ArbCsvRow> = ArbCsvRow::class
+        override val id: RdId get() = RdId(561016179811538)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbCsvRow  {
+            val cells = buffer.readList { buffer.readString() }
+            return ArbCsvRow(cells)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvRow)  {
+            buffer.writeList(value.cells) { v -> buffer.writeString(v) }
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbCsvRow
+        
+        if (cells != other.cells) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + cells.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbCsvRow (")
+        printer.indent {
+            print("cells = "); cells.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
 
 
 /**
@@ -290,7 +764,7 @@ data class ArbEntryUpdate (
 
 
 /**
- * #### Generated from [ArbModel.kt:97]
+ * #### Generated from [ArbModel.kt:137]
  */
 data class ArbKeyInfo (
     val key: String,
@@ -657,7 +1131,7 @@ data class ArbNewLocale (
 
 
 /**
- * #### Generated from [ArbModel.kt:107]
+ * #### Generated from [ArbModel.kt:147]
  */
 data class ArbOpenEditor (
     val arbDir: String,

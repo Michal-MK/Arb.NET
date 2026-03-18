@@ -91,6 +91,46 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("items", immutableList(ArbTranslatedItem))
     }
 
+    val ArbCsvPreviewRequest = structdef {
+        field("directory", string)
+        field("csvContent", string)
+    }
+
+    val ArbCsvRow = structdef {
+        field("cells", immutableList(string))
+    }
+
+    val ArbCsvPreviewResponse = structdef {
+        field("success", bool)
+        field("errorMessage", string.nullable)
+        field("headers", immutableList(string))
+        field("rows", immutableList(ArbCsvRow))
+        field("suggestedMappings", immutableList(string))
+        field("availableLocaleMappings", immutableList(string))
+        field("defaultLocale", string.nullable)
+    }
+
+    val ArbCsvImportRequest = structdef {
+        field("directory", string)
+        field("csvContent", string)
+        field("mappings", immutableList(string))
+        field("mode", string)
+    }
+
+    val ArbCsvImportResponse = structdef {
+        field("success", bool)
+        field("errorMessage", string.nullable)
+        field("importedKeyCount", int)
+        field("affectedLocaleCount", int)
+        field("createdLocaleCount", int)
+    }
+
+    val ArbCsvExportResponse = structdef {
+        field("success", bool)
+        field("errorMessage", string.nullable)
+        field("csvContent", string)
+    }
+
     // A single ARB key with its parametric status (parametric = becomes a method, not a property).
     // Also carries the description from the .arb metadata, the path to the template .arb file,
     // and the 0-based line number of the key in that file (for F12 / Go To Source navigation).
@@ -137,6 +177,15 @@ object ArbModel : Ext(SolutionModel.Solution) {
         // Call: Kotlin asks C# backend to translate source texts using Azure OpenAI.
         // Returns per-key translated strings or an error message.
         call("translateArbEntries", ArbTranslateRequest, ArbTranslateResponse)
+
+        // Call: Kotlin asks C# backend to parse CSV input and suggest header mappings.
+        call("previewArbCsvImport", ArbCsvPreviewRequest, ArbCsvPreviewResponse)
+
+        // Call: Kotlin asks C# backend to apply a CSV import into an ARB directory.
+        call("applyArbCsvImport", ArbCsvImportRequest, ArbCsvImportResponse)
+
+        // Call: Kotlin asks C# backend to export an ARB directory as CSV text.
+        call("exportArbCsv", string, ArbCsvExportResponse)
 
         // Call: Kotlin asks C# backend for all ARB keys from the AppLocale generated class
         // for a given project directory. Falls back to parsing the template .arb file if the

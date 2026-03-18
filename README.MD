@@ -28,8 +28,8 @@ output-namespace: MyProject.Locale # [REQUIRED] the namespace of the generated C
 ```json
 {
   "@@locale": "en", # [REQUIRED] the locale of this .arb file
-  "KeyName": "Localized Value" # entries in this format
-  "ParametricKey": "Value with {param} placeholder" # for parametric keys, use {<name>} syntax
+  "KeyName": "Localized Value", # entries in this format
+  "ParametricKey": "Value with {param} placeholder", # for parametric keys, use {<name>} syntax
   "PluralKey": "{count, plural, one {One item} other {{count} items}}" # for pluralization, use ICU syntax
 }
 ```

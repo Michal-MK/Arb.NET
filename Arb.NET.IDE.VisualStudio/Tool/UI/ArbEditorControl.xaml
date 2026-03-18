@@ -43,10 +43,27 @@
             <Setter Property="Foreground"
                     Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
         </Style>
+        <Style x:Key="GuideCodeTextBoxStyle" TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="AcceptsReturn" Value="True" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background"
+                Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+            <Setter Property="Foreground"
+                Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
     </UserControl.Resources>
     
     <Grid Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -89,6 +106,16 @@
                     Padding="8,2"
                     VerticalAlignment="Center"
                     Click="RemoveKeyButton_OnClick" />
+                <Button Content="Import CSV..."
+                    Margin="8,0,0,0"
+                    Padding="8,2"
+                    VerticalAlignment="Center"
+                    Click="ImportCsvButton_OnClick" />
+                <Button Content="Export CSV..."
+                    Margin="4,0,0,0"
+                    Padding="8,2"
+                    VerticalAlignment="Center"
+                    Click="ExportCsvButton_OnClick" />
             <Button Content="Translate..."
                     Margin="8,0,0,0"
                     Padding="8,2"
@@ -101,9 +128,75 @@
                     Click="AiSettingsButton_OnClick" />
         </StackPanel>
 
+        <Border x:Name="SetupGuidePanel"
+            Grid.Row="1"
+                Margin="8,0,8,6"
+                Padding="10"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}">
+            <StackPanel>
+                <TextBlock Text="Minimal setup"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <TextBlock Margin="0,4,0,8"
+                           Text="An empty l10n.yaml alone is not enough. Create these two files to get the editor into a usable state."
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Padding="8"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}">
+                        <DockPanel LastChildFill="True">
+                            <Button Content="Copy"
+                                    DockPanel.Dock="Top"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,0,0,6"
+                                    Padding="8,2"
+                                    Click="CopyL10nTemplateButton_OnClick" />
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="l10n.yaml"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,6"
+                                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                            <TextBox x:Name="SetupL10nTextBox"
+                                     Style="{StaticResource GuideCodeTextBoxStyle}" />
+                        </DockPanel>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Padding="8"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}">
+                        <DockPanel LastChildFill="True">
+                            <Button Content="Copy"
+                                    DockPanel.Dock="Top"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,0,0,6"
+                                    Padding="8,2"
+                                    Click="CopyArbTemplateButton_OnClick" />
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="en.arb"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,6"
+                                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                            <TextBox x:Name="SetupArbTextBox"
+                                     Style="{StaticResource GuideCodeTextBoxStyle}" />
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </Border>
+
         <!-- Loading overlay -->
         <TextBlock x:Name="LoadingLabel"
-                   Grid.Row="1"
+                   Grid.Row="2"
                    Text="Loading ARB data…"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
@@ -113,7 +206,7 @@
 
         <!-- ARB data grid -->
         <DataGrid x:Name="ArbGrid"
-                  Grid.Row="1"
+                  Grid.Row="2"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"

@@ -1,6 +1,7 @@
 package com.jetbrains.rider.plugins.arbnet
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
@@ -8,7 +9,8 @@ import com.intellij.psi.PsiManager
 import com.jetbrains.rd.ide.model.arbModel
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rider.projectView.solution
-import javax.swing.SwingUtilities
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Subscribes to backend → frontend signals on the ARB model at project startup.
@@ -16,18 +18,15 @@ import javax.swing.SwingUtilities
 class ArbModelListener : ProjectActivity {
 
     override suspend fun execute(project: Project) {
-        val model = project.solution.arbModel
+        // advise must be called on the protocol dispatcher thread (EDT in Rider)
+        withContext(Dispatchers.EDT) {
+            val model = project.solution.arbModel
 
-        // Backend fires this after a "Generate ARB key" quick fix writes the key to .arb files.
-        model.openArbEditor.advise(Lifetime.Eternal) { payload ->
-            SwingUtilities.invokeLater {
+            model.openArbEditor.advise(Lifetime.Eternal) { payload ->
                 openArbEditorAtKey(project, payload.arbDir, payload.keyFilter)
             }
-        }
 
-        // Backend fires this after ARB keys are added, removed, or renamed.
-        model.arbKeysChanged.advise(Lifetime.Eternal) {
-            SwingUtilities.invokeLater {
+            model.arbKeysChanged.advise(Lifetime.Eternal) {
                 restartXamlAnnotations(project)
             }
         }
@@ -39,7 +38,7 @@ class ArbModelListener : ProjectActivity {
         for (file in FileEditorManager.getInstance(project).openFiles) {
             if (file.extension?.lowercase() != "xaml") continue
             val psiFile = psiManager.findFile(file) ?: continue
-            daemon.restart(psiFile)
+            daemon.restart(psiFile, "ARB keys changed")
         }
     }
 }

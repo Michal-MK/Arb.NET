@@ -49,6 +49,9 @@ namespace JetBrains.Rider.Model
     [NotNull] public IRdEndpoint<ArbRemoveKey, bool> RemoveArbKey => _RemoveArbKey;
     [NotNull] public IRdEndpoint<ArbNewLocale, bool> AddArbLocale => _AddArbLocale;
     [NotNull] public IRdEndpoint<ArbTranslateRequest, ArbTranslateResponse> TranslateArbEntries => _TranslateArbEntries;
+    [NotNull] public IRdEndpoint<ArbCsvPreviewRequest, ArbCsvPreviewResponse> PreviewArbCsvImport => _PreviewArbCsvImport;
+    [NotNull] public IRdEndpoint<ArbCsvImportRequest, ArbCsvImportResponse> ApplyArbCsvImport => _ApplyArbCsvImport;
+    [NotNull] public IRdEndpoint<string, ArbCsvExportResponse> ExportArbCsv => _ExportArbCsv;
     [NotNull] public IRdEndpoint<string, List<ArbKeyInfo>> GetArbKeys => _GetArbKeys;
     [NotNull] public ISignal<ArbOpenEditor> OpenArbEditor => _OpenArbEditor;
     [NotNull] public ISignal<string> ArbKeysChanged => _ArbKeysChanged;
@@ -61,6 +64,9 @@ namespace JetBrains.Rider.Model
     [NotNull] private readonly RdCall<ArbRemoveKey, bool> _RemoveArbKey;
     [NotNull] private readonly RdCall<ArbNewLocale, bool> _AddArbLocale;
     [NotNull] private readonly RdCall<ArbTranslateRequest, ArbTranslateResponse> _TranslateArbEntries;
+    [NotNull] private readonly RdCall<ArbCsvPreviewRequest, ArbCsvPreviewResponse> _PreviewArbCsvImport;
+    [NotNull] private readonly RdCall<ArbCsvImportRequest, ArbCsvImportResponse> _ApplyArbCsvImport;
+    [NotNull] private readonly RdCall<string, ArbCsvExportResponse> _ExportArbCsv;
     [NotNull] private readonly RdCall<string, List<ArbKeyInfo>> _GetArbKeys;
     [NotNull] private readonly RdSignal<ArbOpenEditor> _OpenArbEditor;
     [NotNull] private readonly RdSignal<string> _ArbKeysChanged;
@@ -74,6 +80,9 @@ namespace JetBrains.Rider.Model
       [NotNull] RdCall<ArbRemoveKey, bool> removeArbKey,
       [NotNull] RdCall<ArbNewLocale, bool> addArbLocale,
       [NotNull] RdCall<ArbTranslateRequest, ArbTranslateResponse> translateArbEntries,
+      [NotNull] RdCall<ArbCsvPreviewRequest, ArbCsvPreviewResponse> previewArbCsvImport,
+      [NotNull] RdCall<ArbCsvImportRequest, ArbCsvImportResponse> applyArbCsvImport,
+      [NotNull] RdCall<string, ArbCsvExportResponse> exportArbCsv,
       [NotNull] RdCall<string, List<ArbKeyInfo>> getArbKeys,
       [NotNull] RdSignal<ArbOpenEditor> openArbEditor,
       [NotNull] RdSignal<string> arbKeysChanged
@@ -86,6 +95,9 @@ namespace JetBrains.Rider.Model
       if (removeArbKey == null) throw new ArgumentNullException("removeArbKey");
       if (addArbLocale == null) throw new ArgumentNullException("addArbLocale");
       if (translateArbEntries == null) throw new ArgumentNullException("translateArbEntries");
+      if (previewArbCsvImport == null) throw new ArgumentNullException("previewArbCsvImport");
+      if (applyArbCsvImport == null) throw new ArgumentNullException("applyArbCsvImport");
+      if (exportArbCsv == null) throw new ArgumentNullException("exportArbCsv");
       if (getArbKeys == null) throw new ArgumentNullException("getArbKeys");
       if (openArbEditor == null) throw new ArgumentNullException("openArbEditor");
       if (arbKeysChanged == null) throw new ArgumentNullException("arbKeysChanged");
@@ -97,6 +109,9 @@ namespace JetBrains.Rider.Model
       _RemoveArbKey = removeArbKey;
       _AddArbLocale = addArbLocale;
       _TranslateArbEntries = translateArbEntries;
+      _PreviewArbCsvImport = previewArbCsvImport;
+      _ApplyArbCsvImport = applyArbCsvImport;
+      _ExportArbCsv = exportArbCsv;
       _GetArbKeys = getArbKeys;
       _OpenArbEditor = openArbEditor;
       _ArbKeysChanged = arbKeysChanged;
@@ -107,6 +122,9 @@ namespace JetBrains.Rider.Model
       BindableChildren.Add(new KeyValuePair<string, object>("removeArbKey", _RemoveArbKey));
       BindableChildren.Add(new KeyValuePair<string, object>("addArbLocale", _AddArbLocale));
       BindableChildren.Add(new KeyValuePair<string, object>("translateArbEntries", _TranslateArbEntries));
+      BindableChildren.Add(new KeyValuePair<string, object>("previewArbCsvImport", _PreviewArbCsvImport));
+      BindableChildren.Add(new KeyValuePair<string, object>("applyArbCsvImport", _ApplyArbCsvImport));
+      BindableChildren.Add(new KeyValuePair<string, object>("exportArbCsv", _ExportArbCsv));
       BindableChildren.Add(new KeyValuePair<string, object>("getArbKeys", _GetArbKeys));
       BindableChildren.Add(new KeyValuePair<string, object>("openArbEditor", _OpenArbEditor));
       BindableChildren.Add(new KeyValuePair<string, object>("arbKeysChanged", _ArbKeysChanged));
@@ -121,6 +139,9 @@ namespace JetBrains.Rider.Model
       new RdCall<ArbRemoveKey, bool>(ArbRemoveKey.Read, ArbRemoveKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbNewLocale, bool>(ArbNewLocale.Read, ArbNewLocale.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbTranslateRequest, ArbTranslateResponse>(ArbTranslateRequest.Read, ArbTranslateRequest.Write, ArbTranslateResponse.Read, ArbTranslateResponse.Write),
+      new RdCall<ArbCsvPreviewRequest, ArbCsvPreviewResponse>(ArbCsvPreviewRequest.Read, ArbCsvPreviewRequest.Write, ArbCsvPreviewResponse.Read, ArbCsvPreviewResponse.Write),
+      new RdCall<ArbCsvImportRequest, ArbCsvImportResponse>(ArbCsvImportRequest.Read, ArbCsvImportRequest.Write, ArbCsvImportResponse.Read, ArbCsvImportResponse.Write),
+      new RdCall<string, ArbCsvExportResponse>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString, ArbCsvExportResponse.Read, ArbCsvExportResponse.Write),
       new RdCall<string, List<ArbKeyInfo>>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString, ReadArbKeyInfoList, WriteArbKeyInfoList),
       new RdSignal<ArbOpenEditor>(ArbOpenEditor.Read, ArbOpenEditor.Write),
       new RdSignal<string>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString)
@@ -134,7 +155,7 @@ namespace JetBrains.Rider.Model
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     public static  CtxWriteDelegate<List<ArbKeyInfo>> WriteArbKeyInfoList = ArbKeyInfo.Write.List();
     
-    protected override long SerializationHash => -8146834234892139901L;
+    protected override long SerializationHash => -520730573180913457L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -162,6 +183,9 @@ namespace JetBrains.Rider.Model
         printer.Print("removeArbKey = "); _RemoveArbKey.PrintEx(printer); printer.Println();
         printer.Print("addArbLocale = "); _AddArbLocale.PrintEx(printer); printer.Println();
         printer.Print("translateArbEntries = "); _TranslateArbEntries.PrintEx(printer); printer.Println();
+        printer.Print("previewArbCsvImport = "); _PreviewArbCsvImport.PrintEx(printer); printer.Println();
+        printer.Print("applyArbCsvImport = "); _ApplyArbCsvImport.PrintEx(printer); printer.Println();
+        printer.Print("exportArbCsv = "); _ExportArbCsv.PrintEx(printer); printer.Println();
         printer.Print("getArbKeys = "); _GetArbKeys.PrintEx(printer); printer.Println();
         printer.Print("openArbEditor = "); _OpenArbEditor.PrintEx(printer); printer.Println();
         printer.Print("arbKeysChanged = "); _ArbKeysChanged.PrintEx(printer); printer.Println();
@@ -181,6 +205,663 @@ namespace JetBrains.Rider.Model
     public static ArbModel GetArbModel(this Solution solution)
     {
       return solution.GetOrCreateExtension("arbModel", () => new ArbModel());
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:128</p>
+  /// </summary>
+  public sealed class ArbCsvExportResponse : IPrintable, IEquatable<ArbCsvExportResponse>
+  {
+    //fields
+    //public fields
+    public bool Success {get; private set;}
+    [CanBeNull] public string ErrorMessage {get; private set;}
+    [NotNull] public string CsvContent {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbCsvExportResponse(
+      bool success,
+      [CanBeNull] string errorMessage,
+      [NotNull] string csvContent
+    )
+    {
+      if (csvContent == null) throw new ArgumentNullException("csvContent");
+      
+      Success = success;
+      ErrorMessage = errorMessage;
+      CsvContent = csvContent;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct(out bool success, [CanBeNull] out string errorMessage, [NotNull] out string csvContent)
+    {
+      success = Success;
+      errorMessage = ErrorMessage;
+      csvContent = CsvContent;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbCsvExportResponse> Read = (ctx, reader) => 
+    {
+      var success = reader.ReadBool();
+      var errorMessage = ReadStringNullable(ctx, reader);
+      var csvContent = reader.ReadString();
+      var _result = new ArbCsvExportResponse(success, errorMessage, csvContent);
+      return _result;
+    };
+    public static CtxReadDelegate<string> ReadStringNullable = JetBrains.Rd.Impl.Serializers.ReadString.NullableClass();
+    
+    public static CtxWriteDelegate<ArbCsvExportResponse> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Success);
+      WriteStringNullable(ctx, writer, value.ErrorMessage);
+      writer.Write(value.CsvContent);
+    };
+    public static  CtxWriteDelegate<string> WriteStringNullable = JetBrains.Rd.Impl.Serializers.WriteString.NullableClass();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbCsvExportResponse) obj);
+    }
+    public bool Equals(ArbCsvExportResponse other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Success == other.Success && Equals(ErrorMessage, other.ErrorMessage) && CsvContent == other.CsvContent;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Success.GetHashCode();
+        hash = hash * 31 + (ErrorMessage != null ? ErrorMessage.GetHashCode() : 0);
+        hash = hash * 31 + CsvContent.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbCsvExportResponse (");
+      using (printer.IndentCookie()) {
+        printer.Print("success = "); Success.PrintEx(printer); printer.Println();
+        printer.Print("errorMessage = "); ErrorMessage.PrintEx(printer); printer.Println();
+        printer.Print("csvContent = "); CsvContent.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:113</p>
+  /// </summary>
+  public sealed class ArbCsvImportRequest : IPrintable, IEquatable<ArbCsvImportRequest>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Directory {get; private set;}
+    [NotNull] public string CsvContent {get; private set;}
+    [NotNull] public List<string> Mappings {get; private set;}
+    [NotNull] public string Mode {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbCsvImportRequest(
+      [NotNull] string directory,
+      [NotNull] string csvContent,
+      [NotNull] List<string> mappings,
+      [NotNull] string mode
+    )
+    {
+      if (directory == null) throw new ArgumentNullException("directory");
+      if (csvContent == null) throw new ArgumentNullException("csvContent");
+      if (mappings == null) throw new ArgumentNullException("mappings");
+      if (mode == null) throw new ArgumentNullException("mode");
+      
+      Directory = directory;
+      CsvContent = csvContent;
+      Mappings = mappings;
+      Mode = mode;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string directory, [NotNull] out string csvContent, [NotNull] out List<string> mappings, [NotNull] out string mode)
+    {
+      directory = Directory;
+      csvContent = CsvContent;
+      mappings = Mappings;
+      mode = Mode;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbCsvImportRequest> Read = (ctx, reader) => 
+    {
+      var directory = reader.ReadString();
+      var csvContent = reader.ReadString();
+      var mappings = ReadStringList(ctx, reader);
+      var mode = reader.ReadString();
+      var _result = new ArbCsvImportRequest(directory, csvContent, mappings, mode);
+      return _result;
+    };
+    public static CtxReadDelegate<List<string>> ReadStringList = JetBrains.Rd.Impl.Serializers.ReadString.List();
+    
+    public static CtxWriteDelegate<ArbCsvImportRequest> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Directory);
+      writer.Write(value.CsvContent);
+      WriteStringList(ctx, writer, value.Mappings);
+      writer.Write(value.Mode);
+    };
+    public static  CtxWriteDelegate<List<string>> WriteStringList = JetBrains.Rd.Impl.Serializers.WriteString.List();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbCsvImportRequest) obj);
+    }
+    public bool Equals(ArbCsvImportRequest other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Directory == other.Directory && CsvContent == other.CsvContent && Mappings.SequenceEqual(other.Mappings) && Mode == other.Mode;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Directory.GetHashCode();
+        hash = hash * 31 + CsvContent.GetHashCode();
+        hash = hash * 31 + Mappings.ContentHashCode();
+        hash = hash * 31 + Mode.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbCsvImportRequest (");
+      using (printer.IndentCookie()) {
+        printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
+        printer.Print("csvContent = "); CsvContent.PrintEx(printer); printer.Println();
+        printer.Print("mappings = "); Mappings.PrintEx(printer); printer.Println();
+        printer.Print("mode = "); Mode.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:120</p>
+  /// </summary>
+  public sealed class ArbCsvImportResponse : IPrintable, IEquatable<ArbCsvImportResponse>
+  {
+    //fields
+    //public fields
+    public bool Success {get; private set;}
+    [CanBeNull] public string ErrorMessage {get; private set;}
+    public int ImportedKeyCount {get; private set;}
+    public int AffectedLocaleCount {get; private set;}
+    public int CreatedLocaleCount {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbCsvImportResponse(
+      bool success,
+      [CanBeNull] string errorMessage,
+      int importedKeyCount,
+      int affectedLocaleCount,
+      int createdLocaleCount
+    )
+    {
+      Success = success;
+      ErrorMessage = errorMessage;
+      ImportedKeyCount = importedKeyCount;
+      AffectedLocaleCount = affectedLocaleCount;
+      CreatedLocaleCount = createdLocaleCount;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct(out bool success, [CanBeNull] out string errorMessage, out int importedKeyCount, out int affectedLocaleCount, out int createdLocaleCount)
+    {
+      success = Success;
+      errorMessage = ErrorMessage;
+      importedKeyCount = ImportedKeyCount;
+      affectedLocaleCount = AffectedLocaleCount;
+      createdLocaleCount = CreatedLocaleCount;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbCsvImportResponse> Read = (ctx, reader) => 
+    {
+      var success = reader.ReadBool();
+      var errorMessage = ReadStringNullable(ctx, reader);
+      var importedKeyCount = reader.ReadInt();
+      var affectedLocaleCount = reader.ReadInt();
+      var createdLocaleCount = reader.ReadInt();
+      var _result = new ArbCsvImportResponse(success, errorMessage, importedKeyCount, affectedLocaleCount, createdLocaleCount);
+      return _result;
+    };
+    public static CtxReadDelegate<string> ReadStringNullable = JetBrains.Rd.Impl.Serializers.ReadString.NullableClass();
+    
+    public static CtxWriteDelegate<ArbCsvImportResponse> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Success);
+      WriteStringNullable(ctx, writer, value.ErrorMessage);
+      writer.Write(value.ImportedKeyCount);
+      writer.Write(value.AffectedLocaleCount);
+      writer.Write(value.CreatedLocaleCount);
+    };
+    public static  CtxWriteDelegate<string> WriteStringNullable = JetBrains.Rd.Impl.Serializers.WriteString.NullableClass();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbCsvImportResponse) obj);
+    }
+    public bool Equals(ArbCsvImportResponse other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Success == other.Success && Equals(ErrorMessage, other.ErrorMessage) && ImportedKeyCount == other.ImportedKeyCount && AffectedLocaleCount == other.AffectedLocaleCount && CreatedLocaleCount == other.CreatedLocaleCount;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Success.GetHashCode();
+        hash = hash * 31 + (ErrorMessage != null ? ErrorMessage.GetHashCode() : 0);
+        hash = hash * 31 + ImportedKeyCount.GetHashCode();
+        hash = hash * 31 + AffectedLocaleCount.GetHashCode();
+        hash = hash * 31 + CreatedLocaleCount.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbCsvImportResponse (");
+      using (printer.IndentCookie()) {
+        printer.Print("success = "); Success.PrintEx(printer); printer.Println();
+        printer.Print("errorMessage = "); ErrorMessage.PrintEx(printer); printer.Println();
+        printer.Print("importedKeyCount = "); ImportedKeyCount.PrintEx(printer); printer.Println();
+        printer.Print("affectedLocaleCount = "); AffectedLocaleCount.PrintEx(printer); printer.Println();
+        printer.Print("createdLocaleCount = "); CreatedLocaleCount.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:94</p>
+  /// </summary>
+  public sealed class ArbCsvPreviewRequest : IPrintable, IEquatable<ArbCsvPreviewRequest>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Directory {get; private set;}
+    [NotNull] public string CsvContent {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbCsvPreviewRequest(
+      [NotNull] string directory,
+      [NotNull] string csvContent
+    )
+    {
+      if (directory == null) throw new ArgumentNullException("directory");
+      if (csvContent == null) throw new ArgumentNullException("csvContent");
+      
+      Directory = directory;
+      CsvContent = csvContent;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string directory, [NotNull] out string csvContent)
+    {
+      directory = Directory;
+      csvContent = CsvContent;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbCsvPreviewRequest> Read = (ctx, reader) => 
+    {
+      var directory = reader.ReadString();
+      var csvContent = reader.ReadString();
+      var _result = new ArbCsvPreviewRequest(directory, csvContent);
+      return _result;
+    };
+    
+    public static CtxWriteDelegate<ArbCsvPreviewRequest> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Directory);
+      writer.Write(value.CsvContent);
+    };
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbCsvPreviewRequest) obj);
+    }
+    public bool Equals(ArbCsvPreviewRequest other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Directory == other.Directory && CsvContent == other.CsvContent;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Directory.GetHashCode();
+        hash = hash * 31 + CsvContent.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbCsvPreviewRequest (");
+      using (printer.IndentCookie()) {
+        printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
+        printer.Print("csvContent = "); CsvContent.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:103</p>
+  /// </summary>
+  public sealed class ArbCsvPreviewResponse : IPrintable, IEquatable<ArbCsvPreviewResponse>
+  {
+    //fields
+    //public fields
+    public bool Success {get; private set;}
+    [CanBeNull] public string ErrorMessage {get; private set;}
+    [NotNull] public List<string> Headers {get; private set;}
+    [NotNull] public List<ArbCsvRow> Rows {get; private set;}
+    [NotNull] public List<string> SuggestedMappings {get; private set;}
+    [NotNull] public List<string> AvailableLocaleMappings {get; private set;}
+    [CanBeNull] public string DefaultLocale {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbCsvPreviewResponse(
+      bool success,
+      [CanBeNull] string errorMessage,
+      [NotNull] List<string> headers,
+      [NotNull] List<ArbCsvRow> rows,
+      [NotNull] List<string> suggestedMappings,
+      [NotNull] List<string> availableLocaleMappings,
+      [CanBeNull] string defaultLocale
+    )
+    {
+      if (headers == null) throw new ArgumentNullException("headers");
+      if (rows == null) throw new ArgumentNullException("rows");
+      if (suggestedMappings == null) throw new ArgumentNullException("suggestedMappings");
+      if (availableLocaleMappings == null) throw new ArgumentNullException("availableLocaleMappings");
+      
+      Success = success;
+      ErrorMessage = errorMessage;
+      Headers = headers;
+      Rows = rows;
+      SuggestedMappings = suggestedMappings;
+      AvailableLocaleMappings = availableLocaleMappings;
+      DefaultLocale = defaultLocale;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct(out bool success, [CanBeNull] out string errorMessage, [NotNull] out List<string> headers, [NotNull] out List<ArbCsvRow> rows, [NotNull] out List<string> suggestedMappings, [NotNull] out List<string> availableLocaleMappings, [CanBeNull] out string defaultLocale)
+    {
+      success = Success;
+      errorMessage = ErrorMessage;
+      headers = Headers;
+      rows = Rows;
+      suggestedMappings = SuggestedMappings;
+      availableLocaleMappings = AvailableLocaleMappings;
+      defaultLocale = DefaultLocale;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbCsvPreviewResponse> Read = (ctx, reader) => 
+    {
+      var success = reader.ReadBool();
+      var errorMessage = ReadStringNullable(ctx, reader);
+      var headers = ReadStringList(ctx, reader);
+      var rows = ReadArbCsvRowList(ctx, reader);
+      var suggestedMappings = ReadStringList(ctx, reader);
+      var availableLocaleMappings = ReadStringList(ctx, reader);
+      var defaultLocale = ReadStringNullable(ctx, reader);
+      var _result = new ArbCsvPreviewResponse(success, errorMessage, headers, rows, suggestedMappings, availableLocaleMappings, defaultLocale);
+      return _result;
+    };
+    public static CtxReadDelegate<string> ReadStringNullable = JetBrains.Rd.Impl.Serializers.ReadString.NullableClass();
+    public static CtxReadDelegate<List<string>> ReadStringList = JetBrains.Rd.Impl.Serializers.ReadString.List();
+    public static CtxReadDelegate<List<ArbCsvRow>> ReadArbCsvRowList = ArbCsvRow.Read.List();
+    
+    public static CtxWriteDelegate<ArbCsvPreviewResponse> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Success);
+      WriteStringNullable(ctx, writer, value.ErrorMessage);
+      WriteStringList(ctx, writer, value.Headers);
+      WriteArbCsvRowList(ctx, writer, value.Rows);
+      WriteStringList(ctx, writer, value.SuggestedMappings);
+      WriteStringList(ctx, writer, value.AvailableLocaleMappings);
+      WriteStringNullable(ctx, writer, value.DefaultLocale);
+    };
+    public static  CtxWriteDelegate<string> WriteStringNullable = JetBrains.Rd.Impl.Serializers.WriteString.NullableClass();
+    public static  CtxWriteDelegate<List<string>> WriteStringList = JetBrains.Rd.Impl.Serializers.WriteString.List();
+    public static  CtxWriteDelegate<List<ArbCsvRow>> WriteArbCsvRowList = ArbCsvRow.Write.List();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbCsvPreviewResponse) obj);
+    }
+    public bool Equals(ArbCsvPreviewResponse other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Success == other.Success && Equals(ErrorMessage, other.ErrorMessage) && Headers.SequenceEqual(other.Headers) && Rows.SequenceEqual(other.Rows) && SuggestedMappings.SequenceEqual(other.SuggestedMappings) && AvailableLocaleMappings.SequenceEqual(other.AvailableLocaleMappings) && Equals(DefaultLocale, other.DefaultLocale);
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Success.GetHashCode();
+        hash = hash * 31 + (ErrorMessage != null ? ErrorMessage.GetHashCode() : 0);
+        hash = hash * 31 + Headers.ContentHashCode();
+        hash = hash * 31 + Rows.ContentHashCode();
+        hash = hash * 31 + SuggestedMappings.ContentHashCode();
+        hash = hash * 31 + AvailableLocaleMappings.ContentHashCode();
+        hash = hash * 31 + (DefaultLocale != null ? DefaultLocale.GetHashCode() : 0);
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbCsvPreviewResponse (");
+      using (printer.IndentCookie()) {
+        printer.Print("success = "); Success.PrintEx(printer); printer.Println();
+        printer.Print("errorMessage = "); ErrorMessage.PrintEx(printer); printer.Println();
+        printer.Print("headers = "); Headers.PrintEx(printer); printer.Println();
+        printer.Print("rows = "); Rows.PrintEx(printer); printer.Println();
+        printer.Print("suggestedMappings = "); SuggestedMappings.PrintEx(printer); printer.Println();
+        printer.Print("availableLocaleMappings = "); AvailableLocaleMappings.PrintEx(printer); printer.Println();
+        printer.Print("defaultLocale = "); DefaultLocale.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:99</p>
+  /// </summary>
+  public sealed class ArbCsvRow : IPrintable, IEquatable<ArbCsvRow>
+  {
+    //fields
+    //public fields
+    [NotNull] public List<string> Cells {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbCsvRow(
+      [NotNull] List<string> cells
+    )
+    {
+      if (cells == null) throw new ArgumentNullException("cells");
+      
+      Cells = cells;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out List<string> cells)
+    {
+      cells = Cells;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbCsvRow> Read = (ctx, reader) => 
+    {
+      var cells = ReadStringList(ctx, reader);
+      var _result = new ArbCsvRow(cells);
+      return _result;
+    };
+    public static CtxReadDelegate<List<string>> ReadStringList = JetBrains.Rd.Impl.Serializers.ReadString.List();
+    
+    public static CtxWriteDelegate<ArbCsvRow> Write = (ctx, writer, value) => 
+    {
+      WriteStringList(ctx, writer, value.Cells);
+    };
+    public static  CtxWriteDelegate<List<string>> WriteStringList = JetBrains.Rd.Impl.Serializers.WriteString.List();
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbCsvRow) obj);
+    }
+    public bool Equals(ArbCsvRow other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Cells.SequenceEqual(other.Cells);
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Cells.ContentHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbCsvRow (");
+      using (printer.IndentCookie()) {
+        printer.Print("cells = "); Cells.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
     }
   }
   
@@ -392,7 +1073,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:97</p>
+  /// <p>Generated from: ArbModel.kt:137</p>
   /// </summary>
   public sealed class ArbKeyInfo : IPrintable, IEquatable<ArbKeyInfo>
   {
@@ -924,7 +1605,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:107</p>
+  /// <p>Generated from: ArbModel.kt:147</p>
   /// </summary>
   public sealed class ArbOpenEditor : IPrintable, IEquatable<ArbOpenEditor>
   {

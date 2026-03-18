@@ -74,6 +74,9 @@
     <Compile Include="Tool\UI\ArbInputDialog.xaml.cs">
       <DependentUpon>ArbInputDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tool\UI\CsvImportDialog.xaml.cs">
+      <DependentUpon>CsvImportDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Tool\Models\TranslationItem.cs" />
 <Compile Include="Tool\Services\AzureOpenAITranslationService.cs" />
 <Compile Include="Tool\UI\Converters\RelativePathConverter.cs" />
@@ -90,6 +93,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Tool\UI\ArbInputDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tool\UI\CsvImportDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

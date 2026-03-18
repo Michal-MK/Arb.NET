@@ -1,16 +1,19 @@
 using Microsoft.VisualStudio.Shell;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
 using Arb.NET;
+using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.Common.Services;
 using Arb.NET.IDE.VisualStudio.Tool.CodeCompletion;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
@@ -23,6 +26,9 @@ using System.Windows.Data;
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
 public partial class ArbEditorControl : UserControl {
+    private const string MinimalL10nYaml = "arb-dir: arbs\ntemplate-arb-file: en.arb";
+    private const string MinimalTemplateArb = "{\n  \"@@locale\": \"en\"\n}";
+    private const string NoArbDirectoriesMessage = "No ARB directories loaded yet. Use the setup guide above.";
     private AsyncPackage? package;
 
     private ColumnSettingsService columnSettingsService = null!;
@@ -48,6 +54,8 @@ public partial class ArbEditorControl : UserControl {
 
     public ArbEditorControl() {
         InitializeComponent();
+        SetupL10nTextBox.Text = MinimalL10nYaml;
+        SetupArbTextBox.Text = MinimalTemplateArb;
         ArbGrid.ColumnDisplayIndexChanged += ArbGrid_OnColumnDisplayIndexChanged;
     }
 
@@ -72,7 +80,7 @@ public partial class ArbEditorControl : UserControl {
             arbScanResult = await arbService.ScanArbFilesAsync();
 
             if (arbScanResult.SolutionNotLoaded) {
-                LoadingLabel.Text = "No solution open. Open a solution and reopen this window.";
+                ShowStatus("No solution open. Open a solution and reopen this window.");
                 return;
             }
 
@@ -83,12 +91,11 @@ public partial class ArbEditorControl : UserControl {
             }
 
             if (arbScanResult.DirGroupedArbFiles.Count == 0) {
-                LoadingLabel.Text = "No .arb files found in this solution.";
+                ShowStatus(NoArbDirectoriesMessage, showGuide: true);
                 return;
             }
 
-            LoadingLabel.Visibility = Visibility.Collapsed;
-            ArbGrid.Visibility = Visibility.Visible;
+            ShowGrid();
 
             UpdateRelativePathConverter();
             List<string> sortedDirs = arbScanResult.DirGroupedArbFiles.Keys.OrderBy(d => d).ToList();
@@ -110,6 +117,29 @@ public partial class ArbEditorControl : UserControl {
         if (Resources["RelativePathConverter"] is RelativePathConverter converter) {
             converter.ScanResult = arbScanResult;
         }
+    }
+
+    private void ShowStatus(string message, bool showGuide = false) {
+        LoadingLabel.Text = message;
+        LoadingLabel.Visibility = Visibility.Visible;
+        ArbGrid.Visibility = Visibility.Collapsed;
+        SetupGuidePanel.Visibility = showGuide ? Visibility.Visible : Visibility.Collapsed;
+        DirectoryCombo.ItemsSource = null;
+        currentDirectory = null;
+    }
+
+    private void ShowGrid() {
+        LoadingLabel.Visibility = Visibility.Collapsed;
+        ArbGrid.Visibility = Visibility.Visible;
+        SetupGuidePanel.Visibility = Visibility.Collapsed;
+    }
+
+    private void CopyL10nTemplateButton_OnClick(object sender, RoutedEventArgs e) {
+        Clipboard.SetText(MinimalL10nYaml);
+    }
+
+    private void CopyArbTemplateButton_OnClick(object sender, RoutedEventArgs e) {
+        Clipboard.SetText(MinimalTemplateArb);
     }
 
     public void RefreshData() {
@@ -180,7 +210,7 @@ public partial class ArbEditorControl : UserControl {
             UpdateRelativePathConverter();
 
             if (arbScanResult.SolutionNotLoaded) {
-                LoadingLabel.Text = "No solution open. Open a solution and reopen this window.";
+                ShowStatus("No solution open. Open a solution and reopen this window.");
                 return;
             }
 
@@ -191,9 +221,11 @@ public partial class ArbEditorControl : UserControl {
             }
 
             if (arbScanResult.DirGroupedArbFiles.Count == 0) {
-                LoadingLabel.Text = "No .arb files found in this solution.";
+                ShowStatus(NoArbDirectoriesMessage, showGuide: true);
                 return;
             }
+
+            ShowGrid();
 
             List<string> refreshedDirs = arbScanResult.DirGroupedArbFiles.Keys.OrderBy(d => d).ToList();
             string selectedDir = DirectoryCombo.SelectedItem is string currentDir && arbScanResult.DirGroupedArbFiles.ContainsKey(currentDir)
@@ -452,6 +484,59 @@ public partial class ArbEditorControl : UserControl {
 
         File.WriteAllText(filePath, ArbSerializer.Serialize(newDoc));
         _ = RefreshDataAsync();
+    }
+
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
+    private async void ImportCsvButton_OnClick(object sender, RoutedEventArgs e) {
+        if (DirectoryCombo.SelectedItem is not string directory) return;
+
+        OpenFileDialog dialog = new() {
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false,
+            Title = "Import CSV"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        try {
+            string csvContent = File.ReadAllText(dialog.FileName);
+            CsvImportPreview preview = ArbCsvService.BuildImportPreview(directory, csvContent);
+            CsvImportDialog importDialog = new(preview, Path.GetFileName(dialog.FileName));
+            importDialog.Owner = Window.GetWindow(this);
+            bool? accepted = importDialog.ShowDialog();
+            if (accepted != true) return;
+
+            ArbCsvService.ApplyImport(directory, csvContent, importDialog.SelectedMappings, importDialog.SelectedImportMode);
+
+            ArbKeyService.InvalidateCache(directory);
+            RunArbGenerate(directory);
+            ArbXamlValidationTagger.InvalidateAll();
+            await RefreshDataAsync();
+        }
+        catch (Exception ex) {
+            MessageBox.Show($"CSV import failed: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void ExportCsvButton_OnClick(object sender, RoutedEventArgs e) {
+        if (DirectoryCombo.SelectedItem is not string directory) return;
+
+        SaveFileDialog dialog = new() {
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+            FileName = new DirectoryInfo(directory).Name + ".csv",
+            Title = "Export CSV"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        try {
+            string csvContent = ArbCsvService.Export(directory);
+            File.WriteAllText(dialog.FileName, csvContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        }
+        catch (Exception ex) {
+            MessageBox.Show($"CSV export failed: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void RemoveKeyButton_OnClick(object sender, RoutedEventArgs e) => TryRemoveSelectedKey();

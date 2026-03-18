@@ -1,3 +1,5 @@
+using Arb.NET.Models;
+
 namespace Arb.NET.IDE.Common.Services;
 
 public static class LocalizationYamlService {
@@ -22,5 +24,54 @@ public static class LocalizationYamlService {
         }
 
         return projectDir;
+    }
+
+    public static string? FindProjectDirectory(string startDir) {
+        string dir = startDir;
+        while (true) {
+            if (File.Exists(Path.Combine(dir, Constants.LOCALIZATION_FILE))) {
+                return dir;
+            }
+
+            string? parent = Path.GetDirectoryName(dir);
+            if (parent == null || parent == dir) {
+                return null;
+            }
+
+            dir = parent;
+        }
+    }
+
+    public static string? ResolveDefaultLocaleForArbDirectory(string arbDirectory) {
+        string? projectDir = FindProjectDirectory(arbDirectory);
+        return projectDir == null
+            ? null
+            : ResolveDefaultLocale(projectDir);
+    }
+
+    public static string? ResolveDefaultLocale(string projectDir) {
+        string localizationPath = Path.Combine(projectDir, Constants.LOCALIZATION_FILE);
+        if (!File.Exists(localizationPath)) {
+            return null;
+        }
+
+        L10nConfig config = L10nConfig.Parse(File.ReadAllText(localizationPath));
+        if (string.IsNullOrWhiteSpace(config.TemplateArbFile)) {
+            return null;
+        }
+
+        string arbDirectory = ResolveArbDirectory(projectDir);
+        string templatePath = Path.Combine(arbDirectory, config.TemplateArbFile);
+        if (!File.Exists(templatePath)) {
+            return null;
+        }
+
+        ArbParseResult parseResult = new ArbParser().ParseContent(File.ReadAllText(templatePath));
+        return !string.IsNullOrWhiteSpace(parseResult.Document?.Locale)
+            ? StringHelper.NormalizeLocale(parseResult.Document!.Locale)
+            : StringHelper.NormalizeLocale(
+                StringHelper.FirstNonEmpty(
+                    StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(templatePath)),
+                    Path.GetFileNameWithoutExtension(templatePath)));
     }
 }

@@ -252,6 +252,58 @@ public class ArbModelHost {
                 return new ArbTranslateResponse(false, ex.Message, []);
             }
         });
+
+        model.PreviewArbCsvImport.SetSync((_, request) => {
+            try {
+                CsvImportPreview preview = ArbCsvService.BuildImportPreview(request.Directory, request.CsvContent);
+                return new ArbCsvPreviewResponse(
+                    true,
+                    null,
+                    preview.Headers,
+                    [..preview.Rows.Select(row => new ArbCsvRow(row.Cells))],
+                    preview.SuggestedMappings,
+                    preview.AvailableLocaleMappings,
+                    preview.DefaultLocale);
+            }
+            catch (Exception ex) {
+                LOG.Warn($"CSV import preview failed for '{request.Directory}': {ex.Message}");
+                return new ArbCsvPreviewResponse(false, ex.Message, [], [], [], [], null);
+            }
+        });
+
+        model.ApplyArbCsvImport.SetSync((_, request) => {
+            try {
+                CsvImportMode mode = string.Equals(request.Mode, nameof(CsvImportMode.ReplaceAll), StringComparison.OrdinalIgnoreCase)
+                    ? CsvImportMode.ReplaceAll
+                    : CsvImportMode.Merge;
+
+                CsvImportApplyResult result = ArbCsvService.ApplyImport(
+                    request.Directory,
+                    request.CsvContent,
+                    request.Mappings,
+                    mode);
+
+                ArbKeyService.InvalidateCache(request.Directory);
+                RunArbGenerate(request.Directory);
+                model.ArbKeysChanged.Fire(request.Directory);
+
+                return new ArbCsvImportResponse(true, null, result.ImportedKeyCount, result.AffectedLocaleCount, result.CreatedLocaleCount);
+            }
+            catch (Exception ex) {
+                LOG.Warn($"CSV import failed for '{request.Directory}': {ex.Message}");
+                return new ArbCsvImportResponse(false, ex.Message, 0, 0, 0);
+            }
+        });
+
+        model.ExportArbCsv.SetSync((_, directory) => {
+            try {
+                return new ArbCsvExportResponse(true, null, ArbCsvService.Export(directory));
+            }
+            catch (Exception ex) {
+                LOG.Warn($"CSV export failed for '{directory}': {ex.Message}");
+                return new ArbCsvExportResponse(false, ex.Message, string.Empty);
+            }
+        });
     }
 
     private Dictionary<string, string?> LoadDescriptions(string directory, string sourceLocale) {

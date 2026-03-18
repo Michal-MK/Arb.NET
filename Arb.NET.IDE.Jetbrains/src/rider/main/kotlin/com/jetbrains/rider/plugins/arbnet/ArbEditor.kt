@@ -3,6 +3,8 @@ package com.jetbrains.rider.plugins.arbnet
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.IdeActions
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -16,6 +18,9 @@ import com.intellij.testFramework.LightVirtualFile
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
+import com.jetbrains.rd.ide.model.ArbCsvExportResponse
+import com.jetbrains.rd.ide.model.ArbCsvImportRequest
+import com.jetbrains.rd.ide.model.ArbCsvPreviewRequest
 import com.jetbrains.rd.ide.model.ArbEntryUpdate
 import com.jetbrains.rd.ide.model.ArbKeyRename
 import com.jetbrains.rd.ide.model.ArbLocaleData
@@ -26,11 +31,23 @@ import com.jetbrains.rd.ide.model.arbModel
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rider.projectView.solution
 import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Dialog
+import java.awt.FileDialog
+import java.awt.Font
+import java.awt.Frame
+import java.awt.GridLayout
+import java.awt.Toolkit
+import java.awt.Window
+import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.beans.PropertyChangeListener
 import java.awt.Component
+import java.io.File
+import javax.swing.BoxLayout
+import javax.swing.BorderFactory
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JButton
 import javax.swing.JComboBox
@@ -43,6 +60,8 @@ import javax.swing.JPopupMenu
 import javax.swing.KeyStroke
 import javax.swing.RowFilter
 import javax.swing.SwingUtilities
+import javax.swing.JTextArea
+import javax.swing.UIManager
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.event.TableModelEvent
@@ -53,6 +72,10 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
     companion object {
         const val FILE_NAME = "Arb.NET Editor"
+        private const val SETUP_HINT_TEXT = "Minimal setup for a new project. An empty l10n.yaml alone is not enough."
+        private const val NO_ARB_DIRECTORIES_TEXT = "No ARB directories loaded yet. Use the setup guide above."
+        private const val MINIMAL_L10N_YAML = "arb-dir: arbs\ntemplate-arb-file: en.arb"
+        private const val MINIMAL_ARB_JSON = "{\n  \"@@locale\": \"en\"\n}"
         val INITIAL_DIR_KEY: Key<String> = Key.create("arb.initialDir")
         val INITIAL_FILTER_KEY: Key<String> = Key.create("arb.initialFilter")
 
@@ -125,6 +148,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     private var lastByDirectory: Map<String, List<ArbLocaleData>> = emptyMap()
     private var dirCombo: JComboBox<String>? = null
     private var tableHolder: JPanel? = null
+    private var setupGuidePanel: JComponent? = null
     private var filterField: JBTextField? = null
     private var filterListener: DocumentListener? = null
     private var initialised = false
@@ -135,6 +159,94 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
     private val panel: JPanel = JPanel(BorderLayout()).also { root ->
         root.add(JLabel("Loading ARB data…", JLabel.CENTER), BorderLayout.CENTER)
+    }
+
+    private fun createInfoLabel(text: String, horizontalAlignment: Int = JLabel.LEFT): JLabel =
+        JLabel(text, horizontalAlignment).apply {
+            border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        }
+
+    private fun copyToClipboard(text: String) {
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
+    }
+
+    private fun createCodeBlock(title: String, content: String): JComponent {
+        val borderColor = UIManager.getColor("Component.borderColor")
+            ?: UIManager.getColor("Separator.foreground")
+            ?: Color.GRAY
+
+        val header = JPanel(BorderLayout()).apply {
+            isOpaque = false
+            border = BorderFactory.createEmptyBorder(0, 0, 6, 0)
+            add(JLabel(title).apply { font = font.deriveFont(Font.BOLD.toFloat()) }, BorderLayout.WEST)
+            add(JButton("Copy").apply {
+                addActionListener { copyToClipboard(content) }
+            }, BorderLayout.EAST)
+        }
+
+        val textArea = JTextArea(content).apply {
+            isEditable = false
+            lineWrap = false
+            wrapStyleWord = false
+            font = Font(Font.MONOSPACED, Font.PLAIN, 12)
+            border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
+            background = UIManager.getColor("TextArea.background")
+            foreground = UIManager.getColor("TextArea.foreground")
+            caretPosition = 0
+        }
+
+        return JPanel(BorderLayout()).apply {
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)
+            )
+            add(header, BorderLayout.NORTH)
+            add(textArea, BorderLayout.CENTER)
+        }
+    }
+
+    private fun createSetupGuidePanel(): JComponent {
+        val blocks = JPanel(GridLayout(1, 2, 8, 0)).apply {
+            isOpaque = false
+            add(createCodeBlock("l10n.yaml", MINIMAL_L10N_YAML))
+            add(createCodeBlock("en.arb", MINIMAL_ARB_JSON))
+        }
+
+        return JPanel(BorderLayout(0, 8)).apply {
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(0, 0, 8, 0),
+                BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(
+                        UIManager.getColor("Component.borderColor")
+                            ?: UIManager.getColor("Separator.foreground")
+                            ?: Color.GRAY
+                    ),
+                    BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                )
+            )
+
+            val header = JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                isOpaque = false
+                add(JLabel("Minimal setup").apply { font = font.deriveFont(Font.BOLD.toFloat()) })
+                add(JLabel(SETUP_HINT_TEXT).apply { border = BorderFactory.createEmptyBorder(4, 0, 0, 0) })
+            }
+
+            add(header, BorderLayout.NORTH)
+            add(blocks, BorderLayout.CENTER)
+        }
+    }
+
+    private fun showEmptyState(message: String) {
+        val holder = tableHolder ?: return
+        holder.removeAll()
+        holder.add(createInfoLabel(message, JLabel.CENTER), BorderLayout.CENTER)
+        holder.revalidate()
+        holder.repaint()
+    }
+
+    private fun setSetupGuideVisible(visible: Boolean) {
+        setupGuidePanel?.isVisible = visible
     }
 
     /** Fetch fresh ARB data from the backend and rebuild the whole UI. */
@@ -183,6 +295,8 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     val addKeyButton = JButton("Add Key")
                     val addLocaleButton = JButton("Add Locale")
                     val removeKeyButton = JButton("Remove Key")
+                    val importCsvButton = JButton("Import CSV...")
+                    val exportCsvButton = JButton("Export CSV...")
                     val translateButton = JButton("Translate...")
                     val aiSettingsButton = JButton("AI Settings...")
 
@@ -199,25 +313,38 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     topPanel.add(addLocaleButton)
                     topPanel.add(addKeyButton)
                     topPanel.add(removeKeyButton)
+                    topPanel.add(importCsvButton)
+                    topPanel.add(exportCsvButton)
                     topPanel.add(translateButton)
                     topPanel.add(aiSettingsButton)
+
+                    val topSection = JPanel(BorderLayout())
+                    topSection.add(topPanel, BorderLayout.NORTH)
+                    val guidePanel = createSetupGuidePanel()
+                    setupGuidePanel = guidePanel
+                    topSection.add(guidePanel, BorderLayout.CENTER)
 
                     val holder = JPanel(BorderLayout())
                     tableHolder = holder
 
-                    panel.add(topPanel, BorderLayout.NORTH)
+                    panel.add(topSection, BorderLayout.NORTH)
                     panel.add(holder, BorderLayout.CENTER)
 
                     val initialDir = directories.firstOrNull { normPath(it) == normPath(hintDir) }
                         ?: directories.firstOrNull()
 
                     if (initialDir != null) {
+                        setSetupGuideVisible(false)
                         combo.selectedItem = initialDir
                         buildTable(initialDir, byDirectory)
                         if (hintFilter.isNotEmpty()) {
                             filterField?.text = hintFilter
                             hintFilter = ""
                         }
+                    }
+                    else {
+                        setSetupGuideVisible(true)
+                        showEmptyState(NO_ARB_DIRECTORIES_TEXT)
                     }
 
                     addKeyButton.addActionListener {
@@ -256,6 +383,16 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
                     removeKeyButton.addActionListener { removeSelectedKey?.invoke() }
 
+                    importCsvButton.addActionListener {
+                        val directory = combo.selectedItem as? String ?: return@addActionListener
+                        openCsvImportDialog(directory)
+                    }
+
+                    exportCsvButton.addActionListener {
+                        val directory = combo.selectedItem as? String ?: return@addActionListener
+                        exportCsv(directory)
+                    }
+
                     translateButton.addActionListener {
                         openTranslateDialog?.invoke()
                     }
@@ -293,7 +430,13 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
                     listeners.forEach { combo.addActionListener(it) }
 
-                    if (selected != null) buildTable(selected, byDirectory)
+                    if (selected != null) {
+                        setSetupGuideVisible(false)
+                        buildTable(selected, byDirectory)
+                    } else {
+                        setSetupGuideVisible(true)
+                        showEmptyState(NO_ARB_DIRECTORIES_TEXT)
+                    }
                 }
 
                 panel.revalidate()
@@ -566,4 +709,120 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     override fun addPropertyChangeListener(listener: PropertyChangeListener) {}
     override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
     override fun dispose() { lifetime.terminate() }
+
+    private fun openCsvImportDialog(directory: String) {
+        val file = chooseCsvFileOpen() ?: return
+        val csvContent = try {
+            file.readText(Charsets.UTF_8)
+        } catch (t: Throwable) {
+            Messages.showErrorDialog(project, t.message ?: "Failed to read CSV file.", "Arb.NET")
+            return
+        }
+
+        project.solution.arbModel.previewArbCsvImport.start(lifetime, ArbCsvPreviewRequest(directory, csvContent))
+            .result.advise(lifetime) { rdResult ->
+                val response = try {
+                    rdResult.unwrap()
+                } catch (t: Throwable) {
+                    ApplicationManager.getApplication().invokeLater({
+                        Messages.showErrorDialog(project, t.message ?: "Failed to preview CSV import.", "Arb.NET")
+                    }, ModalityState.any())
+                    return@advise
+                }
+
+                ApplicationManager.getApplication().invokeLater({
+                    if (!response.success) {
+                        Messages.showErrorDialog(project, response.errorMessage ?: "Failed to preview CSV import.", "Arb.NET")
+                        return@invokeLater
+                    }
+
+                    val dialog = ArbCsvImportDialog(project, file.name, response)
+                    if (!dialog.showAndGet()) return@invokeLater
+
+                    project.solution.arbModel.applyArbCsvImport.start(
+                        lifetime,
+                        ArbCsvImportRequest(directory, csvContent, dialog.selectedMappings, dialog.selectedImportMode)
+                    ).result.advise(lifetime) { applyResult ->
+                        val applyResponse = try {
+                            applyResult.unwrap()
+                        } catch (t: Throwable) {
+                            ApplicationManager.getApplication().invokeLater({
+                                Messages.showErrorDialog(project, t.message ?: "Failed to import CSV.", "Arb.NET")
+                            }, ModalityState.any())
+                            return@advise
+                        }
+
+                        ApplicationManager.getApplication().invokeLater({
+                            if (!applyResponse.success) {
+                                Messages.showErrorDialog(project, applyResponse.errorMessage ?: "Failed to import CSV.", "Arb.NET")
+                                return@invokeLater
+                            }
+
+                            refresh()
+                        }, ModalityState.any())
+                    }
+                }, ModalityState.any())
+            }
+    }
+
+    private fun exportCsv(directory: String) {
+        val file = chooseCsvFileSave(File(directory).name + ".csv") ?: return
+        project.solution.arbModel.exportArbCsv.start(lifetime, directory)
+            .result.advise(lifetime) { rdResult ->
+                val response: ArbCsvExportResponse = try {
+                    rdResult.unwrap()
+                } catch (t: Throwable) {
+                    ApplicationManager.getApplication().invokeLater({
+                        Messages.showErrorDialog(project, t.message ?: "Failed to export CSV.", "Arb.NET")
+                    }, ModalityState.any())
+                    return@advise
+                }
+
+                ApplicationManager.getApplication().invokeLater({
+                    if (!response.success) {
+                        Messages.showErrorDialog(project, response.errorMessage ?: "Failed to export CSV.", "Arb.NET")
+                        return@invokeLater
+                    }
+
+                    try {
+                        file.writeText(response.csvContent, Charsets.UTF_8)
+                    } catch (t: Throwable) {
+                        Messages.showErrorDialog(project, t.message ?: "Failed to write CSV file.", "Arb.NET")
+                    }
+                }, ModalityState.any())
+            }
+    }
+
+    private fun chooseCsvFileOpen(): File? {
+        val dialog = createNativeFileDialog("Import CSV", FileDialog.LOAD)
+        dialog.isVisible = true
+        val selected = dialog.file ?: return null
+        val directory = dialog.directory ?: return null
+        return File(directory, selected)
+    }
+
+    private fun chooseCsvFileSave(defaultFileName: String): File? {
+        val dialog = createNativeFileDialog("Export CSV", FileDialog.SAVE).apply {
+            file = defaultFileName
+        }
+        dialog.isVisible = true
+        val selected = dialog.file ?: return null
+        val directory = dialog.directory ?: return null
+        val normalized = if (selected.endsWith(".csv", ignoreCase = true)) selected else "$selected.csv"
+        return File(directory, normalized)
+    }
+
+    private fun createNativeFileDialog(title: String, mode: Int): FileDialog {
+        val owner = SwingUtilities.getWindowAncestor(panel)
+        val dialog = when (owner) {
+            is Frame -> FileDialog(owner, title, mode)
+            is Dialog -> FileDialog(owner, title, mode)
+            else -> FileDialog(null as Frame?, title, mode)
+        }
+
+        dialog.filenameFilter = java.io.FilenameFilter { _, name ->
+            mode == FileDialog.SAVE || name.endsWith(".csv", ignoreCase = true)
+        }
+        return dialog
+    }
 }

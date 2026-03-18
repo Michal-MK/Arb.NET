@@ -25,6 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SLN", "SLN", "{D2E83F2C-2E7
 		publish-rider.ps1 = publish-rider.ps1
 		publish-tool-local.ps1 = publish-tool-local.ps1
 		publish-vs.ps1 = publish-vs.ps1
+		VERSIONING.md = VERSIONING.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{E7FEA805-0A7D-4127-996A-F1BA536EA675}"
