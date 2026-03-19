@@ -12,6 +12,7 @@ public static class AppLocale_cs {
 
     /// <summary>Počet položek s podporou plurálu</summary>
     /// <returns>{count, 0 - "Žádné položky", 1 - "{count} položka", 2 - "Dvě položky", 3 - "Tři položky", 4 - "Čtyři položky", else "{count} položek"}</returns>
+    /// <example>0 - "Žádné položky", 1 - "1 položka", 2 - "Dvě položky", 3 - "Tři položky", 4 - "Čtyři položky", n - "n položek"</example>
     public static string ItemCount(int count) {
         var @selectedContent_count = (count) switch {
             0 => "Žádné položky",
@@ -25,6 +26,7 @@ public static class AppLocale_cs {
     }
 
     /// <returns>Celkem: {count, 0 - "Žádné položky", 1 - "{count} položka", 2 - "Dvě položky", 3 - "Tři položky", 4 - "Čtyři položky", else "{count} položek"} k dispozici.</returns>
+    /// <example>0 - "Žádné položky", 1 - "1 položka", 2 - "Dvě položky", 3 - "Tři položky", 4 - "Čtyři položky", n - "n položek"</example>
     public static string ItemCountWithExtras(int count) {
         var @selectedContent_count = (count) switch {
             0 => "Žádné položky",

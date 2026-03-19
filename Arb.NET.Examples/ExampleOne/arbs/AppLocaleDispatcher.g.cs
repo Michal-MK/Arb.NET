@@ -61,6 +61,7 @@ public partial class AppLocale : global::Arb.NET.IArbLocale {
     /// <item><term>cs</term><description>{count, 0 - "Žádné položky", 1 - "{count} položka", 2 - "Dvě položky", 3 - "Tři položky", 4 - "Čtyři položky", else "{count} položek"}</description></item>
     /// </list>
     /// </summary>
+    /// <example>0 - "No items", 1 - "1 item", n - "n items"</example>
     public string ItemCount(int count) {
         return ResolveLocale(_culture) switch {
             "en" => AppLocale_en.ItemCount(count),
@@ -81,6 +82,7 @@ public partial class AppLocale : global::Arb.NET.IArbLocale {
     /// <item><term>cs</term><description>Celkem: {count, 0 - "Žádné položky", 1 - "{count} položka", 2 - "Dvě položky", 3 - "Tři položky", 4 - "Čtyři položky", else "{count} položek"} k dispozici.</description></item>
     /// </list>
     /// </summary>
+    /// <example>0 - "No items", 1 - "1 item", n - "n items"</example>
     public string ItemCountWithExtras(int count) {
         return ResolveLocale(_culture) switch {
             "en" => AppLocale_en.ItemCountWithExtras(count),

@@ -12,6 +12,7 @@ public static class AppLocale_en {
 
     /// <summary>Number of items with plural handling</summary>
     /// <returns>{count, 0 - "No items", 1 - "{count} item", else "{count} items"}</returns>
+    /// <example>0 - "No items", 1 - "1 item", n - "n items"</example>
     public static string ItemCount(int count) {
         var @selectedContent_count = (count) switch {
             0 => "No items",
@@ -22,6 +23,7 @@ public static class AppLocale_en {
     }
 
     /// <returns>Count: {count, 0 - "No items", 1 - "{count} item", else "{count} items"} are available.</returns>
+    /// <example>0 - "No items", 1 - "1 item", n - "n items"</example>
     public static string ItemCountWithExtras(int count) {
         var @selectedContent_count = (count) switch {
             0 => "No items",

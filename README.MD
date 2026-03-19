@@ -55,14 +55,14 @@ output-namespace: MyProject.Locale # [REQUIRED] the namespace of the generated C
 
 `Arb.NET.Analyzers` - analyzer project that provide quick fixes for missing arb keys.
 
-`Arb.NET.Examples/*` - example projects to show how to use the library in different types of applications, currently a CLI example only.
+`Arb.NET.Examples/*` - example projects to show how to use the library in different types of applications
 
 `Arb.NET.Test` - a test project to test the code generation and the runtime support. It will be used to test the generated code and the runtime support. It will also be used to test the integration with the MAUI app.
 
 
 ### IDE support (WIP):
 
-`Arb.NET.IDE.Jetbrains` - a plugin for Rider~~~~
+`Arb.NET.IDE.Jetbrains` - a plugin for Rider
 
 `Arb.NET.IDE.VisualStudio` - an extension for Visual Studio
 
