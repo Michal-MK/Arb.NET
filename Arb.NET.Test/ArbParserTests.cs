@@ -84,7 +84,7 @@ public class ArbParserTests {
 
         Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My { Application"));
     }
-    
+
     [Test]
     public void ParseContent_EmptyGroup() {
         var arbContent = """
@@ -103,8 +103,8 @@ public class ArbParserTests {
         Assert.That(document.Entries.ContainsKey("appTitle"), Is.True);
 
         Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My {} Application"));
-    } 
-    
+    }
+
     [Test]
     public void ParseContent_Escaping() {
         var arbContent = """
@@ -123,5 +123,65 @@ public class ArbParserTests {
         Assert.That(document.Entries.ContainsKey("appTitle"), Is.True);
 
         Assert.That(document.Entries["appTitle"].Value, Is.EqualTo("My \" Application"));
-    }    
+    }
+
+    [Test]
+    public void ParseContent_MangledPluralization() {
+        var arbContent = """
+                         {
+                           "@@locale": "en",
+                           "plural": "{count, plural, 0={test}, 1={pls}"
+                         }
+                         """;
+
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
+
+        Assert.That(document.Locale, Is.EqualTo("en"));
+        Assert.That(document.Entries, Has.Count.EqualTo(1));
+
+        // Lang strings
+        Assert.That(document.Entries.ContainsKey("plural"), Is.True);
+
+        Assert.That(document.Entries["plural"].Value, Is.EqualTo("{count, plural, 0={test}, 1={pls}"));
+    }
+
+    [Test]
+    public void ParseContent_MangledPluralization2() {
+        var arbContent = """
+                         {
+                           "@@locale": "en",
+                           "plural": "{count, plural, =0{test}, =1{pls}"
+                         }
+                         """;
+
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
+
+        Assert.That(document.Locale, Is.EqualTo("en"));
+        Assert.That(document.Entries, Has.Count.EqualTo(1));
+
+        // Lang strings
+        Assert.That(document.Entries.ContainsKey("plural"), Is.True);
+
+        Assert.That(document.Entries["plural"].Value, Is.EqualTo("{count, plural, =0{test}, =1{pls}"));
+    }
+
+    [Test]
+    public void ParseContent_MangledPluralization3() {
+        var arbContent = """
+                         {
+                           "@@locale": "en",
+                           "plural": "{count, plural, =0{test}, =1{pls}}"
+                         }
+                         """;
+
+        ArbDocument document = TestHelpers.ParseValid(arbContent).Document!;
+
+        Assert.That(document.Locale, Is.EqualTo("en"));
+        Assert.That(document.Entries, Has.Count.EqualTo(1));
+
+        // Lang strings
+        Assert.That(document.Entries.ContainsKey("plural"), Is.True);
+
+        Assert.That(document.Entries["plural"].Value, Is.EqualTo("{count, plural, =0{test}, =1{pls}}"));
+    }
 }

@@ -1,5 +1,8 @@
 {
   "@@locale": "en",
   "appTitle": "Arb.NET Example Five Localized",
-  "greeting": "Hello, {name}!"
+  "greeting": "Hello, {name}!",
+  "nonprimary": "",
+  "pluralpls": "{count, plural, 0={test}, other{omg}}",
+  "temp": "calue {value}"
 }

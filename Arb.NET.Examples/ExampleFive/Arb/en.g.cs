@@ -13,4 +13,18 @@ public static class AppLocale_en {
     public static string Greeting(object name) {
         return $"Hello, " + name?.ToString() + "!";
     }
+
+    /// <returns></returns>
+    public static string Nonprimary
+        => "";
+
+#warning Key 'pluralpls': Value looks like a plural for 'count' but the syntax is invalid. Ensure forms are separated by spaces (not commas) and use '=N{{...}}' syntax (not 'N={{...}}').
+    public static string Pluralpls() {
+        throw new System.NotSupportedException("Key 'pluralpls': Value looks like a plural for 'count' but the syntax is invalid. Ensure forms are separated by spaces (not commas) and use '=N{{...}}' syntax (not 'N={{...}}').");
+    }
+
+    /// <returns>calue {value}</returns>
+    public static string Temp(object value) {
+        return $"calue " + value?.ToString() + "";
+    }
 }

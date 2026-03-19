@@ -1,14 +1,39 @@
+using System.Text.RegularExpressions;
+
 namespace Arb.NET;
 
 /// <summary>
 /// Represents a single localization entry in an .arb file
 /// </summary>
 public record ArbEntry {
+    private static readonly Regex PluralIntentRegex = new(@"\{(\w+),\s*plural[\s,]", RegexOptions.Compiled);
+
     public string Key { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
     public ArbMetadata? Metadata { get; set; }
 
     public bool IsParametric(out List<ArbParameterDefinition> defs) => _IsParametricByValue(Value, out defs);
+
+    /// <summary>
+    /// Detects values that look like plurals but failed strict parsing.
+    /// Returns true with a diagnostic message when the intent is clearly plural but syntax is invalid.
+    /// </summary>
+    public bool TryDetectMangledPlural(out string? diagnostic) {
+        diagnostic = null;
+        Match match = PluralIntentRegex.Match(Value);
+        if (!match.Success) return false;
+
+        // If strict parsing already produced a plural definition, it's not mangled
+        if (IsParametric(out List<ArbParameterDefinition> defs) &&
+            defs.Exists(d => d is ArbPluralizationParameterDefinition)) {
+            return false;
+        }
+
+        string name = match.Groups[1].Value;
+        diagnostic = $"Key '{Key}': Value looks like a plural for '{name}' but the syntax is invalid. " +
+                     "Ensure forms are separated by spaces (not commas) and use '=N{{...}}' syntax (not 'N={{...}}').";
+        return true;
+    }
 
     private bool _IsParametricByValue(string value, out List<ArbParameterDefinition> defs) {
         defs = [];

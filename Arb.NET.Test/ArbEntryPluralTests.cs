@@ -92,4 +92,48 @@ public class ArbEntryPluarlTests {
         Assert.That(castDef.CountableParameters, Has.Count.EqualTo(0));
         Assert.That(castDef.OtherParameter, Is.EqualTo(""));
     }
+
+    // ── TryDetectMangledPlural tests ────────────────────────────────────────────
+
+    [Test]
+    public void TryDetectMangledPlural_CommasBetweenForms_ReturnsTrue() {
+        ArbEntry entry = new() {
+            Key = "items",
+            Value = "{count, plural, =0{No items}, =1{{count} item}, other{{count} items}}"
+        };
+
+        Assert.That(entry.TryDetectMangledPlural(out string? diagnostic), Is.True);
+        Assert.That(diagnostic, Does.Contain("'items'"));
+        Assert.That(diagnostic, Does.Contain("'count'"));
+    }
+
+    [Test]
+    public void TryDetectMangledPlural_ValidPlural_ReturnsFalse() {
+        ArbEntry entry = new() {
+            Key = "items",
+            Value = "{count, plural, =0{No items} =1{{count} item} other{{count} items}}"
+        };
+
+        Assert.That(entry.TryDetectMangledPlural(out _), Is.False);
+    }
+
+    [Test]
+    public void TryDetectMangledPlural_NonPluralParametric_ReturnsFalse() {
+        ArbEntry entry = new() {
+            Key = "greeting",
+            Value = "Hello, {username}!"
+        };
+
+        Assert.That(entry.TryDetectMangledPlural(out _), Is.False);
+    }
+
+    [Test]
+    public void TryDetectMangledPlural_PlainText_ReturnsFalse() {
+        ArbEntry entry = new() {
+            Key = "title",
+            Value = "My Application"
+        };
+
+        Assert.That(entry.TryDetectMangledPlural(out _), Is.False);
+    }
 }

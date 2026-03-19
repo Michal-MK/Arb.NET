@@ -13,4 +13,17 @@ public static class AppLocale_cs {
     public static string Greeting(object name) {
         return $"Ahoj, " + name?.ToString() + "!";
     }
+
+    /// <returns>This translates to nothing.</returns>
+    public static string Nonprimary
+        => "This translates to nothing.";
+
+    /// <returns></returns>
+    public static string Pluralpls
+        => "";
+
+    /// <returns>value not present</returns>
+    public static string Temp(object value) {
+        return "value not present";
+    }
 }

@@ -293,8 +293,7 @@ class ArbTranslateDialog(
         targetPanel.removeAll()
         targetCheckboxes.clear()
         for (locale in locales) {
-            if (locale == source) continue
-            val cb = JCheckBox(locale, true)
+            val cb = JCheckBox(locale, locale != source)
             cb.addActionListener { rebuildPreview() }
             targetCheckboxes.add(cb)
             targetPanel.add(cb)
@@ -315,10 +314,18 @@ class ArbTranslateDialog(
         for (targetLocale in targetLocales) {
             val targetMap = byLocale[targetLocale] ?: emptyMap()
             for (key in limitedKeys) {
-                val sourceText = sourceMap[key] ?: ""
-                if (sourceText.isBlank()) continue
                 val existing = targetMap[key] ?: ""
                 if (emptyOnly && existing.isNotBlank()) continue
+
+                // Prefer the selected source locale; fall back to any locale that has a value
+                var sourceText = sourceMap[key] ?: ""
+                if (sourceText.isBlank()) {
+                    sourceText = byLocale.values
+                        .mapNotNull { it[key]?.takeIf(String::isNotBlank) }
+                        .firstOrNull() ?: ""
+                }
+                if (sourceText.isBlank()) continue
+
                 rows.add(TranslationResultRow(
                     key = key,
                     targetLocale = targetLocale,
@@ -333,7 +340,7 @@ class ArbTranslateDialog(
 
         statusLabel.text = when {
             rows.isEmpty() && emptyOnly -> "${rows.size} items queued — all targets already translated. Switch to \"All cells\" to re-translate."
-            rows.isEmpty() -> "No translatable items found for the selected source locale."
+            rows.isEmpty() -> "No translatable items found."
             else -> "${rows.size} item(s) queued for translation."
         }
     }

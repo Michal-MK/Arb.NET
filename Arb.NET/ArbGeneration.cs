@@ -37,6 +37,8 @@ public static class ArbGeneration {
         List<Output> outputs = [];
         List<(ArbDocument Document, string ClassName)> localeList = [];
 
+        // First pass: collect documents and class names
+        List<(Input input, ArbDocument document, string className)> prepared = [];
         foreach (Input input in inputs.OrderBy(i => i.FileNameWithoutExt, StringComparer.OrdinalIgnoreCase)) {
             ArbDocument document = input.Document;
 
@@ -61,13 +63,35 @@ public static class ArbGeneration {
                             + "Localizations";
             }
 
-            outputs.Add(new Output(
-                            $"{input.FileNameWithoutExt}.g.cs",
-                            generator.GenerateClass(document, className, namespaceName)));
-
+            prepared.Add((input, document, className));
             if (!string.IsNullOrWhiteSpace(baseClass)) {
                 localeList.Add((document, className));
             }
+        }
+
+        // Issue 2: Build cross-locale parameter map — for each key, find the most complete parameter list
+        // Skip entries with mangled plurals — their extracted params are garbage
+        Dictionary<string, List<ArbParameterDefinition>>? paramOverrides = null;
+        if (localeList.Count > 1) {
+            paramOverrides = new Dictionary<string, List<ArbParameterDefinition>>();
+            foreach ((ArbDocument doc, string _) in localeList) {
+                foreach (ArbEntry entry in doc.Entries.Values) {
+                    if (entry.TryDetectMangledPlural(out _)) continue;
+                    if (entry.IsParametric(out List<ArbParameterDefinition> defs)) {
+                        if (!paramOverrides.TryGetValue(entry.Key, out List<ArbParameterDefinition>? existing) ||
+                            defs.Count > existing.Count) {
+                            paramOverrides[entry.Key] = defs;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Second pass: generate code with cross-locale awareness
+        foreach ((Input input, ArbDocument document, string className) in prepared) {
+            outputs.Add(new Output(
+                            $"{input.FileNameWithoutExt}.g.cs",
+                            generator.GenerateClass(document, className, namespaceName, paramOverrides)));
         }
 
         if (baseClass != null && localeList.Count > 0) {

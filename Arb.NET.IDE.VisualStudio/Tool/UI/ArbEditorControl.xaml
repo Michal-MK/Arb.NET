@@ -68,64 +68,71 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Directory selector -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6,6,6,4">
-            <Label Content="Directory:"
-                   VerticalAlignment="Center"
-                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
-            <ComboBox x:Name="DirectoryCombo"
-                      MinWidth="320"
-                      VerticalAlignment="Center"
-                      SelectionChanged="DirectoryCombo_OnSelectionChanged">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource RelativePathConverter}}" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            <Label Content="Filter:"
-                   Margin="8,0,0,0"
-                   VerticalAlignment="Center"
-                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
-            <TextBox x:Name="FilterTextBox"
-                     MinWidth="160"
-                     VerticalAlignment="Center"
-                     TextChanged="FilterTextBox_OnTextChanged" />
-            <Button Content="Add Locale"
-                    Margin="8,0,0,0"
-                    Padding="8,2"
-                    VerticalAlignment="Center"
-                    Click="AddLocaleButton_OnClick" />
-            <Button Content="Add Key"
-                    Margin="4,0,0,0"
-                    Padding="8,2"
-                    VerticalAlignment="Center"
-                    Click="AddKeyButton_OnClick" />
-            <Button Content="Remove Key"
-                    Margin="4,0,0,0"
-                    Padding="8,2"
-                    VerticalAlignment="Center"
-                    Click="RemoveKeyButton_OnClick" />
+        <!-- Directory selector + filter (row 1) and action buttons (row 2, wrapping) -->
+        <StackPanel Grid.Row="0" Margin="6,6,6,4">
+            <DockPanel>
+                <Label Content="Directory:"
+                       DockPanel.Dock="Left"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <ComboBox x:Name="DirectoryCombo"
+                          DockPanel.Dock="Left"
+                          MinWidth="320"
+                          VerticalAlignment="Center"
+                          SelectionChanged="DirectoryCombo_OnSelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource RelativePathConverter}}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Label Content="Filter:"
+                       DockPanel.Dock="Left"
+                       Margin="8,0,0,0"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <TextBox x:Name="FilterTextBox"
+                         MinWidth="160"
+                         VerticalAlignment="Center"
+                         TextChanged="FilterTextBox_OnTextChanged" />
+            </DockPanel>
+            <WrapPanel Margin="0,4,0,0">
+                <Button Content="Add Locale"
+                        Margin="0,0,4,2"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        Click="AddLocaleButton_OnClick" />
+                <Button Content="Add Key"
+                        Margin="0,0,4,2"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        Click="AddKeyButton_OnClick" />
+                <Button Content="Remove Key"
+                        Margin="0,0,4,2"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        Click="RemoveKeyButton_OnClick" />
                 <Button Content="Import CSV..."
-                    Margin="8,0,0,0"
-                    Padding="8,2"
-                    VerticalAlignment="Center"
-                    Click="ImportCsvButton_OnClick" />
+                        Margin="0,0,4,2"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        Click="ImportCsvButton_OnClick" />
                 <Button Content="Export CSV..."
-                    Margin="4,0,0,0"
-                    Padding="8,2"
-                    VerticalAlignment="Center"
-                    Click="ExportCsvButton_OnClick" />
-            <Button Content="Translate..."
-                    Margin="8,0,0,0"
-                    Padding="8,2"
-                    VerticalAlignment="Center"
-                    Click="TranslateButton_OnClick" />
-            <Button Content="AI Settings..."
-                    Margin="4,0,0,0"
-                    Padding="8,2"
-                    VerticalAlignment="Center"
-                    Click="AiSettingsButton_OnClick" />
+                        Margin="0,0,4,2"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        Click="ExportCsvButton_OnClick" />
+                <Button Content="Translate..."
+                        Margin="0,0,4,2"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        Click="TranslateButton_OnClick" />
+                <Button Content="AI Settings..."
+                        Margin="0,0,4,2"
+                        Padding="8,2"
+                        VerticalAlignment="Center"
+                        Click="AiSettingsButton_OnClick" />
+            </WrapPanel>
         </StackPanel>
 
         <Border x:Name="SetupGuidePanel"

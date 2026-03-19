@@ -306,17 +306,25 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     }
                     filterField = searchField
 
-                    val topPanel = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 4))
-                    topPanel.add(combo)
-                    topPanel.add(JLabel("Filter:"))
-                    topPanel.add(searchField)
-                    topPanel.add(addLocaleButton)
-                    topPanel.add(addKeyButton)
-                    topPanel.add(removeKeyButton)
-                    topPanel.add(importCsvButton)
-                    topPanel.add(exportCsvButton)
-                    topPanel.add(translateButton)
-                    topPanel.add(aiSettingsButton)
+                    val row1 = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 4))
+                    row1.add(combo)
+                    row1.add(JLabel("Filter:"))
+                    row1.add(searchField)
+
+                    val row2 = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 4))
+                    row2.add(addLocaleButton)
+                    row2.add(addKeyButton)
+                    row2.add(removeKeyButton)
+                    row2.add(importCsvButton)
+                    row2.add(exportCsvButton)
+                    row2.add(translateButton)
+                    row2.add(aiSettingsButton)
+
+                    val topPanel = JPanel().apply {
+                        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                        add(row1)
+                        add(row2)
+                    }
 
                     val topSection = JPanel(BorderLayout())
                     topSection.add(topPanel, BorderLayout.NORTH)

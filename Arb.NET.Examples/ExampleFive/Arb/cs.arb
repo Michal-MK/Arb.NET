@@ -1,5 +1,8 @@
 {
   "@@locale": "cs",
   "appTitle": "Arb.NET Příklad 5 Přeloženo!",
-  "greeting": "Ahoj, {name}!"
+  "greeting": "Ahoj, {name}!",
+  "nonprimary": "This translates to nothing.",
+  "pluralpls": "",
+  "temp": "value not present"
 }

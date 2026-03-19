@@ -72,9 +72,8 @@ public partial class TranslateDialog : DialogWindow {
     private void PopulateTargetLocales() {
         string? source = SourceLocaleCombo.SelectedItem as string;
         List<LocaleSelection> targets = langCodes
-            .Where(l => l != source)
             .Select(l => new LocaleSelection(l) {
-                IsSelected = true
+                IsSelected = l != source
             })
             .ToList();
 
@@ -102,11 +101,15 @@ public partial class TranslateDialog : DialogWindow {
         List<TranslationItem> newItems = [];
         foreach (string targetLocale in targetLocales) {
             foreach (ArbRow row in rows) {
-                string sourceText = row.Values.TryGetValue(sourceLocale!, out string src) ? src : "";
-                if (string.IsNullOrEmpty(sourceText)) continue;
-
                 string existing = row.Values.TryGetValue(targetLocale, out string ex) ? ex : "";
                 if (emptyOnly && !string.IsNullOrEmpty(existing)) continue;
+
+                // Prefer the selected source locale; fall back to any locale that has a value
+                string sourceText = row.Values.TryGetValue(sourceLocale!, out string src) ? src : "";
+                if (string.IsNullOrEmpty(sourceText)) {
+                    sourceText = row.Values.Values.FirstOrDefault(v => !string.IsNullOrEmpty(v)) ?? "";
+                }
+                if (string.IsNullOrEmpty(sourceText)) continue;
 
                 newItems.Add(new TranslationItem {
                     Key = row.Key,
@@ -127,7 +130,7 @@ public partial class TranslateDialog : DialogWindow {
         StatusText.Text = resultItems.Count == 0
             ? emptyOnly
                 ? "Nothing queued — all targets already have values. Switch to \"All cells\" to re-translate."
-                : "Nothing queued — no source texts found for the selected locale."
+                : "Nothing queued — no translatable items found."
             : $"{resultItems.Count} item(s) queued for translation.";
     }
 
