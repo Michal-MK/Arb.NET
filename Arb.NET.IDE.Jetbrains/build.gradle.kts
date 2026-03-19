@@ -124,7 +124,6 @@ tasks.buildPlugin {
             into("${rootDir}/output")
         }
 
-        // TODO: See also org.jetbrains.changelog: https://github.com/JetBrains/gradle-changelog-plugin
         val changelogText = file("${rootDir}/CHANGELOG.md").readText()
         val changelogMatches = Regex("(?s)(-.+?)(?=##|$)").findAll(changelogText)
         val changeNotes = changelogMatches.map {
@@ -150,9 +149,6 @@ dependencies {
         rider(ProductVersion, useInstaller = false)
         jetbrainsRuntime()
 
-        // TODO: add plugins
-        // bundledPlugin("uml")
-        // bundledPlugin("com.jetbrains.ChooseRuntime:1.0.9")
     }
 }
 
@@ -162,7 +158,9 @@ tasks.runIde {
 }
 
 tasks.patchPluginXml {
-    // TODO: See also org.jetbrains.changelog: https://github.com/JetBrains/gradle-changelog-plugin
+    sinceBuild.set("253")
+    untilBuild.set("253.*")
+
     val changelogText = file("${rootDir}/CHANGELOG.md").readText()
     val changelogMatches = Regex("(?s)(-.+?)(?=##|\$)").findAll(changelogText)
 

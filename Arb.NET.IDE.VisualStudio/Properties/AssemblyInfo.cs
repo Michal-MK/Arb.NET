@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Arb.NET.IDE.VisualStudio")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("ARB localization support for Visual Studio — part of the Arb.NET ecosystem")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Arb.NET.IDE.VisualStudio")]
-[assembly: AssemblyCopyright("")]
+[assembly: AssemblyCompany("Michal-MK")]
+[assembly: AssemblyProduct("Arb.NET")]
+[assembly: AssemblyCopyright("Copyright (c) Michal-MK")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.1.0.0")]
-[assembly: AssemblyFileVersion("2.1.0.0")]
+[assembly: AssemblyVersion("2.2.0.0")]
+[assembly: AssemblyFileVersion("2.2.0.0")]

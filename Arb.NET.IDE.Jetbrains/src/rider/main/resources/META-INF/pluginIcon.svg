@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created using Krita: https://krita.org -->
+<svg width="245.76pt" height="245.76pt" version="1.1" viewBox="0 0 245.76 245.76" xmlns="http://www.w3.org/2000/svg" xmlns:krita="http://krita.org/namespaces/svg/krita">
+ <g stroke-linecap="square" stroke-linejoin="bevel">
+  <path d="m59.801 96.232 8.9944 0.6788 8.1458-5.77 6.2792-9.5035 4.2426-8.3156 11.54-13.916 9.3469-6.2791 22.049-2.0365 26.814 3.2244 15.952 7.6368 11.031 10.182 3.225 9.8429-0.34 8.9944-3.564 6.958-7.467 6.6185-14.425 6.6185-26.474 4.9346h-22.571l-16.801-4.2558-13.407-5.0912-9.8429-4.7517-10.861-2.2062-4.2426-2.5456 2.3759-1.0182" fill="none" stroke="#512bd4" stroke-width="3.6"/>
+  <text x="74.241089" y="159.17313" fill="#000000" font-size="48px" font-size-adjust="1" letter-spacing="0" stroke="#000000" stroke-opacity="0" stroke-width="0" krita:textVersion="2" krita:useRichText="true"><tspan font-family="'Comic Sans MS'" font-style="italic"><tspan x="74.241089" font-family="'Comic Sans MS'" font-style="italic"><tspan font-family="'Comic Sans MS'" font-style="normal" font-weight="bold">rb</tspan>.NET</tspan></tspan></text>
+  <path d="m22.349 176.13 9.1641-16.122 23.928-0.0848 8.061 15.783 15.868 0.1697c-10.352-27.323-20.704-54.645-31.056-81.968l-39.796 81.883 13.831 0.3394" fill="none" stroke="#512bd4" stroke-width="3.6"/>
+  <path d="m35.247 150.17 18.668-0.3394-7.8064-20.45-10.861 20.789" fill="none" stroke="#512bd4" stroke-width="2.85"/>
+ </g>
+ <g fill="#512bd4" font-size="20px" stroke="#000000" stroke-linecap="square" stroke-linejoin="bevel" stroke-opacity="0" stroke-width="0">
+  <text x="91.444748" y="90.555717" font-size-adjust="1" letter-spacing="0" word-spacing="0" krita:textVersion="2" krita:useRichText="true"><tspan x="91.444748">č</tspan></text>
+  <text x="121.84467" y="74.872269" font-family="'Google Sans', Arial, sans-serif" font-size-adjust=".46396" font-weight="700" krita:textVersion="2" krita:useRichText="true"><tspan x="121.84467">文</tspan></text>
+  <text x="154.34743" y="93.774651" font-family="sans-serif" font-size-adjust=".45207" krita:textVersion="2" krita:useRichText="true"><tspan x="154.34743">Ж</tspan></text>
+  <text x="117.9979" y="102.21851" font-family="sans-serif" font-size-adjust=".45207" krita:textVersion="2" krita:useRichText="true"><tspan x="117.9979">ß</tspan></text>
+ </g>
+ <text x="286.32233" y="142.72734" font-family="sans-serif" font-size="30px" letter-spacing="0px" stroke-width=".75" word-spacing="0px" style="line-height:1.25" xml:space="preserve"><tspan x="286.32233" y="142.72734" stroke-width=".75"/></text>
+</svg>

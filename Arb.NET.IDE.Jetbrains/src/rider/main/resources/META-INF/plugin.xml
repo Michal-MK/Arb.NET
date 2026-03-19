@@ -3,16 +3,22 @@
   <name>Arb.NET</name>
   <version>0.0.1</version>
   <vendor url="https://github.com/Michal-MK/Arb.NET">Michal-MK</vendor>
-  <idea-version since-build="_PLACEHOLDER_" until-build="_PLACEHOLDER_" />
+  <idea-version since-build="253" until-build="253.*" />
   <depends>com.intellij.modules.rider</depends>
 
   <description>
 <![CDATA[
-<p>Arb.NET Rider extension</p>
+<p><b>Arb.NET</b> brings ARB (Application Resource Bundle) localization support to Rider.</p>
 
-<p>
-Contains an ARB editor and XAML markup support.
-</p>
+<h3>Features</h3>
+<ul>
+  <li>Smart ARB editor with side-by-side multi-locale editing</li>
+  <li>XAML integration — completion, hover docs, syntax highlighting, and Go-to-Definition for ARB keys</li>
+  <li>Inspections and quick-fixes for missing or unused ARB keys</li>
+  <li>Context-menu action to open the ARB editor from the project tree</li>
+</ul>
+
+<p>Part of the <a href="https://github.com/Michal-MK/Arb.NET">Arb.NET</a> ecosystem — a modern replacement for RESX-based localization in .NET, using JSON-based ARB files with support for parameterized keys, pluralization (ICU), and consistent cross-IDE code generation.</p>
 ]]>
   </description>
 
@@ -66,13 +72,6 @@ Contains an ARB editor and XAML markup support.
   </extensions>
 
   <actions>
-    <!-- TODO: this action is grayed out initially and then disappears — investigate why -->
-    <action id="GetAssemblyInfo"
-            class="com.jetbrains.rider.plugins.arbnet.GetAssemblyInfoAction"
-            text="Arb.NET: Assembly Info"
-            description="Show information about the Arb.NET assembly loaded in this plugin">
-      <add-to-group group-id="ToolsMenu" anchor="last"/>
-    </action>
     <action id="OpenArbEditor"
             class="com.jetbrains.rider.plugins.arbnet.OpenArbEditorAction"
             text="Arb.NET Editor"
