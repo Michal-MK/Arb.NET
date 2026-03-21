@@ -44,7 +44,7 @@ public class ArbCodeGenerator {
         }
         string source = GenerateClass(result.Document!, className, namespaceName);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
-        File.WriteAllText(outputPath, source);
+        File.WriteAllText(outputPath, source, Constants.UTF8_NO_BOM);
     }
 #endif
 

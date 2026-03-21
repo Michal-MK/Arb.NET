@@ -1,4 +1,8 @@
+using System.Text;
+
 public static class Constants {
+    public static readonly UTF8Encoding UTF8_NO_BOM = new(encoderShouldEmitUTF8Identifier: false);
+    
     public const string ARB_FILE_EXT = ".arb";
     public const string ANY_ARB = "*" + ARB_FILE_EXT;
     

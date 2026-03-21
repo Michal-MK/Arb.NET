@@ -269,7 +269,7 @@ public partial class TranslateDialog : DialogWindow {
             if (parsed.Document == null) return false;
 
             mutate(parsed.Document);
-            File.WriteAllText(arb.FilePath, ArbSerializer.Serialize(parsed.Document));
+            File.WriteAllText(arb.FilePath, ArbSerializer.Serialize(parsed.Document), Constants.UTF8_NO_BOM);
             return true;
         }
         catch (Exception ex) {

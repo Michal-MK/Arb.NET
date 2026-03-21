@@ -1,4 +1,4 @@
-﻿arb-dir: Arb
+arb-dir: Arb
 template-arb-file: en.arb
 output-class: AppLocale
 output-namespace: ExampleFive

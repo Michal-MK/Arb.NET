@@ -128,6 +128,43 @@ public class ArbProjectGeneratorTests {
         }
     }
 
+    [Test]
+    public void Generate_WritesGeneratedFiles_WithoutUtf8Bom() {
+        string projectDir = CreateTempProject();
+
+        try {
+            WriteFile(Path.Combine(projectDir, "Sample.csproj"), """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net8.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+
+            WriteFile(Path.Combine(projectDir, "l10n.yaml"), """
+                arb-dir: arbs
+                template-arb-file: app_en.arb
+                output-class: AppLocale
+                """);
+
+            WriteFile(Path.Combine(projectDir, "arbs", "app_en.arb"), """
+                {
+                  "@@locale": "en",
+                  "appTitle": "Hello"
+                }
+                """);
+
+            ArbProjectGenerator.Result result = ArbProjectGenerator.Generate(projectDir);
+
+            Assert.That(result.HasErrors, Is.False, string.Join(Environment.NewLine, result.Errors));
+            Assert.That(HasUtf8Bom(Path.Combine(projectDir, "arbs", "app_en.g.cs")), Is.False);
+            Assert.That(HasUtf8Bom(Path.Combine(projectDir, "arbs", "AppLocaleDispatcher.g.cs")), Is.False);
+        }
+        finally {
+            DeleteProjectDir(projectDir);
+        }
+    }
+
     private static string CreateTempProject() {
         string projectDir = Path.Combine(Path.GetTempPath(), "Arb.NET.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(projectDir);
@@ -140,7 +177,15 @@ public class ArbProjectGeneratorTests {
             Directory.CreateDirectory(directory);
         }
 
-        File.WriteAllText(path, content.Replace("\r\n", "\n").Replace("\n", Environment.NewLine));
+        File.WriteAllText(path, content.Replace("\r\n", "\n").Replace("\n", Environment.NewLine), Constants.UTF8_NO_BOM);
+    }
+
+    private static bool HasUtf8Bom(string path) {
+        byte[] bytes = File.ReadAllBytes(path);
+        return bytes.Length >= 3 &&
+               bytes[0] == 0xEF &&
+               bytes[1] == 0xBB &&
+               bytes[2] == 0xBF;
     }
 
     private static void DeleteProjectDir(string projectDir) {

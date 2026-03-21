@@ -43,7 +43,7 @@ public class ArbModelHost {
             }
 
             entry.Value = update.Value;
-            File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
+            File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document), global::Arb.NET.Constants.UTF8_NO_BOM);
             ArbKeyService.InvalidateCache(update.Directory);
             RunArbGenerate(update.Directory);
             return true;
@@ -71,7 +71,7 @@ public class ArbModelHost {
                     Key = payload.Key,
                     Value = string.Empty
                 };
-                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
+                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document), global::Arb.NET.Constants.UTF8_NO_BOM);
                 anyChanged = true;
             }
 
@@ -96,7 +96,7 @@ public class ArbModelHost {
                 if (parsed.Document == null) continue;
                 if (!parsed.Document.Entries.Remove(payload.Key)) continue;
 
-                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document));
+                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document), global::Arb.NET.Constants.UTF8_NO_BOM);
                 anyChanged = true;
             }
 
@@ -135,7 +135,7 @@ public class ArbModelHost {
                 };
             }
 
-            File.WriteAllText(newFilePath, ArbSerializer.Serialize(newDoc));
+            File.WriteAllText(newFilePath, ArbSerializer.Serialize(newDoc), global::Arb.NET.Constants.UTF8_NO_BOM);
 
             string dictKey = payload.Directory + "|" + payload.Locale;
             localeToFilePath[dictKey] = newFilePath;
@@ -173,7 +173,7 @@ public class ArbModelHost {
                 }
 
                 doc.Entries = newEntries;
-                File.WriteAllText(filePath, ArbSerializer.Serialize(doc));
+                File.WriteAllText(filePath, ArbSerializer.Serialize(doc), global::Arb.NET.Constants.UTF8_NO_BOM);
                 anyChanged = true;
             }
 

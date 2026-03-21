@@ -6,12 +6,14 @@
 `Arb.NET` - the core project, contains models and logic for parsing and generating code from .arb files.
 `Arb.NET.Tool` - a console application that can be installed as a dotnet tool, used to generate code manually from .arb files in projects that use Arb.NET. Also contains utilities such as migration from ResX to .arb files.
 `Arb.NET.Generators` - Roslyn source generator that can be used to generate code from .arb files at design time.
+`Arb.NET.Analyzers` - Analyzer for quick fixes related to missing ARB keys in the code.
 `Arb.NET.Test` - a test project
 `Arb.NET.Examples.*` - common prefix for example projects, examples use the Roslyn source generators
 
 ## IDE Support
 `Arb.NET.IDE.Jetbrains` - a plugin for Rider and Resharper
 `Arb.NET.IDE.VisualStudio` - a plugin for Visual Studio
+`Arb.NET.IDE.Common` - shared code for the IDE plugins
 
 ## Hot files
 
@@ -50,6 +52,9 @@ Prefix such logs with "[AI-DEBUG]" so that they can easily be removed after.
 
 **Write all plans into ai-ref/plans!**
 **Maintain feature parity between IDEs! When a feature is requested always assume both IDEs are affected. Unless explicitly stated otherwise.**
+
+## Rules
+- Any file IO should be done with `Constants.UTF8_NO_BOM` encoding to avoid issues with byte order marks in generated files.
 
 ### Tips
 

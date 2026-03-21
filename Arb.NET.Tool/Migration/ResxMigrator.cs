@@ -259,7 +259,7 @@ internal static class ResxMigrator
         else
         {
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-            File.WriteAllText(outputPath, content, Encoding.UTF8);
+            File.WriteAllText(outputPath, content, Constants.UTF8_NO_BOM);
             result.WrittenFiles.Add(outputPath);
         }
     }

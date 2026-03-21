@@ -267,7 +267,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
     private static void WriteGeneratedFile(string outputDir, string fileName, string content) {
         try {
             Directory.CreateDirectory(outputDir);
-            File.WriteAllText(Path.Combine(outputDir, fileName), content, System.Text.Encoding.UTF8);
+            File.WriteAllText(Path.Combine(outputDir, fileName), content, Constants.UTF8_NO_BOM);
         }
         catch {
             // Best-effort; don't crash the build if the file cannot be written.
@@ -276,7 +276,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
     private static void WriteArbFileToDisk(string path, string content) {
         try {
-            File.WriteAllText(path, content, System.Text.Encoding.UTF8);
+            File.WriteAllText(path, content, Constants.UTF8_NO_BOM);
         }
         catch {
             // Best-effort; don't crash the build if the file is read-only or locked

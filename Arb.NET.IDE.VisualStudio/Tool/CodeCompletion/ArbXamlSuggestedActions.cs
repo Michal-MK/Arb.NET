@@ -154,7 +154,7 @@ internal sealed class GenerateArbKeySuggestedAction(string key, string projectDi
                     Key = arbKey,
                     Value = string.Empty
                 };
-                File.WriteAllText(arbFilePath, ArbSerializer.Serialize(parsed.Document));
+                File.WriteAllText(arbFilePath, ArbSerializer.Serialize(parsed.Document), Constants.UTF8_NO_BOM);
             }
             catch {
                 // Best-effort; continue with remaining files

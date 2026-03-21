@@ -352,7 +352,7 @@ public partial class ArbEditorControl : UserControl {
             if (parsed.Document == null) return false;
 
             mutate(parsed.Document);
-            File.WriteAllText(arb.FilePath, ArbSerializer.Serialize(parsed.Document));
+            File.WriteAllText(arb.FilePath, ArbSerializer.Serialize(parsed.Document), Constants.UTF8_NO_BOM);
             return true;
         }
         catch (Exception ex) {
@@ -482,7 +482,7 @@ public partial class ArbEditorControl : UserControl {
             };
         }
 
-        File.WriteAllText(filePath, ArbSerializer.Serialize(newDoc));
+        File.WriteAllText(filePath, ArbSerializer.Serialize(newDoc), Constants.UTF8_NO_BOM);
         _ = RefreshDataAsync();
     }
 
@@ -532,7 +532,7 @@ public partial class ArbEditorControl : UserControl {
 
         try {
             string csvContent = ArbCsvService.Export(directory);
-            File.WriteAllText(dialog.FileName, csvContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            File.WriteAllText(dialog.FileName, csvContent, Constants.UTF8_NO_BOM);
         }
         catch (Exception ex) {
             MessageBox.Show($"CSV export failed: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);

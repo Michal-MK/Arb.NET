@@ -117,7 +117,7 @@ public static class ArbCsvService {
         foreach (ArbLocaleDocument doc in docsByLocale.Values) {
             doc.Document.Locale = doc.Locale;
             Directory.CreateDirectory(Path.GetDirectoryName(doc.FilePath)!);
-            File.WriteAllText(doc.FilePath, ArbSerializer.Serialize(doc.Document));
+            File.WriteAllText(doc.FilePath, ArbSerializer.Serialize(doc.Document), Constants.UTF8_NO_BOM);
         }
 
         return new CsvImportApplyResult {

@@ -53,7 +53,7 @@ public sealed class ArbDispatcherCodeFix : CodeFixProvider {
                 string oldContent = File.ReadAllText(arbFilePath);
                 string? newContent = TryAddKey(oldContent, arbKey);
                 if (newContent == null) continue;
-                File.WriteAllText(arbFilePath, newContent, System.Text.Encoding.UTF8);
+                File.WriteAllText(arbFilePath, newContent, Constants.UTF8_NO_BOM);
             }
             catch {
                 // TODO Handle

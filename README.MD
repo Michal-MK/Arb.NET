@@ -30,7 +30,7 @@ output-class: L # [OPTIONAL] the name of the generated C# class that will contai
 output-namespace: MyProject.Locale # [OPTIONAL] the namespace of the generated C# class
 ```
 
-Or use the IDE integration to create the `l10n.yaml` (using the standard create/add item flow) file~~~~ with the above content prefilled and documented.
+Or use the IDE integration to create the `l10n.yaml` (using the standard create/add item flow) file with the above content prefilled and documented.
 
 3. Create your .arb files in the specified directory (e.g. `arbs/en.arb`, `arbs/cs.arb`, etc.) with the following content:
 ```json

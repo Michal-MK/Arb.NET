@@ -86,7 +86,7 @@ public static class ArbProjectGenerator {
     private static void WriteFile(string path, string content, Result result) {
         try {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, content, System.Text.Encoding.UTF8);
+            File.WriteAllText(path, content, Constants.UTF8_NO_BOM);
             result.WrittenFiles.Add(path);
         }
         catch (Exception ex) {
