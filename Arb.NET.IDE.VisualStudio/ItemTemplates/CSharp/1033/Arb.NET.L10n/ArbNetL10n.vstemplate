@@ -1,0 +1,15 @@
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Arb.NET l10n.yaml</Name>
+    <Description>Creates a commented l10n.yaml configuration file for Arb.NET localization.</Description>
+    <ProjectType>CSharp</ProjectType>
+    <SortOrder>1000</SortOrder>
+    <DefaultName>l10n.yaml</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+    <TemplateID>c7dfae0f-5b4a-4f8a-ae03-6ac8fd9dc251</TemplateID>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="false" TargetFileName="l10n.yaml">l10n.yaml</ProjectItem>
+  </TemplateContent>
+</VSTemplate>

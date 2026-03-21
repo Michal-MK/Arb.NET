@@ -26,9 +26,11 @@ ARB files:
 ```yaml
 arb-dir: arbs # [REQUIRED] relative path to the directory containing your .arb files
 template-arb-file: en.arb # [REQUIRED] the template .arb file (primary locale) that contains all the keys
-output-class: L # [REQUIRED] the name of the generated C# class that will contain the localization members
-output-namespace: MyProject.Locale # [REQUIRED] the namespace of the generated C# class
+output-class: L # [OPTIONAL] the name of the generated C# class that will contain the localization members
+output-namespace: MyProject.Locale # [OPTIONAL] the namespace of the generated C# class
 ```
+
+Or use the IDE integration to create the `l10n.yaml` (using the standard create/add item flow) file~~~~ with the above content prefilled and documented.
 
 3. Create your .arb files in the specified directory (e.g. `arbs/en.arb`, `arbs/cs.arb`, etc.) with the following content:
 ```json
@@ -60,7 +62,7 @@ output-namespace: MyProject.Locale # [REQUIRED] the namespace of the generated C
 `Arb.NET.Test` - a test project to test the code generation and the runtime support. It will be used to test the generated code and the runtime support. It will also be used to test the integration with the MAUI app.
 
 
-### IDE support (WIP):
+### IDE support:
 
 `Arb.NET.IDE.Jetbrains` - a plugin for Rider
 
@@ -74,4 +76,6 @@ output-namespace: MyProject.Locale # [REQUIRED] the namespace of the generated C
 
 If you are feeling generous:
 
-<a href="https://www.buymeacoffee.com/Michal.MK" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+<a href="https://www.buymeacoffee.com/Michal.MK" target="_blank">
+<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
+</a>

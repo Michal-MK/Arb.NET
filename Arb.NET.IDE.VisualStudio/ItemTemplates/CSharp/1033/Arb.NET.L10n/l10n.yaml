@@ -1,0 +1,7 @@
+# Arb.NET localization configuration.
+# Paths are relative to the project that owns this file.
+
+arb-dir: arbs # Required. Directory containing the .arb files.
+template-arb-file: en.arb # Required. Template .arb file that defines the key set.
+output-class: AppLocale # Optional. Dispatcher and generated locale base name.
+output-namespace: MyProject.Localization # Optional. Falls back to the project RootNamespace.

@@ -74,7 +74,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
         const val FILE_NAME = "Arb.NET Editor"
         private const val SETUP_HINT_TEXT = "Minimal setup for a new project. An empty l10n.yaml alone is not enough."
         private const val NO_ARB_DIRECTORIES_TEXT = "No ARB directories loaded yet. Use the setup guide above."
-        private const val MINIMAL_L10N_YAML = "arb-dir: arbs\ntemplate-arb-file: en.arb"
+        private const val MINIMAL_L10N_YAML = "# Arb.NET localization configuration.\n# Paths are relative to the project that owns this file.\n\narb-dir: arbs # Required. Directory containing the .arb files.\ntemplate-arb-file: en.arb # Required. Template .arb file that defines the key set.\noutput-class: AppLocale # Optional. Dispatcher and generated locale base name.\noutput-namespace: MyProject.Localization # Optional. Falls back to the project RootNamespace."
         private const val MINIMAL_ARB_JSON = "{\n  \"@@locale\": \"en\"\n}"
         val INITIAL_DIR_KEY: Key<String> = Key.create("arb.initialDir")
         val INITIAL_FILTER_KEY: Key<String> = Key.create("arb.initialFilter")

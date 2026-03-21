@@ -26,7 +26,7 @@ using System.Windows.Data;
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
 public partial class ArbEditorControl : UserControl {
-    private const string MinimalL10nYaml = "arb-dir: arbs\ntemplate-arb-file: en.arb";
+    private const string MinimalL10nYaml = "# Arb.NET localization configuration.\n# Paths are relative to the project that owns this file.\n\narb-dir: arbs # Required. Directory containing the .arb files.\ntemplate-arb-file: en.arb # Required. Template .arb file that defines the key set.\noutput-class: AppLocale # Optional. Dispatcher and generated locale base name.\noutput-namespace: MyProject.Localization # Optional. Falls back to the project RootNamespace.";
     private const string MinimalTemplateArb = "{\n  \"@@locale\": \"en\"\n}";
     private const string NoArbDirectoriesMessage = "No ARB directories loaded yet. Use the setup guide above.";
     private AsyncPackage? package;

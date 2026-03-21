@@ -24,6 +24,7 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <postStartupActivity implementation="com.jetbrains.rider.plugins.arbnet.ArbModelListener"/>
+    <internalFileTemplate name="Arb.NET l10n.yaml" />
 
     <intentionAction>
       <language>C#</language>
@@ -72,6 +73,12 @@
   </extensions>
 
   <actions>
+    <action id="CreateL10nYaml"
+            class="com.jetbrains.rider.plugins.arbnet.CreateL10nYamlAction"
+            text="Arb.NET l10n.yaml"
+            description="Create a commented l10n.yaml configuration file for Arb.NET">
+      <add-to-group group-id="NewGroup" anchor="last"/>
+    </action>
     <action id="OpenArbEditor"
             class="com.jetbrains.rider.plugins.arbnet.OpenArbEditorAction"
             text="Arb.NET Editor"

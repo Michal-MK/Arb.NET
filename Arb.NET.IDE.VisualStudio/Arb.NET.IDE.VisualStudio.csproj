@@ -115,6 +115,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ItemTemplates\**\*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Arb.NET.IDE.Common\Arb.NET.IDE.Common.csproj" />
   </ItemGroup>
   <ItemGroup>

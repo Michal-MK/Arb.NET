@@ -41,7 +41,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\Arb.NET.IDE.Jetbrains.Common.csproj" />
     <ProjectReference Include="..\..\Arb.NET.IDE.Common\Arb.NET.IDE.Common.csproj" />
   </ItemGroup>
 

@@ -20,8 +20,8 @@ public class L10nConfig {
         Dictionary<string, string> dict = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (string raw in yaml.Split('\n')) {
-            string line = raw.Trim();
-            if (line.Length == 0 || line[0] == '#') continue;
+            string line = StripInlineComment(raw).Trim();
+            if (line.Length == 0) continue;
 
             int colon = line.IndexOf(':');
             if (colon <= 0) continue;
@@ -45,5 +45,41 @@ public class L10nConfig {
             OutputClass = string.IsNullOrWhiteSpace(outputClass) ? null : outputClass,
             OutputNamespace = string.IsNullOrWhiteSpace(outputNamespace) ? null : outputNamespace
         };
+    }
+
+    private static string StripInlineComment(string line) {
+        bool inSingleQuote = false;
+        bool inDoubleQuote = false;
+        bool isEscaped = false;
+
+        for (int i = 0; i < line.Length; i++) {
+            char current = line[i];
+
+            if (isEscaped) {
+                isEscaped = false;
+                continue;
+            }
+
+            if ((inSingleQuote || inDoubleQuote) && current == '\\') {
+                isEscaped = true;
+                continue;
+            }
+
+            if (current == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                continue;
+            }
+
+            if (current == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                continue;
+            }
+
+            if (current == '#' && !inSingleQuote && !inDoubleQuote) {
+                return line.Substring(0, i).TrimEnd();
+            }
+        }
+
+        return line;
     }
 }

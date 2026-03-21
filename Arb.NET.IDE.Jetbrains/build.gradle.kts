@@ -174,8 +174,6 @@ tasks.prepareSandbox {
 
     val outputFolder = "${rootDir}/IDE/bin/${DotnetPluginId}.IDE.Jetbrains.Rider/${BuildConfiguration}"
     val dllFiles = listOf(
-            "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Common.dll",
-            "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Common.pdb",
             "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Rider.dll",
             "$outputFolder/${DotnetPluginId}.IDE.Jetbrains.Rider.pdb",
             "$outputFolder/Arb.NET.IDE.Common.dll",
