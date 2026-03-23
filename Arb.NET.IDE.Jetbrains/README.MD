@@ -24,3 +24,9 @@ Rider plugin for [Arb.NET](https://github.com/Michal-MK/Arb.NET) — ARB (Applic
 ## License
 
 MIT - See the [LICENSE](../LICENSE) file in the repository root.
+
+If you are feeling generous:
+
+<a href="https://www.buymeacoffee.com/Michal.MK" target="_blank">
+<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
+</a>
