@@ -27,7 +27,7 @@ class ArbXamlActionCallPolicy : RiderActionSupportPolicy() {
                 backendActionId == FrontendCtrlClickHost.backendActionId
 
         val editor = FileEditorManager.getInstance(psiElement.project).selectedTextEditor
-        if (isGotoAction && editor != null && findArbContextInEditor(editor) != null) {
+        if (isGotoAction && editor != null && (findArbContextInEditor(editor) != null || findRelayCommandTargetInEditor(editor) != null)) {
             return RiderActionCallStrategy.FRONTEND_ONLY
         }
 

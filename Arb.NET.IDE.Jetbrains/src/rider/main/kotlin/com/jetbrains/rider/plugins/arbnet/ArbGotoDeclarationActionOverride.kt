@@ -22,13 +22,19 @@ class ArbGotoDeclarationActionOverride : AnAction() {
     override fun update(e: AnActionEvent) {
         delegate.update(e)
         val editor = e.project?.let { FileEditorManager.getInstance(it).selectedTextEditor }
-        if (editor != null && findArbContextInEditor(editor) != null) {
+        if (editor != null && (findArbContextInEditor(editor) != null || findRelayCommandTargetInEditor(editor) != null)) {
             e.presentation.isEnabledAndVisible = true
         }
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.project?.let { FileEditorManager.getInstance(it).selectedTextEditor }
+        val relayTarget = editor?.let { findRelayCommandTargetInEditor(it) }
+        if (relayTarget != null) {
+            openRelayCommandTarget(e.project ?: return, relayTarget)
+            return
+        }
+
         val context = editor?.let { findArbContextInEditor(it) }
         if (context != null) {
             val editorManager = FileEditorManager.getInstance(context.project)

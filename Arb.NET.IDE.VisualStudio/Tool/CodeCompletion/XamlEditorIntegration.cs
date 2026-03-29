@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.Common.Services;
+using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
@@ -68,7 +69,7 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
             (pguidCmdGroup == VSConstants.VSStd2K && nCmdID == (uint)VSConstants.VSStd2KCmdID.GOTOTYPEDEF);
 
         if (isGotoDefinitionCommand) {
-            if (TryNavigateToArbEditor()) {
+            if (TryNavigateToRelayCommandSource() || TryNavigateToArbEditor()) {
                 return VSConstants.S_OK;
             }
         }
@@ -87,6 +88,25 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
         return true;
     }
 
+    private bool TryNavigateToRelayCommandSource()
+    {
+        SnapshotPoint caretPoint = textView.Caret.Position.BufferPosition;
+        ITextBuffer documentBuffer = textView.TextDataModel.DocumentBuffer;
+        SnapshotPoint? documentPoint = textView.Caret.Position.Point.GetPoint(documentBuffer, textView.Caret.Position.Affinity);
+
+        if (!TryGetTextDocument(documentBuffer, out ITextDocument document)) return false;
+
+        int caretOffset = documentPoint?.Position ?? caretPoint.Position;
+        string xamlText = documentBuffer.CurrentSnapshot.GetText();
+
+        if (!RelayCommandNavigationService.TryResolveCommandNavigationTarget(document.FilePath, xamlText, caretOffset, out RelayCommandNavigationTarget? target) || target == null) {
+            return false;
+        }
+
+        RelayCommandNavigation.OpenSource(target);
+        return true;
+    }
+
     private bool TryNavigateToArbEditor()
     {
         SnapshotPoint caretPoint = textView.Caret.Position.BufferPosition;
@@ -96,8 +116,7 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
         if (!ArbXamlContext.TryGetArbKeyAtPosition(caretPoint, out string key) &&
             !(documentPoint.HasValue && ArbXamlContext.TryGetArbKeyAtPosition(documentPoint.Value, out key))) return false;
 
-        if (!textView.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument document) &&
-            !documentBuffer.Properties.TryGetProperty(typeof(ITextDocument), out document)) return false;
+        if (!TryGetTextDocument(documentBuffer, out ITextDocument document)) return false;
 
         string? projectDir = ArbKeyService.FindProjectDirFromFilePath(document.FilePath);
         if (string.IsNullOrWhiteSpace(projectDir)) return false;
@@ -112,6 +131,12 @@ internal sealed class ArbXamlCommandFilter(IWpfTextView textView, ICompletionBro
 
         ArbNavigation.OpenToolWindowAtKey(keyInfo.ArbFilePath, rawKey);
         return true;
+    }
+
+    private bool TryGetTextDocument(ITextBuffer documentBuffer, out ITextDocument document)
+    {
+        return textView.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out document) ||
+               documentBuffer.Properties.TryGetProperty(typeof(ITextDocument), out document);
     }
 }
 
@@ -172,6 +197,38 @@ internal static class ArbNavigation
 
             await arbWindow.SetupIfNeededAsync(package.ColumnSettingsService, package.ArbService, package.TranslationSettingsService);
             await arbWindow.NavigateToArbKeyAsync(arbFilePath, rawKey);
+        }
+        catch (OperationCanceledException) {
+            // VS is shutting down or the operation was cancelled.
+        }
+    }
+}
+
+internal static class RelayCommandNavigation
+{
+    public static void OpenSource(RelayCommandNavigationTarget target)
+    {
+        _ = OpenSourceAsync(target);
+    }
+
+    private static async Task OpenSourceAsync(RelayCommandNavigationTarget target)
+    {
+        try {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            ArbPackage? package = await ArbPackage.GetOrLoadAsync();
+            if (package == null) {
+                return;
+            }
+
+            if (await package.GetServiceAsync(typeof(DTE)) is not DTE dte) {
+                return;
+            }
+
+            Window? window = dte.ItemOperations.OpenFile(target.FilePath);
+            if (window?.Document?.Selection is TextSelection selection) {
+                selection.MoveToLineAndOffset(target.LineNumber + 1, target.Column + 1);
+            }
         }
         catch (OperationCanceledException) {
             // VS is shutting down or the operation was cancelled.

@@ -1,17 +1,25 @@
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/maui/global"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:ext="using:ExampleFive.Extensions"
              x:Class="ExampleFive.MainPage"
+             x:DataType="MainPageVm"
              BackgroundColor="Black">
+    <ContentPage.Resources>
+        <Color x:Key="MyColor">#44ff0000</Color>
+    </ContentPage.Resources>
     <VerticalStackLayout Padding="30,0"
                          Spacing="25"
                          VerticalOptions="Center"
                          HorizontalOptions="Center">
         <Label Text="Raw String" FontSize="32" TextColor="White" />
+        <Label Text="{Binding SomeObservableProperty}" FontSize="32" TextColor="White" />
         <Label Text="{ext:Arb AppTitle}" FontSize="32" TextColor="White" />
+        <Button Command="{Binding TestCommand}"></Button>
+        <Button Command="{Binding RawICommandCommand}"></Button>
+        <Button Text="{Binding SomeStringBinding}" />
         <HorizontalStackLayout Spacing="16" HorizontalOptions="Center">
             <Button Text="EN" Clicked="OnEnClicked" />
-            <Button Text="CS" Clicked="OnCsClicked" />
+            <Button Text="CS" Clicked="OnCsClicked" Background="{StaticResource MyColor}" />
         </HorizontalStackLayout>
     </VerticalStackLayout>
 </ContentPage>
