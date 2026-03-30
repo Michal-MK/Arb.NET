@@ -19,7 +19,7 @@ public static class AppLocale_en_CS {
             1 => "" + count.ToString() + " item",
             _ => "" + count.ToString() + " items"
         };
-        return $"" + @selectedContent_count + "";
+        return "" + @selectedContent_count + "";
     }
 
     /// <returns>Count (počet): {count, 0 - "No items", 1 - "{count} item", else "{count} items"} is available.</returns>
@@ -30,7 +30,7 @@ public static class AppLocale_en_CS {
             1 => "" + count.ToString() + " item",
             _ => "" + count.ToString() + " items"
         };
-        return $"Count (počet): " + @selectedContent_count + " is available.";
+        return "Count (počet): " + @selectedContent_count + " is available.";
     }
 
     /// <returns>Souhlasím s &lt;a href="https://finance.patria.cz/otevrit-ucet/patria-finance/podminky-pouzivani"&gt;podmínkami uživání stránek&lt;/a&gt; finance.patria.cz a potvrzuji, že jsem se seznámil s &lt;a href="https://www.csob.cz/cs/csob/ochrana-osobnich-udaju"&gt;informacemi o zpracování osobních údajů a účelem jejich zpracování&lt;/a&gt;. Potvrzuji, že jsem starší 16 let.</returns>
@@ -39,12 +39,12 @@ public static class AppLocale_en_CS {
 
     /// <returns>This (toto) is a simple parameter: {param}</returns>
     public static string SimpleParam(object param) {
-        return $"This (toto) is a simple parameter: " + param?.ToString() + "";
+        return "This (toto) is a simple parameter: " + param?.ToString() + "";
     }
 
     /// <summary>Welcome message with username placeholder</summary>
     /// <returns>Welcome, {username} - OMG!</returns>
     public static string WelcomeMessage(object username) {
-        return $"Welcome, " + username?.ToString() + " - OMG!";
+        return "Welcome, " + username?.ToString() + " - OMG!";
     }
 }

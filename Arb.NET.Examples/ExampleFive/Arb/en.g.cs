@@ -11,7 +11,7 @@ public static class AppLocale_en {
 
     /// <returns>Hello, {name}!</returns>
     public static string Greeting(object name) {
-        return $"Hello, " + name?.ToString() + "!";
+        return "Hello, " + name?.ToString() + "!";
     }
 
     /// <returns></returns>
@@ -25,6 +25,6 @@ public static class AppLocale_en {
 
     /// <returns>calue {value}</returns>
     public static string Temp(object value) {
-        return $"calue " + value?.ToString() + "";
+        return "calue " + value?.ToString() + "";
     }
 }

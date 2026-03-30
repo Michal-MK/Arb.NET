@@ -1,11 +1,17 @@
 using System.CommandLine;
 using Arb.NET;
+using Arb.NET.Models;
 using Arb.NET.Tool.Migration;
 
 RootCommand rootCommand = new("Arb.NET Tool — utilities for working with .arb localization files.");
 
-Argument<DirectoryInfo> pathArg = new("path") {
-    Description = "Path to the folder containing the solution (.sln) file.",
+Argument<DirectoryInfo> sourceArg = new("source") {
+    Description = "Path to the folder containing .resx files to migrate.",
+    Arity = ArgumentArity.ExactlyOne
+};
+
+Argument<DirectoryInfo> outputArg = new("output") {
+    Description = "Path to the output project folder (will contain l10n.yaml and arb directory).",
     Arity = ArgumentArity.ExactlyOne
 };
 
@@ -13,26 +19,63 @@ Option<bool> dryRunOption = new("--dry-run") {
     Description = "List the files that would be written without actually writing them."
 };
 
+Option<string> arbDirOption = new("--arb-dir") {
+    Description = $"Relative path for the arb directory inside the output folder (default: \"{L10nConfig.DEFAULT_ARB_DIR}\")."
+};
+
+Option<string> templateOption = new("--template-arb-file") {
+    Description = "Template .arb file name (default: \"en.arb\")."
+};
+
+Option<string?> outputClassOption = new("--output-class") {
+    Description = "Base name for generated locale classes and the dispatcher."
+};
+
+Option<string?> outputNamespaceOption = new("--output-namespace") {
+    Description = "Namespace for all generated code."
+};
+
+Option<bool> deduplicateOption = new("--deduplicate") {
+    Description = "Merge colliding keys that have identical values across all locales into a single key. " +
+                  "Keys with any differing value are still suffixed with their source file name."
+};
+
 Command migrateCommand = new("migrate", "Migrate .resx files in a solution to .arb format.") {
-    pathArg,
-    dryRunOption
+    sourceArg,
+    outputArg,
+    dryRunOption,
+    arbDirOption,
+    templateOption,
+    outputClassOption,
+    outputNamespaceOption,
+    deduplicateOption
 };
 
 migrateCommand.SetAction(parseResult => {
-    DirectoryInfo path = parseResult.GetValue(pathArg)!;
+    DirectoryInfo source = parseResult.GetValue(sourceArg)!;
+    DirectoryInfo output = parseResult.GetValue(outputArg)!;
     bool dryRun = parseResult.GetValue(dryRunOption);
 
-    if (!path.Exists) {
-        Console.Error.WriteLine($"Error: directory not found: {path.FullName}");
+    if (!source.Exists) {
+        Console.Error.WriteLine($"Error: source directory not found: {source.FullName}");
         return 1;
     }
 
-    Console.WriteLine($"Migrating .resx files in: {path.FullName}");
+    L10nConfig config = new() {
+        ArbDir = parseResult.GetValue(arbDirOption) ?? L10nConfig.DEFAULT_ARB_DIR,
+        TemplateArbFile = parseResult.GetValue(templateOption) ?? "en.arb",
+        OutputClass = parseResult.GetValue(outputClassOption),
+        OutputNamespace = parseResult.GetValue(outputNamespaceOption)
+    };
+
+    Console.WriteLine($"Migrating .resx files in: {source.FullName}");
+    Console.WriteLine($"Output folder: {output.FullName}");
     if (dryRun) {
         Console.WriteLine("(dry run — no files will be written)");
     }
 
-    MigrationResult result = ResxMigrator.Migrate(path.FullName, dryRun);
+    bool deduplicate = parseResult.GetValue(deduplicateOption);
+    MigrationResult result = ResxMigrator.Migrate(source.FullName, output.FullName, config, dryRun, deduplicate);
 
     if (dryRun) {
         if (result.PlannedWrites.Count == 0) {

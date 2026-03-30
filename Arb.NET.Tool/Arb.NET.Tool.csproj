@@ -13,6 +13,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Arb.NET.Test"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="..\README.MD" Pack="true" PackagePath="\" />
         <ProjectReference Include="..\Arb.NET\Arb.NET.csproj" />
     </ItemGroup>

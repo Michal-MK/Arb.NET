@@ -19,7 +19,7 @@ public static class AppLocale_en {
             1 => "" + count.ToString() + " item",
             _ => "" + count.ToString() + " items"
         };
-        return $"" + @selectedContent_count + "";
+        return "" + @selectedContent_count + "";
     }
 
     /// <returns>Count: {count, 0 - "No items", 1 - "{count} item", else "{count} items"} are available.</returns>
@@ -30,7 +30,7 @@ public static class AppLocale_en {
             1 => "" + count.ToString() + " item",
             _ => "" + count.ToString() + " items"
         };
-        return $"Count: " + @selectedContent_count + " are available.";
+        return "Count: " + @selectedContent_count + " are available.";
     }
 
     /// <returns>I agree with &lt;a href="https://finance.patria.cz/en/open-an-account/patria-finance/usage-conditions"&gt;terms of use of the site&lt;/a&gt; finance.patria.cz and confirm that I have become acquainted with &lt;a href="https://www.csob.cz/en/csob/protection-of-personal-data"&gt;information on the processing of personal data and the purpose of their processing&lt;/a&gt;. I confirm that I am over 16 years old.</returns>
@@ -39,12 +39,12 @@ public static class AppLocale_en {
 
     /// <returns>This is a simple parameter: {param}</returns>
     public static string SimpleParam(object param) {
-        return $"This is a simple parameter: " + param?.ToString() + "";
+        return "This is a simple parameter: " + param?.ToString() + "";
     }
 
     /// <summary>Welcome message with username placeholder</summary>
     /// <returns>Welcome, {username} - OMG!</returns>
     public static string WelcomeMessage(object username) {
-        return $"Welcome, " + username?.ToString() + " - OMG!";
+        return "Welcome, " + username?.ToString() + " - OMG!";
     }
 }

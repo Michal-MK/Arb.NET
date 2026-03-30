@@ -39,12 +39,21 @@ public static class ArbGeneration {
 
         // First pass: collect documents and class names
         List<(Input input, ArbDocument document, string className)> prepared = [];
-        foreach (Input input in inputs.OrderBy(i => i.FileNameWithoutExt, StringComparer.OrdinalIgnoreCase)) {
+        string defaultLocaleKey = StringHelper.NormalizeLocale(defaultLangCode);
+        foreach (Input input in inputs.OrderBy(i => {
+                     string locale = StringHelper.NormalizeLocale(
+                         StringHelper.FirstNonEmpty(i.Document.Locale,
+                             StringHelper.InferLangCodeFromFilename(i.FileNameWithoutExt)) ?? i.FileNameWithoutExt);
+                     // Default locale first (0_), then variants of it second (1_), then the rest (2_).
+                     if (locale == defaultLocaleKey) return "0_";
+                     if (!string.IsNullOrEmpty(defaultLocaleKey) && locale.EndsWith("_" + defaultLocaleKey)) return "1_" + locale;
+                     return "2_" + locale;
+                 }, StringComparer.OrdinalIgnoreCase)) {
             ArbDocument document = input.Document;
 
             string? langCode = StringHelper.FirstNonEmpty(
-                StringHelper.InferLangCodeFromFilename(input.FileNameWithoutExt),
                 document.Locale,
+                StringHelper.InferLangCodeFromFilename(input.FileNameWithoutExt),
                 defaultLangCode);
 
             if (!string.IsNullOrWhiteSpace(langCode)) {
@@ -95,6 +104,11 @@ public static class ArbGeneration {
         }
 
         if (baseClass != null && localeList.Count > 0) {
+            // Guard against duplicate locales (e.g. from duplicate AdditionalFiles entries)
+            localeList = localeList
+                .GroupBy(l => StringHelper.NormalizeLocale(l.Document.Locale), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
+                .ToList();
             ArbDocument? defaultDocument = null;
             if (!string.IsNullOrWhiteSpace(defaultLangCode)) {
                 string normalizedDefault = StringHelper.NormalizeLocale(defaultLangCode);

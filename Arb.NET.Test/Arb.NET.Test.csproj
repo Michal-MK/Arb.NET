@@ -21,6 +21,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Arb.NET\Arb.NET.csproj"/>
+        <ProjectReference Include="..\Arb.NET.Tool\Arb.NET.Tool.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

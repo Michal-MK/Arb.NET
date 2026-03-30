@@ -11,7 +11,7 @@ public static class AppLocale_cs {
 
     /// <returns>Ahoj, {name}!</returns>
     public static string Greeting(object name) {
-        return $"Ahoj, " + name?.ToString() + "!";
+        return "Ahoj, " + name?.ToString() + "!";
     }
 
     /// <returns>This translates to nothing.</returns>

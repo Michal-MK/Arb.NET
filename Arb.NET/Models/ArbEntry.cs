@@ -71,14 +71,18 @@ public record ArbEntry {
             if (latestOpenBraceIndex != -1) {
                 if (StringHelper.IsValidParameterChar(current)) {
                     isParameterNumeric ??= char.IsDigit(current);
-                    if (char.IsDigit(current) && !isParameterNumeric.Value) {
-                        // Mixed parameter name, not valid
-                        latestOpenBraceIndex = -1;
-                        isParameterNumeric = null;
+                    if (char.IsDigit(current) && isParameterNumeric.Value) {
+                        // All-digit parameter so far — still valid (e.g. {0}, {1})
                         index++;
+                        continue;
                     }
-                    else if (!StringHelper.IsValidParameterLetter(current) && isParameterNumeric.Value) {
-                        // Mixed parameter name, not valid
+                    if (char.IsDigit(current) && !isParameterNumeric.Value) {
+                        // Letter-started name followed by digit — valid identifier (e.g. {param0} from RESX migration)
+                        index++;
+                        continue;
+                    }
+                    if (!StringHelper.IsValidParameterLetter(current) && isParameterNumeric.Value) {
+                        // Digit-started name followed by letter — not a valid ARB parameter
                         latestOpenBraceIndex = -1;
                         isParameterNumeric = null;
                         index++;

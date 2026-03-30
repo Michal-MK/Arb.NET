@@ -20,7 +20,7 @@ ARB files:
 
 ## How to:
 
-1. Install the packge of your choice. (Arb.NET.Generator for automatic source generated approach or Arb.NET.Tool for manual generation)
+1. Install the package of your choice. (Any of the IDE extensions, Arb.NET.Generator for automatic source generated approach or Arb.NET.Tool for manual generation)
 
 2. Create a `l10n.yaml` file in the root of your project with the following content:
 ```yaml

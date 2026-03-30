@@ -104,7 +104,6 @@ public class ArbCodeGenerator {
         StringBuilder sb = new();
         int index = 0;
 
-        sb.Append('$');
         sb.Append('"');
 
         while (index < entry.Value.Length) {
@@ -145,7 +144,12 @@ public class ArbCodeGenerator {
                 }
             }
 
-            sb.Append(current);
+            if (current == '"') {
+                sb.Append("\\\"");
+            }
+            else {
+                sb.Append(current);
+            }
 
             index++;
         }
@@ -341,35 +345,59 @@ public class ArbCodeGenerator {
         sb.AppendLine($"    /// <list type=\"table\">");
         sb.AppendLine($"    /// <listheader><term>Locale</term><description>Value</description></listheader>");
 
+        List<(string Term, string Description)> rows = [];
+        List<string> pendingFallback = [];
+        string? pendingFallbackTarget = null;
+
         foreach ((ArbDocument doc, string _) in locales) {
             string normalizedKey = StringHelper.NormalizeLocale(doc.Locale);
             string localeLabel = doc.Locale ?? normalizedKey;
 
             if (localesWithEntry.Contains(normalizedKey)) {
-                // Locale has the entry directly
+                FlushPendingFallback();
                 ArbEntry localeEntry = doc.Entries[defaultEntry.Key];
                 string rendered = StringHelper.XmlEscape(RenderEntryValueForDoc(localeEntry));
-                sb.AppendLine($"    /// <item><term>{localeLabel}</term><description>{rendered}</description></item>");
+                rows.Add((localeLabel, rendered));
             }
             else {
-                // Resolve the fallback chain to describe what happens
                 string? fallback = ResolveFallbackLocale(normalizedKey, localesWithEntry);
-                if (fallback != null) {
-                    sb.AppendLine($"    /// <item><term>{localeLabel}</term><description>[fallback to {fallback}]</description></item>");
+
+                // Group with previous fallback row only if same target
+                if (fallback != null && fallback == pendingFallbackTarget) {
+                    pendingFallback.Add(localeLabel);
                 }
                 else {
-                    sb.AppendLine($"    /// <item><term>{localeLabel}</term><description>[MISSING]</description></item>");
+                    FlushPendingFallback();
+                    if (fallback != null) {
+                        pendingFallback.Add(localeLabel);
+                        pendingFallbackTarget = fallback;
+                    }
+                    else {
+                        rows.Add((localeLabel, "[MISSING]"));
+                    }
                 }
             }
+        }
+        FlushPendingFallback();
+
+        foreach ((string term, string desc) in rows) {
+            sb.AppendLine($"    /// <item><term>{term}</term><description>{desc}</description></item>");
         }
 
         sb.AppendLine($"    /// </list>");
         sb.AppendLine($"    /// </summary>");
 
-        // Issue 4: Emit concrete plural examples for the default entry
         string? examples = RenderPluralExamplesForDoc(defaultEntry);
         if (examples != null) {
             sb.AppendLine($"    /// <example>{StringHelper.XmlEscape(examples)}</example>");
+        }
+        return;
+
+        void FlushPendingFallback() {
+            if (pendingFallback.Count == 0) return;
+            rows.Add((string.Join(", ", pendingFallback), $"[fallback to {pendingFallbackTarget}]"));
+            pendingFallback.Clear();
+            pendingFallbackTarget = null;
         }
     }
 
@@ -426,10 +454,12 @@ public class ArbCodeGenerator {
         while (true) {
             int lastSep = current.LastIndexOf('_');
             if (lastSep < 0) return null;
-            current = current.Substring(0, lastSep);
-            if (localesWithEntry.Contains(current)) {
-                return current;
-            }
+            string suffix = current.Substring(lastSep + 1);
+            string prefix = current.Substring(0, lastSep);
+            // Try the suffix first (e.g. cs_en → en), then the prefix (e.g. en_US → en)
+            if (localesWithEntry.Contains(suffix)) return suffix;
+            if (localesWithEntry.Contains(prefix)) return prefix;
+            current = prefix;
         }
     }
 
@@ -554,13 +584,19 @@ public class ArbCodeGenerator {
                     : $"{cls}.{pascalKey}";
             }
 
-            // Strip the last '_'-separated segment to walk up to the parent culture.
+            // Walk up the parent chain: try the suffix first (e.g. cs_en → en),
+            // then the prefix (e.g. en_US → en).
             int lastSep = current.LastIndexOf('_');
             if (lastSep < 0) {
                 return "\"<MISSING>\"";
             }
 
-            current = current.Substring(0, lastSep);
+            string suffix = current.Substring(lastSep + 1);
+            string prefix = current.Substring(0, lastSep);
+            if (localesWithEntry.Contains(suffix) && localeToClass.TryGetValue(suffix, out string? suffixClass)) {
+                return isParametric ? $"{suffixClass}.{pascalKey}({argList})" : $"{suffixClass}.{pascalKey}";
+            }
+            current = prefix;
         }
     }
 }

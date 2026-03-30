@@ -40,7 +40,11 @@ public static class StringHelper {
     }
 
     public static string JsonString(string value) {
-        return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        return value.Replace("\\", "\\\\")
+                    .Replace("\"", "\\\"")
+                    .Replace("\n", "\\n")
+                    .Replace("\r", "\\r")
+                    .Replace("\t", "\\t");
     }
     
     public static string ArbKeyForEnumMember(string enumSimpleName, string memberName) {
@@ -48,6 +52,11 @@ public static class StringHelper {
     }
 
     public static string XmlEscape(string value) {
-        return value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+        return value.Replace("&", "&amp;")
+                    .Replace("<", "&lt;")
+                    .Replace(">", "&gt;")
+                    .Replace("\r\n", "&#10;")
+                    .Replace("\r", "&#10;")
+                    .Replace("\n", "&#10;");
     }
 }

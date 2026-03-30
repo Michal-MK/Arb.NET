@@ -22,7 +22,7 @@ public static class AppLocale_cs {
             4 => "Čtyři položky",
             _ => "" + count.ToString() + " položek"
         };
-        return $"" + @selectedContent_count + "";
+        return "" + @selectedContent_count + "";
     }
 
     /// <returns>Celkem: {count, 0 - "Žádné položky", 1 - "{count} položka", 2 - "Dvě položky", 3 - "Tři položky", 4 - "Čtyři položky", else "{count} položek"} k dispozici.</returns>
@@ -36,7 +36,7 @@ public static class AppLocale_cs {
             4 => "Čtyři položky",
             _ => "" + count.ToString() + " položek"
         };
-        return $"Celkem: " + @selectedContent_count + " k dispozici.";
+        return "Celkem: " + @selectedContent_count + " k dispozici.";
     }
 
     /// <returns>Souhlasím s &lt;a href="https://finance.patria.cz/otevrit-ucet/patria-finance/podminky-pouzivani"&gt;podmínkami uživání stránek&lt;/a&gt; finance.patria.cz a potvrzuji, že jsem se seznámil s &lt;a href="https://www.csob.cz/cs/csob/ochrana-osobnich-udaju"&gt;informacemi o zpracování osobních údajů a účelem jejich zpracování&lt;/a&gt;. Potvrzuji, že jsem starší 16 let.</returns>
@@ -45,12 +45,12 @@ public static class AppLocale_cs {
 
     /// <returns>Toto je jednoduchý parametr: {param}</returns>
     public static string SimpleParam(object param) {
-        return $"Toto je jednoduchý parametr: " + param?.ToString() + "";
+        return "Toto je jednoduchý parametr: " + param?.ToString() + "";
     }
 
     /// <summary>Uvítací zpráva s placeholderem pro uživatelské jméno</summary>
     /// <returns>Ahoj, {username} - OMG!</returns>
     public static string WelcomeMessage(object username) {
-        return $"Ahoj, " + username?.ToString() + " - OMG!";
+        return "Ahoj, " + username?.ToString() + " - OMG!";
     }
 }

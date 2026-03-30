@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Arb.NET.Models;
 
 namespace Arb.NET.Tool.Migration;
 
@@ -13,37 +14,117 @@ internal static class ResxMigrator
     private static readonly Regex FORMAT_ITEM_REGEX = new(@"\{(\d+)(?:,[^}]*)?(:[^}]*)?\}", RegexOptions.Compiled);
 
     /// <summary>
-    /// Discovers all .resx file groups under <paramref name="solutionFolder"/>, converts them to
-    /// <see cref="ArbDocument"/> instances, and writes .arb files next to the originals.
+    /// Discovers all .resx file groups under <paramref name="sourceFolder"/>, converts them to
+    /// <see cref="ArbDocument"/> instances, and writes .arb files into a single output directory
+    /// derived from <paramref name="outputFolder"/> and <paramref name="config"/>.
+    /// A l10n.yaml is written to <paramref name="outputFolder"/>.
     /// </summary>
-    public static MigrationResult Migrate(string solutionFolder, bool dryRun)
+    public static MigrationResult Migrate(string sourceFolder, string outputFolder, L10nConfig config, bool dryRun,
+                                          bool deduplicate = false)
     {
         MigrationResult result = new();
-        List<ResxGroup> groups = DiscoverResxGroups(solutionFolder);
+        List<ResxGroup> groups = DiscoverResxGroups(sourceFolder);
 
-        // Multiple .resx groups in the same directory share the same arbs/ output folder,
-        // so their entries must be merged into a single ArbDocument per locale before writing.
-        IEnumerable<IGrouping<string, ResxGroup>> byOutputDir = groups.GroupBy(g => Path.Combine(g.Directory, "arbs"),
-                                                                               StringComparer.OrdinalIgnoreCase);
+        string arbsDir = Path.Combine(outputFolder, config.ArbDir);
 
-        foreach (IGrouping<string, ResxGroup> dirGroup in byOutputDir)
+        // Derive the default locale from the template-arb-file config (e.g. "en.arb" → "en", "cs.arb" → "cs").
+        string defaultLocale = Path.GetFileNameWithoutExtension(config.TemplateArbFile);
+
+        // Phase 1: parse each group into per-locale entries, keyed by (baseStem, locale, arbKey).
+        // Structure: locale → arbKey → list of (baseStem, ArbEntry)
+        Dictionary<string, Dictionary<string, List<(string BaseStem, ArbEntry Entry)>>> byLocale =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (ResxGroup group in groups)
         {
             try
             {
-                MigrateOutputDir(dirGroup.Key, dirGroup, dryRun, result);
+                CollectGroup(group, byLocale, defaultLocale);
             }
             catch (Exception ex)
             {
-                result.Errors.Add($"Failed to migrate '{dirGroup.Key}': {ex.Message}");
+                result.Errors.Add($"Failed to parse group '{group.BaseName}': {ex.Message}");
             }
         }
+
+        // Phase 2: resolve collisions and build final ArbDocuments.
+        Dictionary<string, ArbDocument> docsByLocale = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach ((string locale, Dictionary<string, List<(string BaseStem, ArbEntry Entry)>> keyMap) in byLocale)
+        {
+            ArbDocument doc = new() { Locale = locale };
+            docsByLocale[locale] = doc;
+
+            foreach ((string arbKey, List<(string BaseStem, ArbEntry Entry)> candidates) in keyMap)
+            {
+                if (candidates.Count == 1)
+                {
+                    // No collision — use as-is.
+                    doc.Entries[arbKey] = candidates[0].Entry;
+                }
+                else if (deduplicate && AllIdenticalAcrossLocales(arbKey, byLocale))
+                {
+                    // All locales agree on the same value — keep one entry, no suffix.
+                    doc.Entries[arbKey] = candidates[0].Entry;
+                }
+                else
+                {
+                    // Collision: suffix each entry with its source base stem.
+                    foreach ((string baseStem, ArbEntry entry) in candidates)
+                    {
+                        string suffixedKey = arbKey + "_" + ToArbKey(baseStem);
+                        entry.Key = suffixedKey;
+                        doc.Entries[suffixedKey] = entry;
+                    }
+                }
+            }
+        }
+
+        // Write arb files
+        foreach ((string locale, ArbDocument doc) in docsByLocale)
+        {
+            string outPath = Path.Combine(arbsDir, $"{locale}.arb");
+            WriteArb(doc, outPath, dryRun, result);
+        }
+
+        // Write l10n.yaml
+        WriteL10nYaml(outputFolder, config, dryRun, result);
 
         return result;
     }
 
-    private static List<ResxGroup> DiscoverResxGroups(string solutionFolder)
+    /// <summary>
+    /// Returns true when, in every locale that contains <paramref name="arbKey"/>,
+    /// all candidates (from different source groups) agree on the same value.
+    /// Values may differ between locales — that is expected and correct.
+    /// </summary>
+    private static bool AllIdenticalAcrossLocales(
+        string arbKey,
+        Dictionary<string, Dictionary<string, List<(string BaseStem, ArbEntry Entry)>>> byLocale)
     {
-        List<string> allResx = Directory.EnumerateFiles(solutionFolder, "*.resx", SearchOption.AllDirectories)
+        foreach (Dictionary<string, List<(string BaseStem, ArbEntry Entry)>> keyMap in byLocale.Values)
+        {
+            if (!keyMap.TryGetValue(arbKey, out List<(string BaseStem, ArbEntry Entry)>? candidates)) continue;
+
+            // All candidates within this locale must have the same value.
+            string? localeValue = null;
+            foreach ((_, ArbEntry entry) in candidates)
+            {
+                if (localeValue == null) {
+                    localeValue = entry.Value;
+                }
+                else if (entry.Value != localeValue) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static List<ResxGroup> DiscoverResxGroups(string sourceFolder)
+    {
+        List<string> allResx = Directory.EnumerateFiles(sourceFolder, "*.resx", SearchOption.AllDirectories)
             .ToList();
 
         // Group files: canonical name is the file without the locale suffix.
@@ -79,6 +160,20 @@ internal static class ResxMigrator
                 baseStem = fileName;
             }
 
+            // Detect non-standard compound locale: BaseName_XX.yy.resx
+            // where _XX is an uppercase locale code embedded in the base stem.
+            // E.g. "Variant_CS.en.resx" → base = "Variant", locale = "cs_en"
+            int lastUnderscore = baseStem.LastIndexOf('_');
+            if (lastUnderscore >= 0 && locale != null)
+            {
+                string possibleEmbeddedLocale = baseStem[(lastUnderscore + 1)..];
+                if (IsLocaleCode(possibleEmbeddedLocale))
+                {
+                    locale = possibleEmbeddedLocale.ToLowerInvariant() + "_" + locale;
+                    baseStem = baseStem[..lastUnderscore];
+                }
+            }
+
             string baseKey = Path.Combine(dir, baseStem + ".resx");
 
             if (!map.TryGetValue(baseKey, out ResxGroup? group))
@@ -102,47 +197,39 @@ internal static class ResxMigrator
     private static bool IsLocaleCode(string s) =>
         Regex.IsMatch(s, @"^[a-zA-Z]{2,3}(-[a-zA-Z]{2,4})?$");
 
-    private static void MigrateOutputDir(string outputDir, IEnumerable<ResxGroup> groups, bool dryRun, MigrationResult result)
+    private static void CollectGroup(
+        ResxGroup group,
+        Dictionary<string, Dictionary<string, List<(string BaseStem, ArbEntry Entry)>>> byLocale,
+        string defaultLocale)
     {
-        // Accumulate entries per locale across all groups in this output directory.
-        Dictionary<string, ArbDocument> docsByLocale = new(StringComparer.OrdinalIgnoreCase);
-
-        foreach (ResxGroup group in groups)
-        {
-            // Collect the set of locales covered by explicit locale files in this group.
-            HashSet<string> explicitLocales = new(group.LocaleFiles.Keys, StringComparer.OrdinalIgnoreCase);
-
-            // The default (neutral) file maps to "en", but only when no explicit "en" file exists.
-            if (group.DefaultFile != null && !explicitLocales.Contains("en")) {
-                MergeResxInto(GetOrCreate("en"), group.DefaultFile);
-            }
-
-            foreach ((string locale, string file) in group.LocaleFiles) {
-                MergeResxInto(GetOrCreate(locale), file);
-            }
+        // The default (neutral) file maps to whatever the project's primary language is.
+        // Collect it first so that an explicit locale .resx can overwrite shared keys within the group.
+        if (group.DefaultFile != null) {
+            CollectResxInto(group.BaseStem, NormalizeLocale(defaultLocale), group.DefaultFile, byLocale);
         }
 
-        foreach ((string locale, ArbDocument doc) in docsByLocale)
-        {
-            string outPath = Path.Combine(outputDir, $"{locale}.arb");
-            WriteArb(doc, outPath, dryRun, result);
-        }
-        return;
-
-        ArbDocument GetOrCreate(string locale)
-        {
-            if (!docsByLocale.TryGetValue(locale, out var doc))
-            {
-                doc = new ArbDocument { Locale = locale };
-                docsByLocale[locale] = doc;
-            }
-            return doc;
+        foreach ((string locale, string file) in group.LocaleFiles) {
+            CollectResxInto(group.BaseStem, NormalizeLocale(locale), file, byLocale);
         }
     }
 
-    private static void MergeResxInto(ArbDocument doc, string filePath)
+    private static void CollectResxInto(
+        string baseStem,
+        string locale,
+        string filePath,
+        Dictionary<string, Dictionary<string, List<(string BaseStem, ArbEntry Entry)>>> byLocale)
     {
+        if (!byLocale.TryGetValue(locale, out Dictionary<string, List<(string, ArbEntry)>>? keyMap))
+        {
+            keyMap = new Dictionary<string, List<(string, ArbEntry)>>(StringComparer.Ordinal);
+            byLocale[locale] = keyMap;
+        }
+
         XDocument xdoc = XDocument.Load(filePath);
+
+        // Track keys already seen from this specific (baseStem, locale) pair so the base file
+        // can be overwritten by the explicit locale file within the same group.
+        HashSet<string> seenInThisFile = [];
 
         foreach (XElement data in xdoc.Root?.Elements("data") ?? [])
         {
@@ -167,15 +254,29 @@ internal static class ResxMigrator
                 {
                     metadata.Placeholders = [];
                     foreach (string ph in placeholderNames) {
-                        metadata.Placeholders[ph] = new ArbPlaceholder {
-                            Type = "String"
-                        };
+                        metadata.Placeholders[ph] = new ArbPlaceholder { Type = "String" };
                     }
                 }
                 entry.Metadata = metadata;
             }
 
-            doc.Entries[arbKey] = entry;
+            if (!keyMap.TryGetValue(arbKey, out List<(string BaseStem, ArbEntry Entry)>? candidates))
+            {
+                candidates = [];
+                keyMap[arbKey] = candidates;
+            }
+
+            // Within the same group, overwrite the entry from the same baseStem
+            // (e.g. base file followed by explicit locale file for the same group).
+            int existingIdx = candidates.FindIndex(c => c.BaseStem == baseStem);
+            if (existingIdx >= 0) {
+                candidates[existingIdx] = (baseStem, entry);
+            }
+            else {
+                candidates.Add((baseStem, entry));
+            }
+
+            seenInThisFile.Add(arbKey);
         }
     }
 
@@ -223,9 +324,6 @@ internal static class ResxMigrator
     /// </summary>
     private static string ToArbKey(string name)
     {
-        // Split on _, space, or PascalCase word boundaries, then rejoin as camelCase
-        // Strategy: just lowercase the first character of the whole string and replace _ with nothing smart
-        // Simple approach: treat underscores and dots as word separators
         string[] parts = name.Split(['_', '.'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0) return name;
 
@@ -244,6 +342,9 @@ internal static class ResxMigrator
         return sb.ToString();
     }
 
+    // ARB uses underscores (en_US) while .resx uses hyphens (en-US).
+    private static string NormalizeLocale(string locale) => locale.Replace('-', '_');
+
     // -------------------------------------------------------------------------
     // Output
     // -------------------------------------------------------------------------
@@ -261,6 +362,34 @@ internal static class ResxMigrator
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             File.WriteAllText(outputPath, content, Constants.UTF8_NO_BOM);
             result.WrittenFiles.Add(outputPath);
+        }
+    }
+
+    private static void WriteL10nYaml(string outputFolder, L10nConfig config, bool dryRun, MigrationResult result)
+    {
+        string yamlPath = Path.Combine(outputFolder, Constants.LOCALIZATION_FILE);
+
+        StringBuilder sb = new();
+        sb.AppendLine($"arb-dir: {config.ArbDir}");
+        sb.AppendLine($"template-arb-file: {config.TemplateArbFile}");
+        if (config.OutputClass != null) {
+            sb.AppendLine($"output-class: {config.OutputClass}");
+        }
+        if (config.OutputNamespace != null) {
+            sb.AppendLine($"output-namespace: {config.OutputNamespace}");
+        }
+
+        string content = sb.ToString();
+
+        if (dryRun)
+        {
+            result.PlannedWrites.Add(yamlPath);
+        }
+        else
+        {
+            Directory.CreateDirectory(outputFolder);
+            File.WriteAllText(yamlPath, content, Constants.UTF8_NO_BOM);
+            result.WrittenFiles.Add(yamlPath);
         }
     }
 }

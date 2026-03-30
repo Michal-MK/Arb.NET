@@ -18,7 +18,7 @@ public static class AppLocale_en_US {
             1 => "" + count.ToString() + " item",
             _ => "" + count.ToString() + " items"
         };
-        return $"" + @selectedContent_count + "";
+        return "" + @selectedContent_count + "";
     }
 
     /// <returns>Yo, count: {count, 0 - "No items", 1 - "{count} item", else "{count} items"} up for grabz bro!</returns>
@@ -29,7 +29,7 @@ public static class AppLocale_en_US {
             1 => "" + count.ToString() + " item",
             _ => "" + count.ToString() + " items"
         };
-        return $"Yo, count: " + @selectedContent_count + " up for grabz bro!";
+        return "Yo, count: " + @selectedContent_count + " up for grabz bro!";
     }
 
     /// <returns>Souhlasím s &lt;a href="https://finance.patria.cz/otevrit-ucet/patria-finance/podminky-pouzivani"&gt;podmínkami uživání stránek&lt;/a&gt; finance.patria.cz a potvrzuji, že jsem se seznámil s &lt;a href="https://www.csob.cz/cs/csob/ochrana-osobnich-udaju"&gt;informacemi o zpracování osobních údajů a účelem jejich zpracování&lt;/a&gt;. Potvrzuji, že jsem starší 16 let.</returns>
@@ -38,6 +38,6 @@ public static class AppLocale_en_US {
 
     /// <returns>Yo this is a simple parameter: {param}</returns>
     public static string SimpleParam(object param) {
-        return $"Yo this is a simple parameter: " + param?.ToString() + "";
+        return "Yo this is a simple parameter: " + param?.ToString() + "";
     }
 }

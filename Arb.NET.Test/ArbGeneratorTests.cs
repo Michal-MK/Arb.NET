@@ -247,4 +247,56 @@ public class ArbGeneratorTests {
         Assert.That(generatedCode, Does.Contain("1 - \"1 item\""));
         Assert.That(generatedCode, Does.Contain("n - \"n items\""));
     }
+
+    [Test]
+    public void GenerateClass_ParametricValue_WithQuotes_EscapedInOutput() {
+        // Value contains literal " characters (decoded from JSON \" in the .arb file).
+        // The generated C# string must escape them as \" so the code compiles.
+        ArbDocument document = new() {
+            Locale = "en",
+            Entries = new Dictionary<string, ArbEntry> {
+                {
+                    "msg", new ArbEntry {
+                        Key = "msg",
+                        Value = "Click <a href=\"https://example.com\">here</a> for {param0}.",
+                    }
+                }
+            }
+        };
+
+        string generatedCode = new ArbCodeGenerator().GenerateClass(document, "AppLocalizations", "MyApp.Localizations");
+
+        Console.WriteLine(generatedCode);
+
+        // The generated string must not contain a bare " inside the string literal —
+        // every quote that is part of the value must be escaped as \"
+        Assert.That(generatedCode, Does.Contain("\\\"https://example.com\\\""));
+        // The param splice must still be present
+        Assert.That(generatedCode, Does.Contain("param0?.ToString()"));
+    }
+
+    [Test]
+    public void GenerateClass_ValueWithNewline_XmlDocUsesNumericEntity() {
+        // Value contains a literal newline (decoded from \n in the .arb JSON).
+        // The <returns> doc tag must not contain a real newline — it should be &#10;
+        ArbDocument document = new() {
+            Locale = "en",
+            Entries = new Dictionary<string, ArbEntry> {
+                {
+                    "msg", new ArbEntry {
+                        Key = "msg",
+                        Value = "Line one.\nLine two.",
+                    }
+                }
+            }
+        };
+
+        string generatedCode = new ArbCodeGenerator().GenerateClass(document, "AppLocalizations", "MyApp.Localizations");
+
+        Console.WriteLine(generatedCode);
+
+        Assert.That(generatedCode, Does.Contain("&#10;"));
+        // No raw newline inside the <returns> tag
+        Assert.That(generatedCode, Does.Not.Contain("<returns>Line one.\nLine two."));
+    }
 }
