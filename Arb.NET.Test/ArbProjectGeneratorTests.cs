@@ -85,6 +85,63 @@ public class ArbProjectGeneratorTests {
     }
 
     [Test]
+    public void Generate_UsesBareTemplateLocaleValue_ForDefaultLocaleOrdering() {
+        string projectDir = CreateTempProject();
+
+        try {
+            WriteFile(Path.Combine(projectDir, "Sample.csproj"), """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+
+            WriteFile(Path.Combine(projectDir, "l10n.yaml"), """
+                arb-dir: arbs
+                template-arb-file: en
+                output-class: AppLocale
+                """);
+
+            WriteFile(Path.Combine(projectDir, "arbs", "en.arb"), """
+                {
+                  "@@locale": "en",
+                  "title": "English"
+                }
+                """);
+
+            WriteFile(Path.Combine(projectDir, "arbs", "bg.arb"), """
+                {
+                  "@@locale": "bg",
+                  "title": "Bulgarian"
+                }
+                """);
+
+            WriteFile(Path.Combine(projectDir, "arbs", "bg_en.arb"), """
+                {
+                  "@@locale": "bg_en"
+                }
+                """);
+
+            ArbProjectGenerator.Result result = ArbProjectGenerator.Generate(projectDir);
+
+            Assert.That(result.HasErrors, Is.False, string.Join(Environment.NewLine, result.Errors));
+
+            string dispatcher = File.ReadAllText(Path.Combine(projectDir, "arbs", "AppLocaleDispatcher.g.cs"));
+            int enIndex = dispatcher.IndexOf("<item><term>en</term><description>English</description></item>", StringComparison.Ordinal);
+            int bgIndex = dispatcher.IndexOf("<item><term>bg</term><description>Bulgarian</description></item>", StringComparison.Ordinal);
+            int fallbackIndex = dispatcher.IndexOf("<item><term>bg_en</term><description>[fallback to en]</description></item>", StringComparison.Ordinal);
+
+            Assert.That(enIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(bgIndex, Is.GreaterThan(enIndex));
+            Assert.That(fallbackIndex, Is.GreaterThan(bgIndex));
+        }
+        finally {
+            DeleteProjectDir(projectDir);
+        }
+    }
+
+    [Test]
     public void Generate_IncludesEnumDispatcherOverloads_WhenRequested() {
         string projectDir = CreateTempProject();
 

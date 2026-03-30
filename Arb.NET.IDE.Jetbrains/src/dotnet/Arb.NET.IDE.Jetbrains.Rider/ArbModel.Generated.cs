@@ -42,7 +42,7 @@ namespace JetBrains.Rider.Model
   {
     //fields
     //public fields
-    [NotNull] public IRdEndpoint<Unit, List<ArbLocaleData>> GetArbData => _GetArbData;
+    [NotNull] public IRdEndpoint<string, List<ArbLocaleData>> GetArbData => _GetArbData;
     [NotNull] public IRdEndpoint<ArbEntryUpdate, bool> SaveArbEntry => _SaveArbEntry;
     [NotNull] public IRdEndpoint<ArbKeyRename, bool> RenameArbKey => _RenameArbKey;
     [NotNull] public IRdEndpoint<ArbNewKey, bool> AddArbKey => _AddArbKey;
@@ -57,7 +57,7 @@ namespace JetBrains.Rider.Model
     [NotNull] public ISignal<string> ArbKeysChanged => _ArbKeysChanged;
     
     //private fields
-    [NotNull] private readonly RdCall<Unit, List<ArbLocaleData>> _GetArbData;
+    [NotNull] private readonly RdCall<string, List<ArbLocaleData>> _GetArbData;
     [NotNull] private readonly RdCall<ArbEntryUpdate, bool> _SaveArbEntry;
     [NotNull] private readonly RdCall<ArbKeyRename, bool> _RenameArbKey;
     [NotNull] private readonly RdCall<ArbNewKey, bool> _AddArbKey;
@@ -73,7 +73,7 @@ namespace JetBrains.Rider.Model
     
     //primary constructor
     private ArbModel(
-      [NotNull] RdCall<Unit, List<ArbLocaleData>> getArbData,
+      [NotNull] RdCall<string, List<ArbLocaleData>> getArbData,
       [NotNull] RdCall<ArbEntryUpdate, bool> saveArbEntry,
       [NotNull] RdCall<ArbKeyRename, bool> renameArbKey,
       [NotNull] RdCall<ArbNewKey, bool> addArbKey,
@@ -132,7 +132,7 @@ namespace JetBrains.Rider.Model
     //secondary constructor
     internal ArbModel (
     ) : this (
-      new RdCall<Unit, List<ArbLocaleData>>(JetBrains.Rd.Impl.Serializers.ReadVoid, JetBrains.Rd.Impl.Serializers.WriteVoid, ReadArbLocaleDataList, WriteArbLocaleDataList),
+      new RdCall<string, List<ArbLocaleData>>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString, ReadArbLocaleDataList, WriteArbLocaleDataList),
       new RdCall<ArbEntryUpdate, bool>(ArbEntryUpdate.Read, ArbEntryUpdate.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbKeyRename, bool>(ArbKeyRename.Read, ArbKeyRename.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbNewKey, bool>(ArbNewKey.Read, ArbNewKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
@@ -155,7 +155,7 @@ namespace JetBrains.Rider.Model
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     public static  CtxWriteDelegate<List<ArbKeyInfo>> WriteArbKeyInfoList = ArbKeyInfo.Write.List();
     
-    protected override long SerializationHash => -520730573180913457L;
+    protected override long SerializationHash => -8433798428104670542L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)

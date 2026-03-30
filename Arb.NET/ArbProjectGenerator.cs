@@ -145,9 +145,20 @@ public static class ArbProjectGenerator {
             return null;
         }
 
-        string templatePath = Path.Combine(arbDirAbsolute, config.TemplateArbFile);
+        string templateFile = config.TemplateArbFile;
+        string templatePath = Path.Combine(arbDirAbsolute, templateFile);
         if (!File.Exists(templatePath)) {
-            return null;
+            string normalizedTemplateFile = Path.HasExtension(templateFile)
+                ? templateFile
+                : templateFile + Constants.ARB_FILE_EXT;
+            string normalizedTemplatePath = Path.Combine(arbDirAbsolute, normalizedTemplateFile);
+            if (!File.Exists(normalizedTemplatePath)) {
+                return StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(normalizedTemplateFile))
+                       ?? StringHelper.NormalizeLocale(templateFile);
+            }
+
+            templateFile = normalizedTemplateFile;
+            templatePath = normalizedTemplatePath;
         }
 
         ArbParseResult templateParse = new ArbParser().ParseContent(File.ReadAllText(templatePath));
@@ -155,7 +166,8 @@ public static class ArbProjectGenerator {
             return templateParse.Document.Locale;
         }
 
-        return StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(templatePath));
+        return StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(templateFile))
+               ?? StringHelper.NormalizeLocale(Path.GetFileNameWithoutExtension(templateFile));
     }
 
     private static string? FindLocalizationYaml(string startDir) {

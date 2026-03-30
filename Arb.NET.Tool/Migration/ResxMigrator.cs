@@ -368,10 +368,11 @@ internal static class ResxMigrator
     private static void WriteL10nYaml(string outputFolder, L10nConfig config, bool dryRun, MigrationResult result)
     {
         string yamlPath = Path.Combine(outputFolder, Constants.LOCALIZATION_FILE);
+        string templateArbFile = NormalizeTemplateArbFile(config.TemplateArbFile);
 
         StringBuilder sb = new();
         sb.AppendLine($"arb-dir: {config.ArbDir}");
-        sb.AppendLine($"template-arb-file: {config.TemplateArbFile}");
+        sb.AppendLine($"template-arb-file: {templateArbFile}");
         if (config.OutputClass != null) {
             sb.AppendLine($"output-class: {config.OutputClass}");
         }
@@ -391,5 +392,16 @@ internal static class ResxMigrator
             File.WriteAllText(yamlPath, content, Constants.UTF8_NO_BOM);
             result.WrittenFiles.Add(yamlPath);
         }
+    }
+
+    private static string NormalizeTemplateArbFile(string templateArbFile)
+    {
+        if (string.IsNullOrWhiteSpace(templateArbFile)) {
+            return "en" + Constants.ARB_FILE_EXT;
+        }
+
+        return Path.HasExtension(templateArbFile)
+            ? templateArbFile
+            : templateArbFile + Constants.ARB_FILE_EXT;
     }
 }

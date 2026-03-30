@@ -304,7 +304,7 @@ public class ResxMigratorTests
 
         L10nConfig config = new() {
             ArbDir = L10nConfig.DEFAULT_ARB_DIR,
-            TemplateArbFile = "en.arb",
+            TemplateArbFile = "en",
             OutputClass = "AppLocale",
             OutputNamespace = "My.Namespace"
         };

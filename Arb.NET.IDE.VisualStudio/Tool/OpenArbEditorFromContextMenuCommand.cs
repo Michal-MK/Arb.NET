@@ -111,25 +111,21 @@ internal sealed class OpenArbEditorFromContextMenuCommand {
     }
 
     private static bool IsRelevantPath(string path) {
-        if (Directory.Exists(path)) {
-            // Show for folders that directly contain .arb files
-            return Directory.GetFiles(path, Constants.ANY_ARB, SearchOption.TopDirectoryOnly).Length > 0;
-        }
-
-        string fileName = Path.GetFileName(path);
-        if (string.Equals(fileName, Constants.LOCALIZATION_FILE, StringComparison.OrdinalIgnoreCase)) return true;
-        if (string.Equals(Path.GetExtension(path), Constants.ARB_FILE_EXT, StringComparison.OrdinalIgnoreCase)) return true;
-
-        return false;
+        return ResolveArbDirectory(path) != null;
     }
 
     /// <param name="path">ARB holding directory or individual ARB file or l10n.yaml file</param>
     private static string? ResolveArbDirectory(string path) {
         // if ARB directory
         if (Directory.Exists(path)) {
-            return Directory.GetFiles(path, Constants.ANY_ARB, SearchOption.TopDirectoryOnly).Length > 0
-                ? path
-                : null;
+            if (Directory.GetFiles(path, Constants.ANY_ARB, SearchOption.TopDirectoryOnly).Length > 0) {
+                return path;
+            }
+
+            string? projectDir = LocalizationYamlService.FindProjectDirectory(path);
+            return projectDir == null
+                ? null
+                : LocalizationYamlService.ResolveArbDirectory(projectDir);
         }
 
         string? dir = Path.GetDirectoryName(path);
@@ -144,6 +140,9 @@ internal sealed class OpenArbEditorFromContextMenuCommand {
             return dir;
         }
 
-        return null;
+        string? owningProjectDir = LocalizationYamlService.FindProjectDirectory(dir);
+        return owningProjectDir == null
+            ? null
+            : LocalizationYamlService.ResolveArbDirectory(owningProjectDir);
     }
 }

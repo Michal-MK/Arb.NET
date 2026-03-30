@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
+import java.io.File
 
 class OpenArbEditorFromFolderAction : AnAction("Open Arb.NET Editor") {
 
@@ -17,12 +18,7 @@ class OpenArbEditorFromFolderAction : AnAction("Open Arb.NET Editor") {
             ?: e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.firstOrNull()
             ?: return
 
-        val dirPath: String = if (vf.name == "l10n.yaml") {
-            val parentPath = vf.parent?.path ?: return
-            resolveArbDirectory(parentPath)
-        } else {
-            (if (vf.isDirectory) vf else vf.parent)?.path ?: return
-        }
+        val dirPath = resolveEditorDirectory(vf) ?: return
 
         val singletonFile = ArbEditor.getOrCreateFile(project)
         val editorManager = FileEditorManager.getInstance(project)
@@ -43,14 +39,39 @@ class OpenArbEditorFromFolderAction : AnAction("Open Arb.NET Editor") {
         val vf = e.getData(CommonDataKeys.VIRTUAL_FILE)
             ?: e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.firstOrNull()
             ?: return
-        val show = when {
-            vf.name == "l10n.yaml" -> true
-            vf.isDirectory -> try { vf.children.any { it.extension == "arb" } } catch (_: Exception) { false }
-            vf.extension == "arb" -> true
-            else -> try {
-                vf.parent?.children?.any { it.extension == "arb" } == true
-            } catch (_: Exception) { false }
+        e.presentation.isEnabledAndVisible = resolveEditorDirectory(vf) != null
+    }
+
+    private fun resolveEditorDirectory(vf: VirtualFile): String? {
+        if (vf.name == "l10n.yaml") {
+            val parentPath = vf.parent?.path ?: return null
+            return resolveArbDirectory(parentPath)
         }
-        e.presentation.isEnabledAndVisible = show
+
+        if (vf.extension == "arb") {
+            return vf.parent?.path
+        }
+
+        val startDir = (if (vf.isDirectory) vf else vf.parent)?.path ?: return null
+        if (vf.isDirectory) {
+            val hasDirectArbFiles = try {
+                vf.children.any { it.extension == "arb" }
+            } catch (_: Exception) {
+                false
+            }
+            if (hasDirectArbFiles) {
+                return startDir
+            }
+        }
+
+        var dir: File? = File(startDir)
+        while (dir != null) {
+            if (File(dir, "l10n.yaml").exists()) {
+                return resolveArbDirectory(dir.path)
+            }
+            dir = dir.parentFile
+        }
+
+        return null
     }
 }

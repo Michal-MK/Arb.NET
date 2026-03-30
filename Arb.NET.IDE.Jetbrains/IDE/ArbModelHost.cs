@@ -26,7 +26,7 @@ public class ArbModelHost {
     public ArbModelHost(ISolution solution, Lifetime _) {
         ArbModel model = solution.GetProtocolSolution().GetArbModel();
 
-        model.GetArbData.SetSync((_, _) => CollectArbData(solution));
+        model.GetArbData.SetSync((_, requestedRoot) => CollectArbData(solution, requestedRoot));
 
         model.SaveArbEntry.SetSync((_, update) => {
             string dictKey = update.Directory + "|" + update.Locale;
@@ -366,11 +366,32 @@ public class ArbModelHost {
         }
     }
 
-    private List<ArbLocaleData> CollectArbData(ISolution solution) {
+    private List<ArbLocaleData> CollectArbData(ISolution solution, string? requestedRoot) {
         localeToFilePath.Clear();
 
-        string solutionDir = solution.SolutionFilePath.Directory.FullPath;
-        IEnumerable<string> arbFiles = ArbKeyService.FindArbFiles(solutionDir);
+        HashSet<string> scanRoots = new(StringComparer.OrdinalIgnoreCase);
+
+        string? solutionDir = null;
+        try {
+            solutionDir = solution.SolutionFilePath?.Directory.FullPath;
+        }
+        catch {
+            // Rider project models opened from a .csproj do not have a solution file path.
+        }
+
+        if (!string.IsNullOrWhiteSpace(solutionDir)) {
+            scanRoots.Add(solutionDir!);
+        }
+        if (!string.IsNullOrWhiteSpace(requestedRoot)) {
+            scanRoots.Add(requestedRoot!);
+        }
+
+        if (scanRoots.Count == 0) {
+            return [];
+        }
+
+        string fallbackRoot = scanRoots.First();
+        IEnumerable<string> arbFiles = ArbKeyService.FindArbFiles(scanRoots);
 
         List<ArbLocaleData> result = [];
         ArbParser parser = new();
@@ -390,7 +411,7 @@ public class ArbModelHost {
                 ? Path.GetFileNameWithoutExtension(filePath)
                 : doc.Locale;
 
-            string directory = Path.GetDirectoryName(filePath) ?? solutionDir;
+            string directory = Path.GetDirectoryName(filePath) ?? fallbackRoot;
 
             // Key by directory+locale so the same locale in different folders is tracked separately.
             string dictKey = directory + "|" + locale;

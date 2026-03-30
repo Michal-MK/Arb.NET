@@ -272,47 +272,52 @@ public static class ArbKeyService {
     }
 
     /// <summary>
-    /// Enumerates all <c>.arb</c> files that are declared by a <c>l10n.yaml</c> file somewhere
-    /// under <paramref name="rootDir"/>. Only files that live inside the <c>arb-dir</c>
-    /// directory specified by their owning <c>l10n.yaml</c> are returned.
+    /// Enumerates all <c>.arb</c> files declared by a <c>l10n.yaml</c> somewhere under any of the
+    /// provided <paramref name="rootDirs"/>. Duplicate files are returned only once.
     /// </summary>
-    public static IEnumerable<string> FindArbFiles(string rootDir) {
-        IEnumerable<string> yamlFiles;
-        try {
-            // TODO(l10n) This is naive; the l10n.yaml may exist elsewhere (e.g. a directory with the arb files)
-            yamlFiles = Directory.EnumerateFiles(rootDir, Constants.LOCALIZATION_FILE, SearchOption.AllDirectories);
-        }
-        catch {
-            yield break;
-        }
+    public static IEnumerable<string> FindArbFiles(IEnumerable<string> rootDirs) {
+        HashSet<string> seenYamlFiles = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> seenArbFiles = new(StringComparer.OrdinalIgnoreCase);
 
-        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string yamlPath in yamlFiles) {
-            string projectDir = Path.GetDirectoryName(yamlPath)!;
-            string arbDir;
+        foreach (string rootDir in rootDirs.Where(dir => !string.IsNullOrWhiteSpace(dir))) {
+            IEnumerable<string> yamlFiles;
             try {
-                L10nConfig config = L10nConfig.Parse(File.ReadAllText(yamlPath));
-                arbDir = string.IsNullOrWhiteSpace(config.ArbDir)
-                    ? projectDir
-                    : Path.GetFullPath(Path.Combine(projectDir, config.ArbDir));
+                // TODO(l10n) This is naive; the l10n.yaml may exist elsewhere (e.g. a directory with the arb files)
+                yamlFiles = Directory.EnumerateFiles(rootDir, Constants.LOCALIZATION_FILE, SearchOption.AllDirectories);
             }
             catch {
                 continue;
             }
 
-            if (!Directory.Exists(arbDir)) continue;
+            foreach (string yamlPath in yamlFiles) {
+                if (!seenYamlFiles.Add(yamlPath)) continue;
 
-            IEnumerable<string> candidates;
-            try {
-                candidates = Directory.EnumerateFiles(arbDir, Constants.ANY_ARB);
-            }
-            catch {
-                continue;
-            }
+                string projectDir = Path.GetDirectoryName(yamlPath)!;
+                string arbDir;
+                try {
+                    L10nConfig config = L10nConfig.Parse(File.ReadAllText(yamlPath));
+                    arbDir = string.IsNullOrWhiteSpace(config.ArbDir)
+                        ? projectDir
+                        : Path.GetFullPath(Path.Combine(projectDir, config.ArbDir));
+                }
+                catch {
+                    continue;
+                }
 
-            foreach (string filePath in candidates) {
-                if (seen.Add(filePath)) {
-                    yield return filePath;
+                if (!Directory.Exists(arbDir)) continue;
+
+                IEnumerable<string> candidates;
+                try {
+                    candidates = Directory.EnumerateFiles(arbDir, Constants.ANY_ARB);
+                }
+                catch {
+                    continue;
+                }
+
+                foreach (string filePath in candidates) {
+                    if (seenArbFiles.Add(filePath)) {
+                        yield return filePath;
+                    }
                 }
             }
         }

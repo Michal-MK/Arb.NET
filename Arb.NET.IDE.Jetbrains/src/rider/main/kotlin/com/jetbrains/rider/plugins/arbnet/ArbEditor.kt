@@ -251,7 +251,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
     /** Fetch fresh ARB data from the backend and rebuild the whole UI. */
     fun refresh() {
-        project.solution.arbModel.getArbData.start(lifetime, Unit).result.advise(lifetime) { result ->
+        project.solution.arbModel.getArbData.start(lifetime, project.basePath ?: "").result.advise(lifetime) { result ->
             val allLocaleData = try {
                 result.unwrap()
             } catch (t: Throwable) {

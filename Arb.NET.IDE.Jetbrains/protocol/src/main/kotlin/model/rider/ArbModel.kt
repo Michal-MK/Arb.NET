@@ -150,9 +150,9 @@ object ArbModel : Ext(SolutionModel.Solution) {
     }
 
     init {
-        // Call: Kotlin asks C# to scan the solution and return all ARB data.
+        // Call: Kotlin asks C# to scan the current workspace roots and return all ARB data.
         // Returns one ArbLocaleData per .arb file found.
-        call("getArbData", void, immutableList(ArbLocaleData))
+        call("getArbData", string, immutableList(ArbLocaleData))
 
         // Call: Kotlin sends an updated entry value to C# to persist to disk.
         // Returns true if the entry was found and saved successfully.

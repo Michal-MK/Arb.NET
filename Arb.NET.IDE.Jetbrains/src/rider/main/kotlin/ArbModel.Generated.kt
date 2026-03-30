@@ -19,7 +19,7 @@ import kotlin.jvm.JvmStatic
  * #### Generated from [ArbModel.kt:9]
  */
 class ArbModel private constructor(
-    private val _getArbData: RdCall<Unit, List<ArbLocaleData>>,
+    private val _getArbData: RdCall<String, List<ArbLocaleData>>,
     private val _saveArbEntry: RdCall<ArbEntryUpdate, Boolean>,
     private val _renameArbKey: RdCall<ArbKeyRename, Boolean>,
     private val _addArbKey: RdCall<ArbNewKey, Boolean>,
@@ -67,14 +67,14 @@ class ArbModel private constructor(
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         private val __ArbKeyInfoListSerializer = ArbKeyInfo.list()
         
-        const val serializationHash = -520730573180913457L
+        const val serializationHash = -8433798428104670542L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
     override val serializationHash: Long get() = ArbModel.serializationHash
     
     //fields
-    val getArbData: IRdCall<Unit, List<ArbLocaleData>> get() = _getArbData
+    val getArbData: IRdCall<String, List<ArbLocaleData>> get() = _getArbData
     val saveArbEntry: IRdCall<ArbEntryUpdate, Boolean> get() = _saveArbEntry
     val renameArbKey: IRdCall<ArbKeyRename, Boolean> get() = _renameArbKey
     val addArbKey: IRdCall<ArbNewKey, Boolean> get() = _addArbKey
@@ -108,7 +108,7 @@ class ArbModel private constructor(
     //secondary constructor
     internal constructor(
     ) : this(
-        RdCall<Unit, List<ArbLocaleData>>(FrameworkMarshallers.Void, __ArbLocaleDataListSerializer),
+        RdCall<String, List<ArbLocaleData>>(FrameworkMarshallers.String, __ArbLocaleDataListSerializer),
         RdCall<ArbEntryUpdate, Boolean>(ArbEntryUpdate, FrameworkMarshallers.Bool),
         RdCall<ArbKeyRename, Boolean>(ArbKeyRename, FrameworkMarshallers.Bool),
         RdCall<ArbNewKey, Boolean>(ArbNewKey, FrameworkMarshallers.Bool),

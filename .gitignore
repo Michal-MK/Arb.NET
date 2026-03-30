@@ -38,8 +38,8 @@ publish-all.ps1
 publish-local.ps1
 publish-tool-local.ps1
 
-# External resources
-ExternalResources that do not belong to this repo
+# External resources that do not belong to this repo
+ExternalResources
 
 # Local output - testing playground not fit for an Examples project etc...
 local/
