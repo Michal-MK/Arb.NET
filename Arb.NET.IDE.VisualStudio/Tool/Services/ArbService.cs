@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Arb.NET.IDE.Common.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
