@@ -2,10 +2,10 @@
 
 All notable changes to the Arb.NET Rider plugin will be documented in this file.
 
-## 0.0.6
-- Fix ARB directory discovery when Rider is opened from a `.csproj` without a `.sln`
-- Improve source navigation support for generated localization members
-- Pick up generated XML documentation and locale-ordering fixes in Rider tooltips and editor views
+## 0.0.7
+- Add placeholder renaming in the ARB editor and persist those changes across locale files
+- Exclude subculture locales by default in AI translation, with an opt-in toggle to restore the previous behavior
+- Officially support Rider 2026.1 while remaining compatible with Rider 2025.3, and widen the editor filter field
 
 ## 0.0.5
 - Add `l10n.yaml` templates and related Rider-side documentation updates

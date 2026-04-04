@@ -22,6 +22,7 @@ class ArbModel private constructor(
     private val _getArbData: RdCall<String, List<ArbLocaleData>>,
     private val _saveArbEntry: RdCall<ArbEntryUpdate, Boolean>,
     private val _renameArbKey: RdCall<ArbKeyRename, Boolean>,
+    private val _renameArbPlaceholder: RdCall<ArbPlaceholderRename, Boolean>,
     private val _addArbKey: RdCall<ArbNewKey, Boolean>,
     private val _removeArbKey: RdCall<ArbRemoveKey, Boolean>,
     private val _addArbLocale: RdCall<ArbNewLocale, Boolean>,
@@ -43,6 +44,7 @@ class ArbModel private constructor(
             serializers.register(LazyCompanionMarshaller(RdId(1601623367371735298), classLoader, "com.jetbrains.rd.ide.model.ArbLocaleData"))
             serializers.register(LazyCompanionMarshaller(RdId(-5695656692253622339), classLoader, "com.jetbrains.rd.ide.model.ArbEntryUpdate"))
             serializers.register(LazyCompanionMarshaller(RdId(-1733504620339216673), classLoader, "com.jetbrains.rd.ide.model.ArbKeyRename"))
+            serializers.register(LazyCompanionMarshaller(RdId(8903959258467108083), classLoader, "com.jetbrains.rd.ide.model.ArbPlaceholderRename"))
             serializers.register(LazyCompanionMarshaller(RdId(561016481825661), classLoader, "com.jetbrains.rd.ide.model.ArbNewKey"))
             serializers.register(LazyCompanionMarshaller(RdId(-1733498659906343011), classLoader, "com.jetbrains.rd.ide.model.ArbRemoveKey"))
             serializers.register(LazyCompanionMarshaller(RdId(-1733502063603979140), classLoader, "com.jetbrains.rd.ide.model.ArbNewLocale"))
@@ -67,7 +69,7 @@ class ArbModel private constructor(
         private val __ArbLocaleDataListSerializer = ArbLocaleData.list()
         private val __ArbKeyInfoListSerializer = ArbKeyInfo.list()
         
-        const val serializationHash = -8433798428104670542L
+        const val serializationHash = -7749148818641045260L
         
     }
     override val serializersOwner: ISerializersOwner get() = ArbModel
@@ -77,6 +79,7 @@ class ArbModel private constructor(
     val getArbData: IRdCall<String, List<ArbLocaleData>> get() = _getArbData
     val saveArbEntry: IRdCall<ArbEntryUpdate, Boolean> get() = _saveArbEntry
     val renameArbKey: IRdCall<ArbKeyRename, Boolean> get() = _renameArbKey
+    val renameArbPlaceholder: IRdCall<ArbPlaceholderRename, Boolean> get() = _renameArbPlaceholder
     val addArbKey: IRdCall<ArbNewKey, Boolean> get() = _addArbKey
     val removeArbKey: IRdCall<ArbRemoveKey, Boolean> get() = _removeArbKey
     val addArbLocale: IRdCall<ArbNewLocale, Boolean> get() = _addArbLocale
@@ -93,6 +96,7 @@ class ArbModel private constructor(
         bindableChildren.add("getArbData" to _getArbData)
         bindableChildren.add("saveArbEntry" to _saveArbEntry)
         bindableChildren.add("renameArbKey" to _renameArbKey)
+        bindableChildren.add("renameArbPlaceholder" to _renameArbPlaceholder)
         bindableChildren.add("addArbKey" to _addArbKey)
         bindableChildren.add("removeArbKey" to _removeArbKey)
         bindableChildren.add("addArbLocale" to _addArbLocale)
@@ -111,6 +115,7 @@ class ArbModel private constructor(
         RdCall<String, List<ArbLocaleData>>(FrameworkMarshallers.String, __ArbLocaleDataListSerializer),
         RdCall<ArbEntryUpdate, Boolean>(ArbEntryUpdate, FrameworkMarshallers.Bool),
         RdCall<ArbKeyRename, Boolean>(ArbKeyRename, FrameworkMarshallers.Bool),
+        RdCall<ArbPlaceholderRename, Boolean>(ArbPlaceholderRename, FrameworkMarshallers.Bool),
         RdCall<ArbNewKey, Boolean>(ArbNewKey, FrameworkMarshallers.Bool),
         RdCall<ArbRemoveKey, Boolean>(ArbRemoveKey, FrameworkMarshallers.Bool),
         RdCall<ArbNewLocale, Boolean>(ArbNewLocale, FrameworkMarshallers.Bool),
@@ -132,6 +137,7 @@ class ArbModel private constructor(
             print("getArbData = "); _getArbData.print(printer); println()
             print("saveArbEntry = "); _saveArbEntry.print(printer); println()
             print("renameArbKey = "); _renameArbKey.print(printer); println()
+            print("renameArbPlaceholder = "); _renameArbPlaceholder.print(printer); println()
             print("addArbKey = "); _addArbKey.print(printer); println()
             print("removeArbKey = "); _removeArbKey.print(printer); println()
             print("addArbLocale = "); _addArbLocale.print(printer); println()
@@ -151,6 +157,7 @@ class ArbModel private constructor(
             _getArbData.deepClonePolymorphic(),
             _saveArbEntry.deepClonePolymorphic(),
             _renameArbKey.deepClonePolymorphic(),
+            _renameArbPlaceholder.deepClonePolymorphic(),
             _addArbKey.deepClonePolymorphic(),
             _removeArbKey.deepClonePolymorphic(),
             _addArbLocale.deepClonePolymorphic(),
@@ -172,7 +179,7 @@ val Solution.arbModel get() = getOrCreateExtension("arbModel", ::ArbModel)
 
 
 /**
- * #### Generated from [ArbModel.kt:128]
+ * #### Generated from [ArbModel.kt:136]
  */
 data class ArbCsvExportResponse (
     val success: Boolean,
@@ -243,7 +250,7 @@ data class ArbCsvExportResponse (
 
 
 /**
- * #### Generated from [ArbModel.kt:113]
+ * #### Generated from [ArbModel.kt:121]
  */
 data class ArbCsvImportRequest (
     val directory: String,
@@ -320,7 +327,7 @@ data class ArbCsvImportRequest (
 
 
 /**
- * #### Generated from [ArbModel.kt:120]
+ * #### Generated from [ArbModel.kt:128]
  */
 data class ArbCsvImportResponse (
     val success: Boolean,
@@ -403,7 +410,7 @@ data class ArbCsvImportResponse (
 
 
 /**
- * #### Generated from [ArbModel.kt:94]
+ * #### Generated from [ArbModel.kt:102]
  */
 data class ArbCsvPreviewRequest (
     val directory: String,
@@ -468,7 +475,7 @@ data class ArbCsvPreviewRequest (
 
 
 /**
- * #### Generated from [ArbModel.kt:103]
+ * #### Generated from [ArbModel.kt:111]
  */
 data class ArbCsvPreviewResponse (
     val success: Boolean,
@@ -563,7 +570,7 @@ data class ArbCsvPreviewResponse (
 
 
 /**
- * #### Generated from [ArbModel.kt:99]
+ * #### Generated from [ArbModel.kt:107]
  */
 data class ArbCsvRow (
     val cells: List<String>
@@ -764,7 +771,7 @@ data class ArbEntryUpdate (
 
 
 /**
- * #### Generated from [ArbModel.kt:137]
+ * #### Generated from [ArbModel.kt:145]
  */
 data class ArbKeyInfo (
     val key: String,
@@ -1001,7 +1008,7 @@ data class ArbLocaleData (
 
 
 /**
- * #### Generated from [ArbModel.kt:43]
+ * #### Generated from [ArbModel.kt:51]
  */
 data class ArbNewKey (
     val directory: String,
@@ -1066,7 +1073,7 @@ data class ArbNewKey (
 
 
 /**
- * #### Generated from [ArbModel.kt:55]
+ * #### Generated from [ArbModel.kt:63]
  */
 data class ArbNewLocale (
     val directory: String,
@@ -1131,7 +1138,7 @@ data class ArbNewLocale (
 
 
 /**
- * #### Generated from [ArbModel.kt:147]
+ * #### Generated from [ArbModel.kt:155]
  */
 data class ArbOpenEditor (
     val arbDir: String,
@@ -1196,7 +1203,84 @@ data class ArbOpenEditor (
 
 
 /**
- * #### Generated from [ArbModel.kt:49]
+ * #### Generated from [ArbModel.kt:43]
+ */
+data class ArbPlaceholderRename (
+    val directory: String,
+    val key: String,
+    val oldName: String,
+    val newName: String
+) : IPrintable {
+    //companion
+    
+    companion object : IMarshaller<ArbPlaceholderRename> {
+        override val _type: KClass<ArbPlaceholderRename> = ArbPlaceholderRename::class
+        override val id: RdId get() = RdId(8903959258467108083)
+        
+        @Suppress("UNCHECKED_CAST")
+        override fun read(ctx: SerializationCtx, buffer: AbstractBuffer): ArbPlaceholderRename  {
+            val directory = buffer.readString()
+            val key = buffer.readString()
+            val oldName = buffer.readString()
+            val newName = buffer.readString()
+            return ArbPlaceholderRename(directory, key, oldName, newName)
+        }
+        
+        override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbPlaceholderRename)  {
+            buffer.writeString(value.directory)
+            buffer.writeString(value.key)
+            buffer.writeString(value.oldName)
+            buffer.writeString(value.newName)
+        }
+        
+        
+    }
+    //fields
+    //methods
+    //initializer
+    //secondary constructor
+    //equals trait
+    override fun equals(other: Any?): Boolean  {
+        if (this === other) return true
+        if (other == null || other::class != this::class) return false
+        
+        other as ArbPlaceholderRename
+        
+        if (directory != other.directory) return false
+        if (key != other.key) return false
+        if (oldName != other.oldName) return false
+        if (newName != other.newName) return false
+        
+        return true
+    }
+    //hash code trait
+    override fun hashCode(): Int  {
+        var __r = 0
+        __r = __r*31 + directory.hashCode()
+        __r = __r*31 + key.hashCode()
+        __r = __r*31 + oldName.hashCode()
+        __r = __r*31 + newName.hashCode()
+        return __r
+    }
+    //pretty print
+    override fun print(printer: PrettyPrinter)  {
+        printer.println("ArbPlaceholderRename (")
+        printer.indent {
+            print("directory = "); directory.print(printer); println()
+            print("key = "); key.print(printer); println()
+            print("oldName = "); oldName.print(printer); println()
+            print("newName = "); newName.print(printer); println()
+        }
+        printer.print(")")
+    }
+    //deepClone
+    //contexts
+    //threading
+}
+
+
+/**
+ * #### Generated from [ArbModel.kt:57]
  */
 data class ArbRemoveKey (
     val directory: String,
@@ -1261,7 +1345,7 @@ data class ArbRemoveKey (
 
 
 /**
- * #### Generated from [ArbModel.kt:74]
+ * #### Generated from [ArbModel.kt:82]
  */
 data class ArbTranslateRequest (
     val directory: String,
@@ -1350,7 +1434,7 @@ data class ArbTranslateRequest (
 
 
 /**
- * #### Generated from [ArbModel.kt:88]
+ * #### Generated from [ArbModel.kt:96]
  */
 data class ArbTranslateResponse (
     val success: Boolean,
@@ -1421,7 +1505,7 @@ data class ArbTranslateResponse (
 
 
 /**
- * #### Generated from [ArbModel.kt:83]
+ * #### Generated from [ArbModel.kt:91]
  */
 data class ArbTranslatedItem (
     val key: String,
@@ -1486,7 +1570,7 @@ data class ArbTranslatedItem (
 
 
 /**
- * #### Generated from [ArbModel.kt:68]
+ * #### Generated from [ArbModel.kt:76]
  */
 data class ArbTranslationItem (
     val key: String,
@@ -1557,7 +1641,7 @@ data class ArbTranslationItem (
 
 
 /**
- * #### Generated from [ArbModel.kt:60]
+ * #### Generated from [ArbModel.kt:68]
  */
 data class AzureTranslationSettings (
     val endpoint: String,

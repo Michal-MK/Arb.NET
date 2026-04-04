@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Arb.NET;
@@ -13,6 +14,54 @@ public record ArbEntry {
     public ArbMetadata? Metadata { get; set; }
 
     public bool IsParametric(out List<ArbParameterDefinition> defs) => _IsParametricByValue(Value, out defs);
+
+    public IReadOnlyList<string> GetPlaceholderNames() {
+        List<string> names = [];
+        HashSet<string> seen = new(StringComparer.Ordinal);
+
+        if (IsParametric(out List<ArbParameterDefinition> defs)) {
+            foreach (ArbParameterDefinition def in defs) {
+                if (seen.Add(def.Name)) {
+                    names.Add(def.Name);
+                }
+            }
+        }
+
+        if (Metadata?.Placeholders != null) {
+            foreach (string name in Metadata.Placeholders.Keys) {
+                if (seen.Add(name)) {
+                    names.Add(name);
+                }
+            }
+        }
+
+        return names;
+    }
+
+    public bool RenamePlaceholder(string oldName, string newName) {
+        if (string.IsNullOrWhiteSpace(oldName) || string.IsNullOrWhiteSpace(newName)) return false;
+
+        oldName = oldName.Trim();
+        newName = newName.Trim();
+
+        if (string.Equals(oldName, newName, StringComparison.Ordinal)) return false;
+        if (!StringHelper.IsValidPlaceholderName(newName)) return false;
+
+        bool changed = false;
+
+        string renamedValue = RenamePlaceholderReferences(Value, oldName, newName);
+        if (!string.Equals(renamedValue, Value, StringComparison.Ordinal)) {
+            Value = renamedValue;
+            changed = true;
+        }
+
+        if (Metadata?.Placeholders != null && Metadata.Placeholders.ContainsKey(oldName)) {
+            Metadata.Placeholders = RenamePlaceholderMetadata(Metadata.Placeholders, oldName, newName);
+            changed = true;
+        }
+
+        return changed;
+    }
 
     /// <summary>
     /// Detects values that look like plurals but failed strict parsing.
@@ -250,5 +299,73 @@ public record ArbEntry {
             index++;
         }
         return false; // No matching closing brace found
+    }
+
+    private static string RenamePlaceholderReferences(string value, string oldName, string newName) {
+        if (string.IsNullOrEmpty(value)) return value;
+
+        StringBuilder builder = new(value.Length + Math.Max(0, newName.Length - oldName.Length));
+        int copyStart = 0;
+
+        for (int index = 0; index < value.Length; index++) {
+            char current = value[index];
+            if (current == '\\') {
+                index++;
+                continue;
+            }
+
+            if (current != '{') {
+                continue;
+            }
+
+            int nameStart = index + 1;
+            if (nameStart >= value.Length || !StringHelper.IsValidParameterChar(value[nameStart])) {
+                continue;
+            }
+
+            int cursor = nameStart + 1;
+            while (cursor < value.Length && StringHelper.IsValidParameterChar(value[cursor])) {
+                cursor++;
+            }
+
+            int nameLength = cursor - nameStart;
+            if (nameLength != oldName.Length) {
+                continue;
+            }
+
+            if (!value.AsSpan(nameStart, nameLength).SequenceEqual(oldName.AsSpan())) {
+                continue;
+            }
+
+            if (cursor >= value.Length || value[cursor] is not ('}' or ',')) {
+                continue;
+            }
+
+            builder.Append(value, copyStart, nameStart - copyStart);
+            builder.Append(newName);
+            copyStart = cursor;
+        }
+
+        if (copyStart == 0) {
+            return value;
+        }
+
+        builder.Append(value, copyStart, value.Length - copyStart);
+        return builder.ToString();
+    }
+
+    private static Dictionary<string, ArbPlaceholder> RenamePlaceholderMetadata(
+        Dictionary<string, ArbPlaceholder> placeholders,
+        string oldName,
+        string newName) {
+        Dictionary<string, ArbPlaceholder> renamed = new(placeholders.Count, StringComparer.Ordinal);
+        foreach (KeyValuePair<string, ArbPlaceholder> placeholder in placeholders) {
+            string key = string.Equals(placeholder.Key, oldName, StringComparison.Ordinal)
+                ? newName
+                : placeholder.Key;
+            renamed[key] = placeholder.Value;
+        }
+
+        return renamed;
     }
 }

@@ -85,6 +85,7 @@ class ArbTranslateDialog(
     private val sourceCombo = JComboBox(locales.toTypedArray())
     private val targetCheckboxes = mutableListOf<JCheckBox>()
     private val targetPanel = JPanel(FlowLayout(FlowLayout.LEFT, 8, 2))
+    private val includeSubculturesCheckBox = JCheckBox("Include subculture locales (restore old behavior)")
     private val emptyOnlyRadio = JRadioButton("Empty cells only", true)
     private val allCellsRadio = JRadioButton("All cells")
     private val azureProviderRadio = JRadioButton("Azure OpenAI", true)
@@ -192,6 +193,10 @@ class ArbTranslateDialog(
             rebuildTargetCheckboxes()
             rebuildPreview()
         }
+        includeSubculturesCheckBox.addActionListener {
+            rebuildTargetCheckboxes()
+            rebuildPreview()
+        }
         emptyOnlyRadio.addActionListener { rebuildPreview() }
         allCellsRadio.addActionListener { rebuildPreview() }
 
@@ -233,6 +238,11 @@ class ArbTranslateDialog(
         topSection.add(targetPanel, gbc)
 
         gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.0
+        topSection.add(JBLabel(""), gbc)
+        gbc.gridx = 1; gbc.weightx = 1.0
+        topSection.add(includeSubculturesCheckBox, gbc)
+
+        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.0
         topSection.add(JBLabel("Mode:"), gbc)
         gbc.gridx = 1; gbc.weightx = 1.0
         val modePanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
@@ -241,12 +251,12 @@ class ArbTranslateDialog(
         modePanel.add(allCellsRadio)
         topSection.add(modePanel, gbc)
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.0
+        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0
         topSection.add(JBLabel("Custom prompt:"), gbc)
         gbc.gridx = 1; gbc.weightx = 1.0
         topSection.add(customPromptField, gbc)
 
-        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0
+        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.0
         topSection.add(JBLabel("Provider:"), gbc)
         gbc.gridx = 1; gbc.weightx = 1.0
         val providerPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
@@ -255,7 +265,7 @@ class ArbTranslateDialog(
         providerPanel.add(googleProviderRadio)
         topSection.add(providerPanel, gbc)
 
-        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.0; gbc.gridwidth = 2
+        gbc.gridx = 0; gbc.gridy = 6; gbc.weightx = 0.0; gbc.gridwidth = 2
         val translateRow = JPanel(FlowLayout(FlowLayout.LEFT, 4, 0))
         translateRow.add(translateButton)
         translateRow.add(stopButton)
@@ -288,12 +298,19 @@ class ArbTranslateDialog(
 
     // ── Rebuild target checkboxes ──────────────────────────────────────────────
 
+    private fun isSubcultureLocale(locale: String): Boolean = locale.replace('-', '_').contains('_')
+
+    private fun visibleTargetLocales(source: String): List<String> = locales.filter { locale ->
+        locale != source && (includeSubculturesCheckBox.isSelected || !isSubcultureLocale(locale))
+    }
+
     private fun rebuildTargetCheckboxes() {
         val source = sourceCombo.selectedItem as? String ?: return
+        val previousSelections = targetCheckboxes.associate { it.text to it.isSelected }
         targetPanel.removeAll()
         targetCheckboxes.clear()
-        for (locale in locales) {
-            val cb = JCheckBox(locale, locale != source)
+        for (locale in visibleTargetLocales(source)) {
+            val cb = JCheckBox(locale, previousSelections[locale] ?: true)
             cb.addActionListener { rebuildPreview() }
             targetCheckboxes.add(cb)
             targetPanel.add(cb)

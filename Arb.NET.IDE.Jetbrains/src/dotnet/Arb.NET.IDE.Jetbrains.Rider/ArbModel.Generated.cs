@@ -45,6 +45,7 @@ namespace JetBrains.Rider.Model
     [NotNull] public IRdEndpoint<string, List<ArbLocaleData>> GetArbData => _GetArbData;
     [NotNull] public IRdEndpoint<ArbEntryUpdate, bool> SaveArbEntry => _SaveArbEntry;
     [NotNull] public IRdEndpoint<ArbKeyRename, bool> RenameArbKey => _RenameArbKey;
+    [NotNull] public IRdEndpoint<ArbPlaceholderRename, bool> RenameArbPlaceholder => _RenameArbPlaceholder;
     [NotNull] public IRdEndpoint<ArbNewKey, bool> AddArbKey => _AddArbKey;
     [NotNull] public IRdEndpoint<ArbRemoveKey, bool> RemoveArbKey => _RemoveArbKey;
     [NotNull] public IRdEndpoint<ArbNewLocale, bool> AddArbLocale => _AddArbLocale;
@@ -60,6 +61,7 @@ namespace JetBrains.Rider.Model
     [NotNull] private readonly RdCall<string, List<ArbLocaleData>> _GetArbData;
     [NotNull] private readonly RdCall<ArbEntryUpdate, bool> _SaveArbEntry;
     [NotNull] private readonly RdCall<ArbKeyRename, bool> _RenameArbKey;
+    [NotNull] private readonly RdCall<ArbPlaceholderRename, bool> _RenameArbPlaceholder;
     [NotNull] private readonly RdCall<ArbNewKey, bool> _AddArbKey;
     [NotNull] private readonly RdCall<ArbRemoveKey, bool> _RemoveArbKey;
     [NotNull] private readonly RdCall<ArbNewLocale, bool> _AddArbLocale;
@@ -76,6 +78,7 @@ namespace JetBrains.Rider.Model
       [NotNull] RdCall<string, List<ArbLocaleData>> getArbData,
       [NotNull] RdCall<ArbEntryUpdate, bool> saveArbEntry,
       [NotNull] RdCall<ArbKeyRename, bool> renameArbKey,
+      [NotNull] RdCall<ArbPlaceholderRename, bool> renameArbPlaceholder,
       [NotNull] RdCall<ArbNewKey, bool> addArbKey,
       [NotNull] RdCall<ArbRemoveKey, bool> removeArbKey,
       [NotNull] RdCall<ArbNewLocale, bool> addArbLocale,
@@ -91,6 +94,7 @@ namespace JetBrains.Rider.Model
       if (getArbData == null) throw new ArgumentNullException("getArbData");
       if (saveArbEntry == null) throw new ArgumentNullException("saveArbEntry");
       if (renameArbKey == null) throw new ArgumentNullException("renameArbKey");
+      if (renameArbPlaceholder == null) throw new ArgumentNullException("renameArbPlaceholder");
       if (addArbKey == null) throw new ArgumentNullException("addArbKey");
       if (removeArbKey == null) throw new ArgumentNullException("removeArbKey");
       if (addArbLocale == null) throw new ArgumentNullException("addArbLocale");
@@ -105,6 +109,7 @@ namespace JetBrains.Rider.Model
       _GetArbData = getArbData;
       _SaveArbEntry = saveArbEntry;
       _RenameArbKey = renameArbKey;
+      _RenameArbPlaceholder = renameArbPlaceholder;
       _AddArbKey = addArbKey;
       _RemoveArbKey = removeArbKey;
       _AddArbLocale = addArbLocale;
@@ -118,6 +123,7 @@ namespace JetBrains.Rider.Model
       BindableChildren.Add(new KeyValuePair<string, object>("getArbData", _GetArbData));
       BindableChildren.Add(new KeyValuePair<string, object>("saveArbEntry", _SaveArbEntry));
       BindableChildren.Add(new KeyValuePair<string, object>("renameArbKey", _RenameArbKey));
+      BindableChildren.Add(new KeyValuePair<string, object>("renameArbPlaceholder", _RenameArbPlaceholder));
       BindableChildren.Add(new KeyValuePair<string, object>("addArbKey", _AddArbKey));
       BindableChildren.Add(new KeyValuePair<string, object>("removeArbKey", _RemoveArbKey));
       BindableChildren.Add(new KeyValuePair<string, object>("addArbLocale", _AddArbLocale));
@@ -135,6 +141,7 @@ namespace JetBrains.Rider.Model
       new RdCall<string, List<ArbLocaleData>>(JetBrains.Rd.Impl.Serializers.ReadString, JetBrains.Rd.Impl.Serializers.WriteString, ReadArbLocaleDataList, WriteArbLocaleDataList),
       new RdCall<ArbEntryUpdate, bool>(ArbEntryUpdate.Read, ArbEntryUpdate.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbKeyRename, bool>(ArbKeyRename.Read, ArbKeyRename.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
+      new RdCall<ArbPlaceholderRename, bool>(ArbPlaceholderRename.Read, ArbPlaceholderRename.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbNewKey, bool>(ArbNewKey.Read, ArbNewKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbRemoveKey, bool>(ArbRemoveKey.Read, ArbRemoveKey.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
       new RdCall<ArbNewLocale, bool>(ArbNewLocale.Read, ArbNewLocale.Write, JetBrains.Rd.Impl.Serializers.ReadBool, JetBrains.Rd.Impl.Serializers.WriteBool),
@@ -155,7 +162,7 @@ namespace JetBrains.Rider.Model
     public static  CtxWriteDelegate<List<ArbLocaleData>> WriteArbLocaleDataList = ArbLocaleData.Write.List();
     public static  CtxWriteDelegate<List<ArbKeyInfo>> WriteArbKeyInfoList = ArbKeyInfo.Write.List();
     
-    protected override long SerializationHash => -8433798428104670542L;
+    protected override long SerializationHash => -7749148818641045260L;
     
     protected override Action<ISerializers> Register => RegisterDeclaredTypesSerializers;
     public static void RegisterDeclaredTypesSerializers(ISerializers serializers)
@@ -179,6 +186,7 @@ namespace JetBrains.Rider.Model
         printer.Print("getArbData = "); _GetArbData.PrintEx(printer); printer.Println();
         printer.Print("saveArbEntry = "); _SaveArbEntry.PrintEx(printer); printer.Println();
         printer.Print("renameArbKey = "); _RenameArbKey.PrintEx(printer); printer.Println();
+        printer.Print("renameArbPlaceholder = "); _RenameArbPlaceholder.PrintEx(printer); printer.Println();
         printer.Print("addArbKey = "); _AddArbKey.PrintEx(printer); printer.Println();
         printer.Print("removeArbKey = "); _RemoveArbKey.PrintEx(printer); printer.Println();
         printer.Print("addArbLocale = "); _AddArbLocale.PrintEx(printer); printer.Println();
@@ -210,7 +218,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:128</p>
+  /// <p>Generated from: ArbModel.kt:136</p>
   /// </summary>
   public sealed class ArbCsvExportResponse : IPrintable, IEquatable<ArbCsvExportResponse>
   {
@@ -313,7 +321,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:113</p>
+  /// <p>Generated from: ArbModel.kt:121</p>
   /// </summary>
   public sealed class ArbCsvImportRequest : IPrintable, IEquatable<ArbCsvImportRequest>
   {
@@ -427,7 +435,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:120</p>
+  /// <p>Generated from: ArbModel.kt:128</p>
   /// </summary>
   public sealed class ArbCsvImportResponse : IPrintable, IEquatable<ArbCsvImportResponse>
   {
@@ -544,7 +552,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:94</p>
+  /// <p>Generated from: ArbModel.kt:102</p>
   /// </summary>
   public sealed class ArbCsvPreviewRequest : IPrintable, IEquatable<ArbCsvPreviewRequest>
   {
@@ -638,7 +646,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:103</p>
+  /// <p>Generated from: ArbModel.kt:111</p>
   /// </summary>
   public sealed class ArbCsvPreviewResponse : IPrintable, IEquatable<ArbCsvPreviewResponse>
   {
@@ -780,7 +788,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:99</p>
+  /// <p>Generated from: ArbModel.kt:107</p>
   /// </summary>
   public sealed class ArbCsvRow : IPrintable, IEquatable<ArbCsvRow>
   {
@@ -1073,7 +1081,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:137</p>
+  /// <p>Generated from: ArbModel.kt:145</p>
   /// </summary>
   public sealed class ArbKeyInfo : IPrintable, IEquatable<ArbKeyInfo>
   {
@@ -1417,7 +1425,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:43</p>
+  /// <p>Generated from: ArbModel.kt:51</p>
   /// </summary>
   public sealed class ArbNewKey : IPrintable, IEquatable<ArbNewKey>
   {
@@ -1511,7 +1519,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:55</p>
+  /// <p>Generated from: ArbModel.kt:63</p>
   /// </summary>
   public sealed class ArbNewLocale : IPrintable, IEquatable<ArbNewLocale>
   {
@@ -1605,7 +1613,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:147</p>
+  /// <p>Generated from: ArbModel.kt:155</p>
   /// </summary>
   public sealed class ArbOpenEditor : IPrintable, IEquatable<ArbOpenEditor>
   {
@@ -1699,7 +1707,119 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:49</p>
+  /// <p>Generated from: ArbModel.kt:43</p>
+  /// </summary>
+  public sealed class ArbPlaceholderRename : IPrintable, IEquatable<ArbPlaceholderRename>
+  {
+    //fields
+    //public fields
+    [NotNull] public string Directory {get; private set;}
+    [NotNull] public string Key {get; private set;}
+    [NotNull] public string OldName {get; private set;}
+    [NotNull] public string NewName {get; private set;}
+    
+    //private fields
+    //primary constructor
+    public ArbPlaceholderRename(
+      [NotNull] string directory,
+      [NotNull] string key,
+      [NotNull] string oldName,
+      [NotNull] string newName
+    )
+    {
+      if (directory == null) throw new ArgumentNullException("directory");
+      if (key == null) throw new ArgumentNullException("key");
+      if (oldName == null) throw new ArgumentNullException("oldName");
+      if (newName == null) throw new ArgumentNullException("newName");
+      
+      Directory = directory;
+      Key = key;
+      OldName = oldName;
+      NewName = newName;
+    }
+    //secondary constructor
+    //deconstruct trait
+    public void Deconstruct([NotNull] out string directory, [NotNull] out string key, [NotNull] out string oldName, [NotNull] out string newName)
+    {
+      directory = Directory;
+      key = Key;
+      oldName = OldName;
+      newName = NewName;
+    }
+    //statics
+    
+    public static CtxReadDelegate<ArbPlaceholderRename> Read = (ctx, reader) => 
+    {
+      var directory = reader.ReadString();
+      var key = reader.ReadString();
+      var oldName = reader.ReadString();
+      var newName = reader.ReadString();
+      var _result = new ArbPlaceholderRename(directory, key, oldName, newName);
+      return _result;
+    };
+    
+    public static CtxWriteDelegate<ArbPlaceholderRename> Write = (ctx, writer, value) => 
+    {
+      writer.Write(value.Directory);
+      writer.Write(value.Key);
+      writer.Write(value.OldName);
+      writer.Write(value.NewName);
+    };
+    
+    //constants
+    
+    //custom body
+    //methods
+    //equals trait
+    public override bool Equals(object obj)
+    {
+      if (ReferenceEquals(null, obj)) return false;
+      if (ReferenceEquals(this, obj)) return true;
+      if (obj.GetType() != GetType()) return false;
+      return Equals((ArbPlaceholderRename) obj);
+    }
+    public bool Equals(ArbPlaceholderRename other)
+    {
+      if (ReferenceEquals(null, other)) return false;
+      if (ReferenceEquals(this, other)) return true;
+      return Directory == other.Directory && Key == other.Key && OldName == other.OldName && NewName == other.NewName;
+    }
+    //hash code trait
+    public override int GetHashCode()
+    {
+      unchecked {
+        var hash = 0;
+        hash = hash * 31 + Directory.GetHashCode();
+        hash = hash * 31 + Key.GetHashCode();
+        hash = hash * 31 + OldName.GetHashCode();
+        hash = hash * 31 + NewName.GetHashCode();
+        return hash;
+      }
+    }
+    //pretty print
+    public void Print(PrettyPrinter printer)
+    {
+      printer.Println("ArbPlaceholderRename (");
+      using (printer.IndentCookie()) {
+        printer.Print("directory = "); Directory.PrintEx(printer); printer.Println();
+        printer.Print("key = "); Key.PrintEx(printer); printer.Println();
+        printer.Print("oldName = "); OldName.PrintEx(printer); printer.Println();
+        printer.Print("newName = "); NewName.PrintEx(printer); printer.Println();
+      }
+      printer.Print(")");
+    }
+    //toString
+    public override string ToString()
+    {
+      var printer = new SingleLinePrettyPrinter();
+      Print(printer);
+      return printer.ToString();
+    }
+  }
+  
+  
+  /// <summary>
+  /// <p>Generated from: ArbModel.kt:57</p>
   /// </summary>
   public sealed class ArbRemoveKey : IPrintable, IEquatable<ArbRemoveKey>
   {
@@ -1793,7 +1913,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:74</p>
+  /// <p>Generated from: ArbModel.kt:82</p>
   /// </summary>
   public sealed class ArbTranslateRequest : IPrintable, IEquatable<ArbTranslateRequest>
   {
@@ -1925,7 +2045,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:88</p>
+  /// <p>Generated from: ArbModel.kt:96</p>
   /// </summary>
   public sealed class ArbTranslateResponse : IPrintable, IEquatable<ArbTranslateResponse>
   {
@@ -2030,7 +2150,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:83</p>
+  /// <p>Generated from: ArbModel.kt:91</p>
   /// </summary>
   public sealed class ArbTranslatedItem : IPrintable, IEquatable<ArbTranslatedItem>
   {
@@ -2124,7 +2244,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:68</p>
+  /// <p>Generated from: ArbModel.kt:76</p>
   /// </summary>
   public sealed class ArbTranslationItem : IPrintable, IEquatable<ArbTranslationItem>
   {
@@ -2228,7 +2348,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:60</p>
+  /// <p>Generated from: ArbModel.kt:68</p>
   /// </summary>
   public sealed class AzureTranslationSettings : IPrintable, IEquatable<AzureTranslationSettings>
   {

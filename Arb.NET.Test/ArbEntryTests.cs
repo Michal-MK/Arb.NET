@@ -1,4 +1,4 @@
-﻿namespace Arb.NET.Test;
+namespace Arb.NET.Test;
 
 [TestFixture]
 public class ArbEntryTests {
@@ -129,5 +129,85 @@ public class ArbEntryTests {
         Assert.That(defs[0].Name, Is.EqualTo("param"));
         Assert.That(defs[0].StartIndex, Is.EqualTo(2));
         Assert.That(defs[0].EndIndex, Is.EqualTo(9));
+    }
+
+    [Test]
+    public void RenamePlaceholder_UpdatesValueAndMetadata() {
+        ArbEntry entry = new() {
+            Key = "items",
+            Value = "{count, plural, =0{No items} other{{count} items for {name}}}",
+            Metadata = new ArbMetadata {
+                Placeholders = new Dictionary<string, ArbPlaceholder> {
+                    ["count"] = new() { Type = "int" },
+                    ["name"] = new() { Type = "String" }
+                }
+            }
+        };
+
+        bool changed = entry.RenamePlaceholder("count", "itemCount");
+
+        Assert.That(changed, Is.True);
+        Assert.That(entry.Value, Is.EqualTo("{itemCount, plural, =0{No items} other{{itemCount} items for {name}}}"));
+        Assert.That(entry.Metadata?.Placeholders, Does.ContainKey("itemCount"));
+        Assert.That(entry.Metadata?.Placeholders, Does.Not.ContainKey("count"));
+        Assert.That(entry.GetPlaceholderNames(), Is.EquivalentTo(new[] { "itemCount", "name" }));
+    }
+
+    [Test]
+    public void RenamePlaceholder_InvalidNewName_DoesNothing() {
+        ArbEntry entry = new() {
+            Key = "hello",
+            Value = "Hello {name}!"
+        };
+
+        bool changed = entry.RenamePlaceholder("name", "bad-name");
+
+        Assert.That(changed, Is.False);
+        Assert.That(entry.Value, Is.EqualTo("Hello {name}!"));
+    }
+
+    [Test]
+    public void RenamePlaceholder_DoesNotTouchEscapedBraces() {
+        ArbEntry entry = new() {
+            Key = "hello",
+            Value = "\\{name} and {name}"
+        };
+
+        bool changed = entry.RenamePlaceholder("name", "userName");
+
+        Assert.That(changed, Is.True);
+        Assert.That(entry.Value, Is.EqualTo("\\{name} and {userName}"));
+    }
+
+    [Test]
+    public void RenamePlaceholder_NumericPlaceholder_IsSupported() {
+        ArbEntry entry = new() {
+            Key = "legacy",
+            Value = "Value {0} and again {0}",
+            Metadata = new ArbMetadata {
+                Placeholders = new Dictionary<string, ArbPlaceholder> {
+                    ["0"] = new() { Type = "Object" }
+                }
+            }
+        };
+
+        bool changed = entry.RenamePlaceholder("0", "param0");
+
+        Assert.That(changed, Is.True);
+        Assert.That(entry.Value, Is.EqualTo("Value {param0} and again {param0}"));
+        Assert.That(entry.Metadata?.Placeholders, Does.ContainKey("param0"));
+    }
+
+    [Test]
+    public void RenamePlaceholder_DoesNotRenameLongerPlaceholderPrefix() {
+        ArbEntry entry = new() {
+            Key = "counts",
+            Value = "{counter} and {count}"
+        };
+
+        bool changed = entry.RenamePlaceholder("count", "itemCount");
+
+        Assert.That(changed, Is.True);
+        Assert.That(entry.Value, Is.EqualTo("{counter} and {itemCount}"));
     }
 }

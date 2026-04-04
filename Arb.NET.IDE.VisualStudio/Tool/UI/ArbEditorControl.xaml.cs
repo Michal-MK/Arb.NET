@@ -85,9 +85,10 @@ public partial class ArbEditorControl : UserControl {
             }
 
             if (arbScanResult.ArbErrors.Count > 0) {
-                MessageBox.Show($"Completed with {arbScanResult.ArbErrors.Count} error(s):\n" +
-                                string.Join("\n", arbScanResult.ArbErrors.Select(ex => $"  {ex.Message}")),
-                                "Arb.NET - Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+                DialogUtilities.ShowMessageBox(this,
+                    $"Completed with {arbScanResult.ArbErrors.Count} error(s):\n" +
+                    string.Join("\n", arbScanResult.ArbErrors.Select(ex => $"  {ex.Message}")),
+                    "Arb.NET - Exception", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             if (arbScanResult.DirGroupedArbFiles.Count == 0) {
@@ -215,9 +216,10 @@ public partial class ArbEditorControl : UserControl {
             }
 
             if (arbScanResult.ArbErrors.Count > 0) {
-                MessageBox.Show($"Completed refresh with {arbScanResult.ArbErrors.Count} errors:\n" +
-                                string.Join("\n", arbScanResult.ArbErrors.Select(ex => $"  {ex.Message}")),
-                                "Arb.NET - Refresh Errors", MessageBoxButton.OK, MessageBoxImage.Warning);
+                DialogUtilities.ShowMessageBox(this,
+                    $"Completed refresh with {arbScanResult.ArbErrors.Count} errors:\n" +
+                    string.Join("\n", arbScanResult.ArbErrors.Select(ex => $"  {ex.Message}")),
+                    "Arb.NET - Refresh Errors", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
             if (arbScanResult.DirGroupedArbFiles.Count == 0) {
@@ -256,9 +258,10 @@ public partial class ArbEditorControl : UserControl {
                 ArbParseResult result = parser.ParseContent(content);
 
                 if (!result.ValidationResults.IsValid) {
-                    MessageBox.Show($"Failed to build table due to ARB file validation errors in {arb.FilePath}:\n" +
-                                    string.Join("\n", result.ValidationResults.Errors.Select(e => $"  [{e.Keyword}] {e.Message} at {e.InstanceLocation}")),
-                                    "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    DialogUtilities.ShowMessageBox(this,
+                        $"Failed to build table due to ARB file validation errors in {arb.FilePath}:\n" +
+                        string.Join("\n", result.ValidationResults.Errors.Select(e => $"  [{e.Keyword}] {e.Message} at {e.InstanceLocation}")),
+                        "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -356,7 +359,7 @@ public partial class ArbEditorControl : UserControl {
             return true;
         }
         catch (Exception ex) {
-            MessageBox.Show($"Failed to modify {arb.FilePath}: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            DialogUtilities.ShowMessageBox(this, $"Failed to modify {arb.FilePath}: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
     }
@@ -411,6 +414,7 @@ public partial class ArbEditorControl : UserControl {
     private void GridContextMenu_OnOpened(object sender, RoutedEventArgs e) {
         bool hasSelection = (ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is ArbRow;
         RenameMenuItem.IsEnabled = hasSelection;
+        RenamePlaceholderMenuItem.IsEnabled = hasSelection && GetSelectedRowPlaceholderNames().Count > 0;
         DeleteKeyMenuItem.IsEnabled = hasSelection;
     }
 
@@ -418,12 +422,16 @@ public partial class ArbEditorControl : UserControl {
         TryRenameSelectedRow();
     }
 
+    private void RenamePlaceholderMenuItem_OnClick(object sender, RoutedEventArgs e) {
+        TryRenameSelectedPlaceholder();
+    }
+
     private void AddKeyButton_OnClick(object sender, RoutedEventArgs e) {
         if (DirectoryCombo.SelectedItem is not string directory) return;
         if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         ArbInputDialog dialog = new("Add ARB Key", "Enter the new key name:", "");
-        dialog.ShowDialog();
+        DialogUtilities.ShowModal(dialog, this);
         string? newKey = dialog.Result;
         if (string.IsNullOrWhiteSpace(newKey)) return;
 
@@ -445,14 +453,14 @@ public partial class ArbEditorControl : UserControl {
         if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         ArbInputDialog dialog = new("Add ARB Locale", "Enter locale code (e.g. de, fr):", "");
-        dialog.ShowDialog();
+        DialogUtilities.ShowModal(dialog, this);
         string? locale = dialog.Result;
         if (string.IsNullOrWhiteSpace(locale)) return;
         locale = locale!.Trim();
 
         string filePath = Path.Combine(directory, locale + ".arb");
         if (File.Exists(filePath)) {
-            MessageBox.Show($"Locale file '{Path.GetFileName(filePath)}' already exists.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            DialogUtilities.ShowMessageBox(this, $"Locale file '{Path.GetFileName(filePath)}' already exists.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -497,14 +505,13 @@ public partial class ArbEditorControl : UserControl {
             Title = "Import CSV"
         };
 
-        if (dialog.ShowDialog() != true) return;
+        if (DialogUtilities.ShowFileDialog(dialog, this) != true) return;
 
         try {
             string csvContent = File.ReadAllText(dialog.FileName);
             CsvImportPreview preview = ArbCsvService.BuildImportPreview(directory, csvContent);
             CsvImportDialog importDialog = new(preview, Path.GetFileName(dialog.FileName));
-            importDialog.Owner = Window.GetWindow(this);
-            bool? accepted = importDialog.ShowDialog();
+            bool? accepted = DialogUtilities.ShowModal(importDialog, this);
             if (accepted != true) return;
 
             ArbCsvService.ApplyImport(directory, csvContent, importDialog.SelectedMappings, importDialog.SelectedImportMode);
@@ -515,7 +522,7 @@ public partial class ArbEditorControl : UserControl {
             await RefreshDataAsync();
         }
         catch (Exception ex) {
-            MessageBox.Show($"CSV import failed: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            DialogUtilities.ShowMessageBox(this, $"CSV import failed: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -528,14 +535,14 @@ public partial class ArbEditorControl : UserControl {
             Title = "Export CSV"
         };
 
-        if (dialog.ShowDialog() != true) return;
+        if (DialogUtilities.ShowFileDialog(dialog, this) != true) return;
 
         try {
             string csvContent = ArbCsvService.Export(directory);
             File.WriteAllText(dialog.FileName, csvContent, Constants.UTF8_NO_BOM);
         }
         catch (Exception ex) {
-            MessageBox.Show($"CSV export failed: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            DialogUtilities.ShowMessageBox(this, $"CSV export failed: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -553,7 +560,8 @@ public partial class ArbEditorControl : UserControl {
         if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         string key = row.Key;
-        MessageBoxResult confirm = MessageBox.Show(
+        MessageBoxResult confirm = DialogUtilities.ShowMessageBox(
+            this,
             $"Remove key '{key}' from all locale files in this directory?",
             "Arb.NET \u2013 Remove Key", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
@@ -586,6 +594,12 @@ public partial class ArbEditorControl : UserControl {
             if (doc.Entries.TryGetValue(key, out ArbEntry entry)) {
                 entry.Value = newValue;
             }
+            else {
+                doc.Entries[key] = new ArbEntry {
+                    Key = key,
+                    Value = newValue
+                };
+            }
         });
         if (changed) RunArbGenerate(directory);
     }
@@ -596,7 +610,7 @@ public partial class ArbEditorControl : UserControl {
 
         string oldKey = row.Key;
         ArbInputDialog dialog = new("Rename ARB Key", $"Rename key '{oldKey}' in all locale files:", oldKey);
-        dialog.ShowDialog();
+        DialogUtilities.ShowModal(dialog, this);
         string? newKey = dialog.Result;
         if (newKey == oldKey || string.IsNullOrWhiteSpace(newKey)) return;
 
@@ -632,6 +646,116 @@ public partial class ArbEditorControl : UserControl {
         }
     }
 
+    private void TryRenameSelectedPlaceholder() {
+        CommitPendingGridEdits();
+
+        if ((ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is not ArbRow row) return;
+        if (DirectoryCombo.SelectedItem is not string directory) return;
+
+        List<string> placeholderNames = GetSelectedRowPlaceholderNames();
+        if (placeholderNames.Count == 0) {
+            DialogUtilities.ShowMessageBox(this, "The selected key does not contain any placeholders.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        PlaceholderRenameDialog dialog = new(row.Key, placeholderNames);
+        DialogUtilities.ShowModal(dialog, this);
+        if (dialog.DialogResult != true) return;
+
+        List<(string OldName, string NewName)> renames = [];
+        HashSet<string> finalNames = new(placeholderNames, StringComparer.Ordinal);
+
+        foreach (PlaceholderRenameItem item in dialog.ResultItems) {
+            string oldName = item.OriginalName;
+            string newName = item.NewName?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(newName) || string.Equals(oldName, newName, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            if (!StringHelper.IsValidPlaceholderName(newName)) {
+                DialogUtilities.ShowMessageBox(this, $"'{newName}' is not a valid placeholder name.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            finalNames.Remove(oldName);
+            if (!finalNames.Add(newName)) {
+                DialogUtilities.ShowMessageBox(this, $"Placeholder '{newName}' would collide with another placeholder on key '{row.Key}'.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            renames.Add((oldName, newName));
+        }
+
+        if (renames.Count == 0) return;
+        RenamePlaceholders(directory, row, renames);
+    }
+
+    private List<string> GetSelectedRowPlaceholderNames() {
+        if ((ArbGrid.SelectedItem ?? ArbGrid.CurrentItem) is not ArbRow row) return [];
+
+        HashSet<string> names = new(StringComparer.Ordinal);
+        foreach (string value in row.Values.Values.Where(v => !string.IsNullOrWhiteSpace(v))) {
+            ArbEntry entry = new() {
+                Key = row.Key,
+                Value = value
+            };
+
+            foreach (string name in entry.GetPlaceholderNames()) {
+                names.Add(name);
+            }
+        }
+
+        return names.OrderBy(name => name, StringComparer.Ordinal).ToList();
+    }
+
+    private void RenamePlaceholders(string directory, ArbRow row, List<(string OldName, string NewName)> renames) {
+        if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
+
+        bool anyChanged = false;
+        foreach (ArbFile arb in arbFiles) {
+            string currentValue = row.Values.TryGetValue(arb.LangCode, out string? value)
+                ? value ?? string.Empty
+                : string.Empty;
+
+            ArbEntry previewEntry = new() {
+                Key = row.Key,
+                Value = currentValue
+            };
+            bool localeChanged = false;
+            foreach ((string oldName, string newName) in renames) {
+                localeChanged |= previewEntry.RenamePlaceholder(oldName, newName);
+            }
+            if (!localeChanged) continue;
+
+            string updatedValue = previewEntry.Value;
+            bool fileChanged = ModifyArbFile(arb, doc => {
+                if (!doc.Entries.TryGetValue(row.Key, out ArbEntry entry)) {
+                    entry = new ArbEntry {
+                        Key = row.Key,
+                        Value = updatedValue
+                    };
+                    doc.Entries[row.Key] = entry;
+                }
+                else {
+                    entry.Value = updatedValue;
+                }
+            });
+
+            if (fileChanged) {
+                row.Values[arb.LangCode] = updatedValue;
+                anyChanged = true;
+            }
+        }
+
+        if (anyChanged) {
+            ArbKeyService.InvalidateCache(directory);
+            RunArbGenerate(directory);
+            ArbGrid.Items.Refresh();
+            ApplyFilter();
+            ArbXamlValidationTagger.InvalidateAll();
+        }
+    }
+
     private void TranslateButton_OnClick(object sender, RoutedEventArgs e) {
         OpenTranslateDialog(currentRows.ToList());
     }
@@ -644,15 +768,17 @@ public partial class ArbEditorControl : UserControl {
 
     private void AiSettingsButton_OnClick(object sender, RoutedEventArgs e) {
         TranslationSettingsDialog dialog = new(translationSettingsService);
-        dialog.ShowDialog();
+        DialogUtilities.ShowModal(dialog, this);
     }
 
     private void OpenTranslateDialog(List<ArbRow> rows) {
+        CommitPendingGridEdits();
+
         if (DirectoryCombo.SelectedItem is not string directory) return;
         if (arbScanResult?.DirGroupedArbFiles.TryGetValue(directory, out List<ArbFile> arbFiles) is null or false) return;
 
         TranslateDialog dialog = new(rows, currentLangCodes, arbFiles, directory, translationSettingsService, parser);
-        dialog.ShowDialog();
+        DialogUtilities.ShowModal(dialog, this);
 
         if (dialog.AppliedChanges) {
             RunArbGenerate(directory);
@@ -684,6 +810,12 @@ public partial class ArbEditorControl : UserControl {
             string? parent = Path.GetDirectoryName(dir);
             if (parent == null || parent == dir) return null;
             dir = parent;
+        }
+    }
+
+    private void CommitPendingGridEdits() {
+        if (ArbGrid.CommitEdit(DataGridEditingUnit.Cell, true)) {
+            ArbGrid.CommitEdit(DataGridEditingUnit.Row, true);
         }
     }
 }

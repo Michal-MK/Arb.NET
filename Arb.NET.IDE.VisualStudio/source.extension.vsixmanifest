@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Arb.NET.b3364d74-2252-423e-ae27-3724908312ac" Version="2.3.1" Language="en-US" Publisher="Michal-MK" />
+    <Identity Id="Arb.NET.b3364d74-2252-423e-ae27-3724908312ac" Version="2.3.2" Language="en-US" Publisher="Michal-MK" />
     <DisplayName>Arb.NET</DisplayName>
     <Description xml:space="preserve">ARB (Application Resource Bundle) localization support for Visual Studio. Smart ARB editor with side-by-side multi-locale editing, XAML integration, and code generation. Part of the Arb.NET ecosystem — a modern replacement for RESX-based localization in .NET.</Description>
     <MoreInfo>https://github.com/Michal-MK/Arb.NET</MoreInfo>

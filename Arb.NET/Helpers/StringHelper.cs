@@ -6,6 +6,28 @@ public static class StringHelper {
                c is >= '0' and <= '9';
     }
 
+    public static bool IsValidPlaceholderName(string? name) {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+
+        bool numericOnly = char.IsDigit(name[0]);
+        if (!numericOnly && !IsValidParameterLetter(name[0])) {
+            return false;
+        }
+
+        for (int i = 1; i < name.Length; i++) {
+            char current = name[i];
+            if (!IsValidParameterChar(current)) {
+                return false;
+            }
+
+            if (numericOnly && !char.IsDigit(current)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static bool IsValidParameterLetter(char c) {
         return c is >= 'a' and <= 'z' ||
                c is >= 'A' and <= 'Z' ||
@@ -58,5 +80,10 @@ public static class StringHelper {
                     .Replace("\r\n", "&#10;")
                     .Replace("\r", "&#10;")
                     .Replace("\n", "&#10;");
+    }
+
+    public static bool IsSubcultureLocale(string? locale) {
+        string normalized = NormalizeLocale(locale);
+        return normalized.Contains('_');
     }
 }

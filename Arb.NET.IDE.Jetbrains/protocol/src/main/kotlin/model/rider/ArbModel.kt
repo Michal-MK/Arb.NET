@@ -39,6 +39,14 @@ object ArbModel : Ext(SolutionModel.Solution) {
         field("newKey", string)
     }
 
+    // Payload for renaming a placeholder within one key across all locale files in a directory.
+    val ArbPlaceholderRename = structdef {
+        field("directory", string)
+        field("key", string)
+        field("oldName", string)
+        field("newName", string)
+    }
+
     // Payload for adding a new (empty) key to all locale files in a directory.
     val ArbNewKey = structdef {
         field("directory", string)
@@ -161,6 +169,10 @@ object ArbModel : Ext(SolutionModel.Solution) {
         // Call: Kotlin asks C# to rename a key across all locale files.
         // Returns true if at least one file was updated.
         call("renameArbKey", ArbKeyRename, bool)
+
+        // Call: Kotlin asks C# to rename a placeholder within one key across all locale files.
+        // Returns true if at least one file was updated.
+        call("renameArbPlaceholder", ArbPlaceholderRename, bool)
 
         // Call: Kotlin asks C# to add a new empty key to all locale files in a directory.
         // Returns true if at least one file was updated.

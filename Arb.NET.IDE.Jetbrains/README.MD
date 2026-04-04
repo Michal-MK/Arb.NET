@@ -11,7 +11,7 @@ Rider plugin for [Arb.NET](https://github.com/Michal-MK/Arb.NET) — ARB (Applic
 
 ## Requirements
 
-- JetBrains Rider 2025.3+
+- JetBrains Rider 2025.3+ or newer
 - A project using [Arb.NET](https://github.com/Michal-MK/Arb.NET) with a `l10n.yaml` configuration file
 
 ## Development Setup

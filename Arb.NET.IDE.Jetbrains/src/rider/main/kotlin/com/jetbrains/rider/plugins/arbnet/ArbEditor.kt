@@ -26,6 +26,7 @@ import com.jetbrains.rd.ide.model.ArbKeyRename
 import com.jetbrains.rd.ide.model.ArbLocaleData
 import com.jetbrains.rd.ide.model.ArbNewKey
 import com.jetbrains.rd.ide.model.ArbNewLocale
+import com.jetbrains.rd.ide.model.ArbPlaceholderRename
 import com.jetbrains.rd.ide.model.ArbRemoveKey
 import com.jetbrains.rd.ide.model.arbModel
 import com.jetbrains.rd.util.lifetime.Lifetime
@@ -156,6 +157,8 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
     private var openTranslateDialog: (() -> Unit)? = null
     // The remove-key action is updated each time buildTable() runs so it can access the live table.
     private var removeSelectedKey: (() -> Unit)? = null
+    private var currentTableDirectory: String? = null
+    private var suppressTableSaves = false
 
     private val panel: JPanel = JPanel(BorderLayout()).also { root ->
         root.add(JLabel("Loading ARB data…", JLabel.CENTER), BorderLayout.CENTER)
@@ -302,7 +305,7 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
                     val searchField = JBTextField().apply {
                         emptyText.text = "Filter…"
-                        preferredSize = java.awt.Dimension(160, preferredSize.height)
+                        preferredSize = java.awt.Dimension(280, preferredSize.height)
                     }
                     filterField = searchField
 
@@ -455,6 +458,26 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
     private fun buildTable(directory: String, byDirectory: Map<String, List<ArbLocaleData>>) {
         val holder = tableHolder ?: return
+
+        val previousScrollPosition = if (currentTableDirectory == directory) {
+            (holder.components.firstOrNull() as? JBScrollPane)?.viewport?.viewPosition
+        } else {
+            null
+        }
+        val previousSelectedKey = if (currentTableDirectory == directory) {
+            ((holder.components.firstOrNull() as? JBScrollPane)?.viewport?.view as? JBTable)
+                ?.selectedRow
+                ?.takeIf { it >= 0 }
+                ?.let { selectedViewRow ->
+                    val existingTable = (holder.components.firstOrNull() as? JBScrollPane)?.viewport?.view as? JBTable
+                    existingTable
+                        ?.convertRowIndexToModel(selectedViewRow)
+                        ?.let { selectedModelRow -> existingTable.model.getValueAt(selectedModelRow, 0) as? String }
+                }
+        } else {
+            null
+        }
+
         holder.removeAll()
 
         val localeDataList = byDirectory[directory] ?: return
@@ -500,7 +523,29 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             ).show()
         }
 
+        val placeholderRegex = Regex("""(?<!\\)\{([A-Za-z_][A-Za-z0-9_]*|\d+)(?=[},])""")
+
+        fun placeholderNamesForKey(key: String): List<String> {
+            val modelRow = (0 until tableModel.rowCount)
+                .firstOrNull { row -> (tableModel.getValueAt(row, 0) as? String) == key }
+                ?: return emptyList()
+
+            return locales
+                .asSequence()
+                .mapIndexedNotNull { index, _ -> tableModel.getValueAt(modelRow, index + 1) as? String }
+                .flatMap { value -> placeholderRegex.findAll(value).map { it.groupValues[1] }.asSequence() }
+                .distinct()
+                .sorted()
+                .toList()
+        }
+
+        fun renamePlaceholderInValue(value: String, oldName: String, newName: String): String {
+            val renameRegex = Regex("""(?<!\\)\{${Regex.escape(oldName)}(?=[},])""")
+            return renameRegex.replace(value, "{$newName")
+        }
+
         tableModel.addTableModelListener { e ->
+            if (suppressTableSaves) return@addTableModelListener
             if (e.type != TableModelEvent.UPDATE) return@addTableModelListener
             val row = e.firstRow
             val col = e.column
@@ -511,7 +556,20 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             val newValue = tableModel.getValueAt(row, col) as? String ?: return@addTableModelListener
             project.solution.arbModel.saveArbEntry.start(
                 lifetime, ArbEntryUpdate(directory, locale, key, newValue)
-            )
+            ).result.advise(lifetime) { result ->
+                val saved = try {
+                    result.unwrap()
+                } catch (_: Throwable) {
+                    false
+                }
+
+                if (saved) return@advise
+
+                ApplicationManager.getApplication().invokeLater({
+                    Messages.showErrorDialog(project, "Failed to save '$key' for locale '$locale'. The editor will be refreshed to restore file contents.", "Arb.NET")
+                    refresh()
+                }, ModalityState.any())
+            }
         }
 
         // Shared rename action reused by both the keyboard shortcut and the context menu.
@@ -533,6 +591,63 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             )
             // Update the table model so the UI reflects the rename immediately.
             tableModel.setValueAt(newKey, modelRow, 0)
+        }
+
+        fun doRenamePlaceholder(table: JBTable, viewRow: Int) {
+            val modelRow = table.convertRowIndexToModel(viewRow)
+            val key = tableModel.getValueAt(modelRow, 0) as? String ?: return
+            val placeholderNames = placeholderNamesForKey(key)
+            if (placeholderNames.isEmpty()) {
+                Messages.showInfoMessage(project, "The selected key does not contain any placeholders.", "Rename Placeholder")
+                return
+            }
+
+            val dialog = ArbPlaceholderRenameDialog(project, key, placeholderNames)
+            if (!dialog.showAndGet()) {
+                return
+            }
+
+            val renames = dialog.resultRenames
+            if (renames.isEmpty()) return
+
+            fun applyRename(index: Int) {
+                if (index >= renames.size) {
+                    suppressTableSaves = true
+                    try {
+                        for (colIndex in locales.indices) {
+                            val currentValue = tableModel.getValueAt(modelRow, colIndex + 1) as? String ?: ""
+                            val updatedValue = renames.fold(currentValue) { acc, (oldName, newName) ->
+                                renamePlaceholderInValue(acc, oldName, newName)
+                            }
+
+                            if (updatedValue != currentValue) {
+                                tableModel.setValueAt(updatedValue, modelRow, colIndex + 1)
+                            }
+                        }
+                    }
+                    finally {
+                        suppressTableSaves = false
+                    }
+                    return
+                }
+
+                val (oldName, newName) = renames[index]
+                project.solution.arbModel.renameArbPlaceholder.start(
+                    lifetime,
+                    ArbPlaceholderRename(directory, key, oldName, newName)
+                ).result.advise(lifetime) { result ->
+                    if (result.unwrap()) {
+                        applyRename(index + 1)
+                    }
+                    else {
+                        ApplicationManager.getApplication().invokeLater({
+                            Messages.showErrorDialog(project, "Failed to rename placeholder '$oldName' to '$newName'.", "Arb.NET")
+                        }, ModalityState.any())
+                    }
+                }
+            }
+
+            applyRename(0)
         }
 
         val table = JBTable(tableModel).apply {
@@ -577,6 +692,14 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                         openTranslateDialogForRows(selectedIndices.ifEmpty { null })
                     }
                     menu.add(translateItem)
+
+                    val key = tableModel.getValueAt(convertRowIndexToModel(row), 0) as? String
+                    val placeholderNames = key?.let(::placeholderNamesForKey).orEmpty()
+                    if (placeholderNames.isNotEmpty()) {
+                        val renamePlaceholderItem = JMenuItem("Rename Placeholder...")
+                        renamePlaceholderItem.addActionListener { doRenamePlaceholder(this@apply, row) }
+                        menu.add(renamePlaceholderItem)
+                    }
 
                     if (col != 0) {
                         menu.show(this@apply, e.x, e.y)
@@ -663,9 +786,34 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             }
         })
 
-        holder.add(JBScrollPane(table), BorderLayout.CENTER)
+        val scrollPane = JBScrollPane(table)
+        holder.add(scrollPane, BorderLayout.CENTER)
+        currentTableDirectory = directory
         holder.revalidate()
         holder.repaint()
+
+        SwingUtilities.invokeLater {
+            previousSelectedKey?.let { selectedKey ->
+                val modelRow = (0 until tableModel.rowCount)
+                    .firstOrNull { row -> (tableModel.getValueAt(row, 0) as? String) == selectedKey }
+
+                if (modelRow != null) {
+                    val viewRow = table.convertRowIndexToView(modelRow)
+                    if (viewRow >= 0) {
+                        table.setRowSelectionInterval(viewRow, viewRow)
+                    }
+                }
+            }
+
+            previousScrollPosition?.let { viewPosition ->
+                val viewport = scrollPane.viewport
+                val viewSize = viewport.view.size
+                val extent = viewport.extentSize
+                val clampedX = viewPosition.x.coerceIn(0, (viewSize.width - extent.width).coerceAtLeast(0))
+                val clampedY = viewPosition.y.coerceIn(0, (viewSize.height - extent.height).coerceAtLeast(0))
+                viewport.viewPosition = java.awt.Point(clampedX, clampedY)
+            }
+        }
     }
 
     /**

@@ -63,6 +63,12 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <CheckBox x:Name="IncludeSubculturesCheckBox"
+                      Content="Include subculture locales (restore old behavior)"
+                      Margin="0,6,0,0"
+                      Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+                      Checked="IncludeSubculturesCheckBox_Changed"
+                      Unchecked="IncludeSubculturesCheckBox_Changed" />
         </StackPanel>
 
         <!-- Mode -->

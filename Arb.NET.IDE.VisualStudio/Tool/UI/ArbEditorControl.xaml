@@ -235,6 +235,7 @@
             <DataGrid.ContextMenu>
                 <ContextMenu Opened="GridContextMenu_OnOpened">
                     <MenuItem x:Name="RenameMenuItem" Header="Rename" Click="RenameMenuItem_OnClick" />
+                    <MenuItem x:Name="RenamePlaceholderMenuItem" Header="Rename Placeholder..." Click="RenamePlaceholderMenuItem_OnClick" />
                     <MenuItem x:Name="DeleteKeyMenuItem" Header="Remove Key" Click="RemoveKeyMenuItem_OnClick" />
                     <MenuItem Header="Translate Selected" Click="TranslateSelectedMenuItem_OnClick" />
                 </ContextMenu>

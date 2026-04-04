@@ -128,7 +128,7 @@ public partial class CsvImportDialog : DialogWindow {
             .ToList();
 
         if (mappings.Count(mapping => string.Equals(mapping, KeyMapping, System.StringComparison.OrdinalIgnoreCase)) != 1) {
-            MessageBox.Show("Select exactly one column mapped to Key.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            DialogUtilities.ShowMessageBox(this, "Select exactly one column mapped to Key.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -140,7 +140,7 @@ public partial class CsvImportDialog : DialogWindow {
             .ToList();
 
         if (duplicateLocales.Count > 0) {
-            MessageBox.Show($"Each locale can be mapped only once. Duplicate mappings: {string.Join(", ", duplicateLocales)}.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            DialogUtilities.ShowMessageBox(this, $"Each locale can be mapped only once. Duplicate mappings: {string.Join(", ", duplicateLocales)}.", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

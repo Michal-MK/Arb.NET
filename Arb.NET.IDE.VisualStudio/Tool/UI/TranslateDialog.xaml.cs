@@ -11,6 +11,7 @@ using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
+using Arb.NET.IDE.Common.Services;
 
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 
@@ -71,9 +72,14 @@ public partial class TranslateDialog : DialogWindow {
 
     private void PopulateTargetLocales() {
         string? source = SourceLocaleCombo.SelectedItem as string;
-        List<LocaleSelection> targets = langCodes
-            .Select(l => new LocaleSelection(l) {
-                IsSelected = l != source
+        Dictionary<string, bool> existingSelections = (TargetLocalesPanel.ItemsSource as List<LocaleSelection>)?
+            .ToDictionary(t => t.Locale, t => t.IsSelected, StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        List<LocaleSelection> targets = ArbTranslationLocaleService
+            .GetVisibleTargetLocales(langCodes, source, IncludeSubculturesCheckBox.IsChecked == true)
+            .Select(locale => new LocaleSelection(locale) {
+                IsSelected = existingSelections.TryGetValue(locale, out bool isSelected) ? isSelected : true
             })
             .ToList();
 
@@ -86,6 +92,11 @@ public partial class TranslateDialog : DialogWindow {
     }
 
     private void ModeRadio_Changed(object sender, RoutedEventArgs e) => RebuildPreview();
+
+    private void IncludeSubculturesCheckBox_Changed(object sender, RoutedEventArgs e) {
+        PopulateTargetLocales();
+        RebuildPreview();
+    }
 
     private void RebuildPreview() {
         string? sourceLocale = SourceLocaleCombo.SelectedItem as string;
@@ -154,7 +165,7 @@ public partial class TranslateDialog : DialogWindow {
             AzureOpenAITranslationService service = new(settings, provider);
             (bool valid, string error) = service.ValidateSettings();
             if (!valid) {
-                MessageBox.Show(error, "Arb.NET - Configuration Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                DialogUtilities.ShowMessageBox(this, error, "Arb.NET - Configuration Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -273,7 +284,7 @@ public partial class TranslateDialog : DialogWindow {
             return true;
         }
         catch (Exception ex) {
-            MessageBox.Show($"Failed to modify {arb.FilePath}: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            DialogUtilities.ShowMessageBox(this, $"Failed to modify {arb.FilePath}: {ex.Message}", "Arb.NET", MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
     }

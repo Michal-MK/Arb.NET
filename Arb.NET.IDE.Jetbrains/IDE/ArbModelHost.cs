@@ -29,8 +29,9 @@ public class ArbModelHost {
         model.GetArbData.SetSync((_, requestedRoot) => CollectArbData(solution, requestedRoot));
 
         model.SaveArbEntry.SetSync((_, update) => {
-            string dictKey = update.Directory + "|" + update.Locale;
-            if (!localeToFilePath.TryGetValue(dictKey, out string filePath)) {
+            string? filePath = ResolveLocaleFilePath(update.Directory, update.Locale);
+            if (filePath == null) {
+                LOG.Warn($"Could not resolve ARB file for save: directory='{update.Directory}', locale='{update.Locale}'.");
                 return false;
             }
 
@@ -39,11 +40,17 @@ public class ArbModelHost {
             if (parsed.Document == null) return false;
 
             if (!parsed.Document.Entries.TryGetValue(update.Key, out ArbEntry entry)) {
-                return false;
+                parsed.Document.Entries[update.Key] = new ArbEntry {
+                    Key = update.Key,
+                    Value = update.Value
+                };
+            }
+            else {
+                entry.Value = update.Value;
             }
 
-            entry.Value = update.Value;
             File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document), Constants.UTF8_NO_BOM);
+            localeToFilePath[BuildLocaleMapKey(update.Directory, update.Locale)] = filePath;
             ArbKeyService.InvalidateCache(update.Directory);
             RunArbGenerate(update.Directory);
             return true;
@@ -185,6 +192,37 @@ public class ArbModelHost {
             return anyChanged;
         });
 
+        model.RenameArbPlaceholder.SetSync((_, rename) => {
+            bool anyChanged = false;
+
+            IEnumerable<string> dirFiles = localeToFilePath
+                .Where(kv => kv.Key.StartsWith(rename.Directory + "|"))
+                .Select(kv => kv.Value)
+                .ToList();
+
+            if (!dirFiles.Any() && Directory.Exists(rename.Directory)) {
+                dirFiles = Directory.EnumerateFiles(rename.Directory, Constants.ANY_ARB);
+            }
+
+            foreach (string filePath in dirFiles) {
+                string content = File.ReadAllText(filePath);
+                ArbParseResult parsed = new ArbParser().ParseContent(content);
+                if (parsed.Document == null) continue;
+                if (!parsed.Document.Entries.TryGetValue(rename.Key, out ArbEntry entry)) continue;
+                if (!entry.RenamePlaceholder(rename.OldName, rename.NewName)) continue;
+
+                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document), Constants.UTF8_NO_BOM);
+                anyChanged = true;
+            }
+
+            if (anyChanged) {
+                ArbKeyService.InvalidateCache(rename.Directory);
+                RunArbGenerate(rename.Directory);
+                model.ArbKeysChanged.Fire(rename.Directory);
+            }
+            return anyChanged;
+        });
+
         model.GetArbKeys.SetSync((_, projectDir) => {
             return ArbKeyService.GetKeys(projectDir)
                 .Select(k => new JetBrains.Rider.Model.ArbKeyInfo(
@@ -308,9 +346,8 @@ public class ArbModelHost {
 
     private Dictionary<string, string?> LoadDescriptions(string directory, string sourceLocale) {
         Dictionary<string, string?> descriptions = new();
-        string dictKey = directory + "|" + sourceLocale;
-
-        if (!localeToFilePath.TryGetValue(dictKey, out string sourceFilePath)) {
+        string? sourceFilePath = ResolveLocaleFilePath(directory, sourceLocale);
+        if (sourceFilePath == null) {
             return descriptions;
         }
 
@@ -334,6 +371,44 @@ public class ArbModelHost {
 
         return descriptions;
     }
+
+    private string? ResolveLocaleFilePath(string directory, string locale) {
+        string dictKey = BuildLocaleMapKey(directory, locale);
+        if (localeToFilePath.TryGetValue(dictKey, out string filePath) && File.Exists(filePath)) {
+            return filePath;
+        }
+
+        if (!Directory.Exists(directory)) {
+            return null;
+        }
+
+        string normalizedLocale = StringHelper.NormalizeLocale(locale);
+        foreach (string candidatePath in Directory.EnumerateFiles(directory, Constants.ANY_ARB)) {
+            try {
+                string content = File.ReadAllText(candidatePath);
+                ArbParseResult parsed = new ArbParser().ParseContent(content);
+                if (parsed.Document == null) continue;
+
+                string candidateLocale = string.IsNullOrWhiteSpace(parsed.Document.Locale)
+                    ? Path.GetFileNameWithoutExtension(candidatePath)
+                    : parsed.Document.Locale;
+
+                if (!string.Equals(StringHelper.NormalizeLocale(candidateLocale), normalizedLocale, StringComparison.OrdinalIgnoreCase)) {
+                    continue;
+                }
+
+                localeToFilePath[dictKey] = candidatePath;
+                return candidatePath;
+            }
+            catch (Exception ex) {
+                LOG.Warn($"Failed to inspect ARB file '{candidatePath}' while resolving locale '{locale}': {ex.Message}");
+            }
+        }
+
+        return null;
+    }
+
+    private static string BuildLocaleMapKey(string directory, string locale) => directory + "|" + locale;
 
     /// <summary>
     /// Fires-and-forgets in-process generation so generated .g.cs files are refreshed

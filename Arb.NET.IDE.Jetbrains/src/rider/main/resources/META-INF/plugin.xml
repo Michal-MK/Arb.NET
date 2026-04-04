@@ -3,7 +3,7 @@
   <name>Arb.NET</name>
   <version>0.0.1</version>
   <vendor url="https://github.com/Michal-MK/Arb.NET">Michal-MK</vendor>
-  <idea-version since-build="253" until-build="253.*" />
+  <idea-version since-build="253" until-build="261.*" />
   <depends>com.intellij.modules.rider</depends>
 
   <description>

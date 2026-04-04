@@ -63,6 +63,7 @@
     <Compile Include="Tool\Models\ArbRow.cs" />
     <Compile Include="Tool\Models\ArbScanResult.cs" />
     <Compile Include="Tool\Models\LocaleSelection.cs" />
+    <Compile Include="Tool\Models\PlaceholderRenameItem.cs" />
     <Compile Include="Tool\Services\ArbService.cs" />
     <Compile Include="Tool\Services\Persistence\ColumnSettingsService.cs" />
     <Compile Include="Tool\Services\Persistence\TranslationSettingsService.cs" />
@@ -76,6 +77,10 @@
     </Compile>
     <Compile Include="Tool\UI\CsvImportDialog.xaml.cs">
       <DependentUpon>CsvImportDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tool\UI\DialogUtilities.cs" />
+    <Compile Include="Tool\UI\PlaceholderRenameDialog.xaml.cs">
+      <DependentUpon>PlaceholderRenameDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Tool\Models\TranslationItem.cs" />
 <Compile Include="Tool\Services\AzureOpenAITranslationService.cs" />
@@ -97,6 +102,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Tool\UI\CsvImportDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tool\UI\PlaceholderRenameDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
