@@ -2,6 +2,10 @@
 
 All notable changes to the Arb.NET Rider plugin will be documented in this file.
 
+## 0.0.8
+- Fix code generator producing invalid C# when ARB parameter names are numeric (e.g. `{0}` now generates `object _0`)
+- Fix locale ordering in dispatcher: sub-locales of unrelated bases (e.g. `bg_en`) no longer sorted ahead of other locales
+
 ## 0.0.7
 - Add placeholder renaming in the ARB editor and persist those changes across locale files
 - Exclude subculture locales by default in AI translation, with an opt-in toggle to restore the previous behavior

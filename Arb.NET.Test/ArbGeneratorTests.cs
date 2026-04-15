@@ -24,6 +24,29 @@ public class ArbGeneratorTests {
         Assert.That(generatedCode, Does.Contain("public static string Key("));
         Assert.That(generatedCode, Does.Contain("A parameter:"));
     }
+    
+    [Test]
+    public void GenerateClass_NumericParam_ProducesCorrectSource() {
+        ArbDocument document = new() {
+            Locale = "en",
+            Entries = new Dictionary<string, ArbEntry> {
+                {
+                    "key", new ArbEntry {
+                        Key = "key",
+                        Value = "A parameter: '{0}' is here.",
+                    }
+                }
+            }
+        };
+
+        string generatedCode = new ArbCodeGenerator().GenerateClass(document, "AppLocalizations", "MyApp.Localizations");
+
+        Console.WriteLine(generatedCode);
+
+        Assert.That(generatedCode, Does.Contain("class AppLocalizations"));
+        Assert.That(generatedCode, Does.Contain("public static string Key("));
+        Assert.That(generatedCode, Does.Contain("(object _0)"));
+    }
 
     [Test]
     public void GenerateClassPlural_ProducesCorrectSource() {

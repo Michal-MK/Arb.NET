@@ -44,9 +44,9 @@ public static class ArbGeneration {
                      string locale = StringHelper.NormalizeLocale(
                          StringHelper.FirstNonEmpty(i.Document.Locale,
                              StringHelper.InferLangCodeFromFilename(i.FileNameWithoutExt)) ?? i.FileNameWithoutExt);
-                     // Default locale first (0_), then variants of it second (1_), then the rest (2_).
+                     // Default locale first (0_), then sub-locales of it second (1_), then the rest (2_).
                      if (locale == defaultLocaleKey) return "0_";
-                     if (!string.IsNullOrEmpty(defaultLocaleKey) && locale.EndsWith("_" + defaultLocaleKey)) return "1_" + locale;
+                     if (!string.IsNullOrEmpty(defaultLocaleKey) && locale.StartsWith(defaultLocaleKey + "_")) return "1_" + locale;
                      return "2_" + locale;
                  }, StringComparer.OrdinalIgnoreCase)) {
             ArbDocument document = input.Document;

@@ -89,13 +89,20 @@ public class ArbCodeGenerator {
         }
     }
 
+    /// <summary>
+    /// Returns a valid C# identifier for the given ARB parameter name.
+    /// Numeric names like "0" are prefixed with "_" to produce "_0".
+    /// </summary>
+    private static string ToIdentifier(string name) =>
+        char.IsDigit(name[0]) ? "_" + name : name;
+
     private static string BuildParamList(List<ArbParameterDefinition> names) {
         return string.Join(", ", names.Select(s => {
             if (s is not ArbPluralizationParameterDefinition) {
-                return "object " + s.Name;
+                return "object " + ToIdentifier(s.Name);
             }
             else {
-                return "int " + s.Name;
+                return "int " + ToIdentifier(s.Name);
             }
         }));
     }
@@ -126,7 +133,7 @@ public class ArbCodeGenerator {
                 if (def is not ArbPluralizationParameterDefinition) {
                     sb.Append("\"");
                     sb.Append(" + ");
-                    sb.Append(def.Name);
+                    sb.Append(ToIdentifier(def.Name));
                     sb.Append("?.ToString()");
                     sb.Append(" + ");
                     sb.Append("\"");
@@ -136,7 +143,7 @@ public class ArbCodeGenerator {
                 else {
                     sb.Append("\"");
                     sb.Append(" + ");
-                    sb.Append($"@selectedContent_{def.Name}");
+                    sb.Append($"@selectedContent_{ToIdentifier(def.Name)}");
                     sb.Append(" + ");
                     sb.Append("\"");
                     index = def.EndIndex;
@@ -162,14 +169,15 @@ public class ArbCodeGenerator {
         foreach (ArbParameterDefinition? def in defs) {
             if (def is not ArbPluralizationParameterDefinition pluralDef) continue;
 
-            sb.AppendLine($"        var @selectedContent_{pluralDef.Name} = ({pluralDef.Name}) switch {{");
+            string id = ToIdentifier(pluralDef.Name);
+            sb.AppendLine($"        var @selectedContent_{id} = ({id}) switch {{");
             foreach (KeyValuePair<int, string> form in pluralDef.CountableParameters) {
                 string escapeString = StringHelper.JsonString(form.Value);
-                escapeString = escapeString.Replace($"{{{def.Name}}}", $"\" + {def.Name}.ToString() + \"");
+                escapeString = escapeString.Replace($"{{{def.Name}}}", $"\" + {id}.ToString() + \"");
                 sb.AppendLine($"            {form.Key} => \"{escapeString}\",");
             }
             string escapeOtherString = StringHelper.JsonString(pluralDef.OtherParameter);
-            escapeOtherString = escapeOtherString.Replace($"{{{def.Name}}}", $"\" + {def.Name}.ToString() + \"");
+            escapeOtherString = escapeOtherString.Replace($"{{{def.Name}}}", $"\" + {id}.ToString() + \"");
             sb.AppendLine($"            _ => \"{escapeOtherString}\"");
             sb.AppendLine("        };");
         }
@@ -303,7 +311,7 @@ public class ArbCodeGenerator {
 
         if (isParametric) {
             string paramList = BuildParamList(defs);
-            string argList = string.Join(", ", defs.Select(d => d.Name));
+            string argList = string.Join(", ", defs.Select(d => ToIdentifier(d.Name)));
             sb.AppendLine($"    public string {pascalKey}({paramList}) {{");
             sb.AppendLine($"        return ResolveLocale(_culture) switch {{");
             foreach ((ArbDocument doc, string _) in locales) {
