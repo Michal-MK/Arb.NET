@@ -39,7 +39,10 @@ class ArbCSharpGenerateKeyIntention : IntentionAction, PriorityAction {
 
         if (identifier.isEmpty() || !identifier[0].isUpperCase()) return false
 
-        val keys = ArbKeyRetrievalService.getInstance(project).getKeysBlocking(projectDir, Lifetime.Eternal)
+        // Use the non-blocking cache — returns null when cold (triggers background refresh).
+        // isAvailable must never block; returning false here is safe: the intention reappears
+        // once the cache is warm on the next pass.
+        val keys = ArbKeyRetrievalService.getInstance(project).getCached(projectDir) ?: return false
 
         if (keys.isEmpty()) return false
 

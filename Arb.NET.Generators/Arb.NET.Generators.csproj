@@ -29,7 +29,7 @@
             Roslyn 4.8.0 is the latest 4.x release and uses Immutable 8.x — fully compatible.
             The generator compiles against 4.8 API but runs in whatever Roslyn version the host provides.
         -->
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" PrivateAssets="all" />
         <!--
             Pin System.Text.Json to 8.x so the generator assembly is compatible with the
             Roslyn isolated host in Rider 2025.x, which ships System.Text.Json 8.0 and

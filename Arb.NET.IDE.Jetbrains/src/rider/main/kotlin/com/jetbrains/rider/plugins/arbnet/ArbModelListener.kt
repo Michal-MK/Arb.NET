@@ -26,7 +26,8 @@ class ArbModelListener : ProjectActivity {
                 openArbEditorAtKey(project, payload.arbDir, payload.keyFilter)
             }
 
-            model.arbKeysChanged.advise(Lifetime.Eternal) {
+            model.arbKeysChanged.advise(Lifetime.Eternal) { projectDir ->
+                ArbKeyRetrievalService.getInstance(project).invalidate(projectDir)
                 restartXamlAnnotations(project)
             }
         }

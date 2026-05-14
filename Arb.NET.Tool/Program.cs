@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Arb.NET;
 using Arb.NET.Models;
+using Arb.NET.Tool;
 using Arb.NET.Tool.Migration;
 
 RootCommand rootCommand = new("Arb.NET Tool — utilities for working with .arb localization files.");
@@ -133,7 +134,8 @@ generateCommand.SetAction(parseResult => {
 
     Console.WriteLine($"Generating from: {projectDir}");
 
-    ArbProjectGenerator.Result result = ArbProjectGenerator.Generate(projectDir);
+    IReadOnlyList<EnumLocalizationInfo> enumInfos = EnumScanner.Scan(projectDir);
+    ArbProjectGenerator.Result result = ArbProjectGenerator.Generate(projectDir, enumInfos.Count > 0 ? enumInfos : null);
 
     if (result.WrittenFiles.Count > 0) {
         Console.WriteLine($"\nWrote {result.WrittenFiles.Count} file(s):");
