@@ -127,7 +127,7 @@ tasks.buildPlugin {
         val changelogText = file("${rootDir}/CHANGELOG.md").readText()
         val changelogMatches = Regex("(?s)(-.+?)(?=##|$)").findAll(changelogText)
         val changeNotes = changelogMatches.map {
-            it.groups[1]!!.value.replace("(?s)- ".toRegex(), "\u2022 ").replace("`", "").replace(",", "%2C").replace(";", "%3B")
+            it.groups[1]!!.value.replace("(?s)- ".toRegex(), "\u2022 ").replace("`", "").replace("\"", "").replace(",", "%2C").replace(";", "%3B")
         }.take(1).joinToString()
 
         val executable: String by setBuildTool.get().extra

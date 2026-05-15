@@ -2,6 +2,11 @@
 
 All notable changes to the Arb.NET Rider plugin will be documented in this file.
 
+## 0.0.9
+- Add Generate ARB key C# context action: detects unresolved member access on `IArbLocale` types and adds the missing key to all `.arb` files
+- Cache ARB keys in the retrieval service to avoid blocking the EDT on repeated lookups; cache is invalidated on `arbKeysChanged`
+- Add enum scanner to the CLI `generate` command: scans `[ArbLocalize]`-decorated enums and passes them to the code generator
+
 ## 0.0.8
 - Fix code generator producing invalid C# when ARB parameter names are numeric (e.g. `{0}` now generates `object _0`)
 - Fix locale ordering in dispatcher: sub-locales of unrelated bases (e.g. `bg_en`) no longer sorted ahead of other locales

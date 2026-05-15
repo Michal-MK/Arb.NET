@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Arb.NET.IDE.Common.Models;
 using Arb.NET.Models;
 
@@ -321,6 +322,45 @@ public static class ArbKeyService {
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Adds <paramref name="key"/> with an empty value to every <c>.arb</c> file found in
+    /// <paramref name="arbDir"/>. Skips files that already contain the key.
+    /// Returns <c>true</c> if at least one file was modified.
+    /// </summary>
+    public static bool AddKey(string arbDir, string key) {
+        if (!Directory.Exists(arbDir)) return false;
+
+        bool anyChanged = false;
+        foreach (string filePath in Directory.EnumerateFiles(arbDir, Constants.ANY_ARB)) {
+            try {
+                string content = File.ReadAllText(filePath);
+                ArbParseResult parsed = new ArbParser().ParseContent(content);
+                if (parsed.Document == null) continue;
+                if (parsed.Document.Entries.ContainsKey(key)) continue;
+
+                parsed.Document.Entries[key] = new ArbEntry { Key = key, Value = string.Empty };
+                File.WriteAllText(filePath, ArbSerializer.Serialize(parsed.Document), Constants.UTF8_NO_BOM);
+                anyChanged = true;
+            }
+            catch {
+                // Best-effort; skip unreadable files.
+            }
+        }
+
+        if (anyChanged) {
+            string? projectDir = FindProjectDirFromFilePath(arbDir);
+            if (projectDir != null) {
+                InvalidateCache(projectDir);
+                Task.Run(() => {
+                    try { ArbProjectGenerator.Generate(projectDir); }
+                    catch { }
+                });
+            }
+        }
+
+        return anyChanged;
     }
 
     /// <summary>

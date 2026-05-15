@@ -26,12 +26,6 @@
     <postStartupActivity implementation="com.jetbrains.rider.plugins.arbnet.ArbModelListener"/>
     <internalFileTemplate name="Arb.NET l10n.yaml" />
 
-    <intentionAction>
-      <language>C#</language>
-      <className>com.jetbrains.rider.plugins.arbnet.ArbCSharpGenerateKeyIntention</className>
-      <category>Arb.NET</category>
-    </intentionAction>
-
     <fileEditorProvider
         implementation="com.jetbrains.rider.plugins.arbnet.ArbEditorProvider" />
     <fileType 

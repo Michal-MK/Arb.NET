@@ -2,7 +2,7 @@
 
   <!-- Shared NuGet package metadata for all packable projects in this repo. -->
   <PropertyGroup>
-    <ArbNetPackageVersion>0.3.4</ArbNetPackageVersion>
+    <ArbNetPackageVersion>0.3.5</ArbNetPackageVersion>
     <!-- Pinned to 4.8.0: latest 4.x release; Rider's Roslyn isolated host ships Immutable 8.x
          which is incompatible with Roslyn 5.x. The tool also pins here for consistency. -->
     <RoslynVersion>4.8.0</RoslynVersion>
