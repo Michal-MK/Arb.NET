@@ -29,6 +29,8 @@ public partial class ArbEditorControl : UserControl {
     private const string MinimalL10nYaml = "# Arb.NET localization configuration.\n# Paths are relative to the project that owns this file.\n\narb-dir: arbs # Required. Directory containing the .arb files.\ntemplate-arb-file: en.arb # Required. Template .arb file that defines the key set.\noutput-class: AppLocale # Optional. Dispatcher and generated locale base name.\noutput-namespace: MyProject.Localization # Optional. Falls back to the project RootNamespace.";
     private const string MinimalTemplateArb = "{\n  \"@@locale\": \"en\"\n}";
     private const string NoArbDirectoriesMessage = "No ARB directories loaded yet. Use the setup guide above.";
+    private static readonly StringEmptyToVisibilityConverter EmptyToVisible = new();
+    private static readonly StringEmptyToVisibilityConverter NonEmptyToVisible = new() { Invert = true };
     private AsyncPackage? package;
 
     private ColumnSettingsService columnSettingsService = null!;
@@ -292,6 +294,11 @@ public partial class ArbEditorControl : UserControl {
             currentLangCodes = alphabetical;
         }
 
+        // Pre-compute the nearest parent locale for each locale (e.g. "en" for "en_US").
+        Dictionary<string, string?> parentLocale = currentLangCodes.ToDictionary(
+            l => l,
+            l => FindParentLocale(l, currentLangCodes));
+
         ObservableCollection<ArbRow> rows = [];
         foreach (string key in allKeys) {
             ArbRow row = new(key);
@@ -299,7 +306,20 @@ public partial class ArbEditorControl : UserControl {
                 row.Values[locale] = byLocale.TryGetValue(locale, out var vals) && vals.TryGetValue(key, out string val)
                     ? val
                     : string.Empty;
+                row.Previews[locale] = string.Empty;
             }
+
+            // Populate fallback preview text for empty cells whose parent locale has a value.
+            foreach (string locale in currentLangCodes) {
+                if (!string.IsNullOrEmpty(row.Values[locale])) continue;
+                string? parent = parentLocale[locale];
+                if (parent == null) continue;
+                string parentValue = byLocale.TryGetValue(parent, out var pv) && pv.TryGetValue(key, out string pval)
+                    ? pval : string.Empty;
+                if (!string.IsNullOrEmpty(parentValue))
+                    row.Previews[locale] = $"({parent}) {parentValue}";
+            }
+
             rows.Add(row);
         }
         currentRows = rows;
@@ -322,11 +342,8 @@ public partial class ArbEditorControl : UserControl {
             Width = savedWidths.TryGetValue("Key", out double kw) ? kw : DEFAULT_KEY_COLUMN_WIDTH
         });
         foreach (string locale in currentLangCodes) {
-            ArbGrid.Columns.Add(new DataGridTextColumn {
-                Header = locale,
-                Binding = new Binding($"Values[{locale}]"),
-                Width = savedWidths.TryGetValue(locale, out double lw) ? lw : DEFAULT_LOCALE_COLUMN_WIDTH
-            });
+            ArbGrid.Columns.Add(CreateLocaleColumn(locale,
+                savedWidths.TryGetValue(locale, out double lw) ? lw : DEFAULT_LOCALE_COLUMN_WIDTH));
         }
 
         filteredRows = new ObservableCollection<ArbRow>(currentRows);
@@ -784,6 +801,50 @@ public partial class ArbEditorControl : UserControl {
             RunArbGenerate(directory);
             BuildTable(directory);
         }
+    }
+
+    private static string? FindParentLocale(string locale, ICollection<string> allLocales) {
+        string[] parts = locale.Split('_');
+        for (int len = parts.Length - 1; len >= 1; len--) {
+            string candidate = string.Join("_", parts, 0, len);
+            if (allLocales.Contains(candidate)) return candidate;
+        }
+        return null;
+    }
+
+    private DataGridTemplateColumn CreateLocaleColumn(string locale, double width) {
+        // Display template: shows the actual value, or a grey italic fallback preview when empty.
+        var fefGrid = new FrameworkElementFactory(typeof(Grid));
+
+        var fefNormal = new FrameworkElementFactory(typeof(TextBlock));
+        fefNormal.SetBinding(TextBlock.TextProperty, new Binding($"Values[{locale}]"));
+        fefNormal.SetBinding(UIElement.VisibilityProperty,
+            new Binding($"Values[{locale}]") { Converter = NonEmptyToVisible });
+        fefGrid.AppendChild(fefNormal);
+
+        var fefPreview = new FrameworkElementFactory(typeof(TextBlock));
+        fefPreview.SetBinding(TextBlock.TextProperty, new Binding($"Previews[{locale}]"));
+        fefPreview.SetValue(TextBlock.ForegroundProperty, SystemColors.GrayTextBrush);
+        fefPreview.SetValue(TextBlock.FontStyleProperty, FontStyles.Italic);
+        fefPreview.SetBinding(UIElement.VisibilityProperty,
+            new Binding($"Values[{locale}]") { Converter = EmptyToVisible });
+        fefGrid.AppendChild(fefPreview);
+
+        var cellTemplate = new DataTemplate { VisualTree = fefGrid };
+
+        // Edit template: plain text box bound to the real value.
+        var fefEdit = new FrameworkElementFactory(typeof(TextBox));
+        fefEdit.SetBinding(TextBox.TextProperty,
+            new Binding($"Values[{locale}]") { UpdateSourceTrigger = UpdateSourceTrigger.LostFocus });
+        var editTemplate = new DataTemplate { VisualTree = fefEdit };
+
+        return new DataGridTemplateColumn {
+            Header = locale,
+            CellTemplate = cellTemplate,
+            CellEditingTemplate = editTemplate,
+            Width = width,
+            SortMemberPath = $"Values[{locale}]"
+        };
     }
 
     private static void RunArbGenerate(string arbDirectory) {

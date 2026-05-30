@@ -66,7 +66,10 @@ import javax.swing.UIManager
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.event.TableModelEvent
+import javax.swing.JTable
+import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
+import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableRowSorter
 
 class ArbEditor(private val project: Project, private val file: VirtualFile) : UserDataHolderBase(), FileEditor {
@@ -103,6 +106,20 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
 
         /** Normalise a filesystem path for comparison: forward slashes, lowercase. */
         fun normPath(p: String): String = p.replace('\\', '/').lowercase()
+
+        /**
+         * Returns the nearest parent locale that exists in [locales], or null if none.
+         * E.g. for "en_US" with ["en", "en_US"] returns "en".
+         * For "zh_Hant_CN" tries "zh_Hant" first, then "zh".
+         */
+        fun findParentLocale(locale: String, locales: List<String>): String? {
+            val parts = locale.split("_")
+            for (len in parts.size - 1 downTo 1) {
+                val candidate = parts.take(len).joinToString("_")
+                if (candidate in locales) return candidate
+            }
+            return null
+        }
     }
 
     private fun loadColumnWidth(directory: String, header: String): Int {
@@ -661,6 +678,14 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
                     loadColumnWidth(directory, locales[i - 1]).takeIf { it > 0 } ?: DEFAULT_LOCALE_COL_WIDTH
             }
 
+            // Attach fallback-preview renderers to locale columns. Reads live from the model,
+            // so previews stay accurate as the user edits parent-locale cells in the same session.
+            for (i in locales.indices) {
+                val parentLocale = findParentLocale(locales[i], locales) ?: continue
+                val parentColIndex = locales.indexOf(parentLocale) + 1 // col 0 is Key
+                columnModel.getColumn(i + 1).cellRenderer = createFallbackRenderer(parentLocale, parentColIndex)
+            }
+
             // Column-move persistence is handled in header mouseReleased (below) alongside widths,
             // because columnMoved fires on every intermediate drag step — the fromIndex/toIndex
             // values during intermediate events are unreliable for detecting completion.
@@ -849,6 +874,35 @@ class ArbEditor(private val project: Project, private val file: VirtualFile) : U
             filterField?.text = filter
         }
     }
+
+    /**
+     * Creates a cell renderer that shows a grey italic fallback preview when the cell is empty
+     * but the [parentLocale] column (at [parentColIndex]) has a value.
+     * The preview reads live from the table model, so it updates as the user edits the parent column.
+     */
+    private fun createFallbackRenderer(parentLocale: String, parentColIndex: Int): TableCellRenderer =
+        object : DefaultTableCellRenderer() {
+            override fun getTableCellRendererComponent(
+                table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
+            ): Component {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+                val actualValue = value as? String ?: ""
+                if (actualValue.isEmpty()) {
+                    val modelRow = table.convertRowIndexToModel(row)
+                    val parentValue = table.model.getValueAt(modelRow, parentColIndex) as? String ?: ""
+                    if (parentValue.isNotEmpty()) {
+                        text = "($parentLocale) $parentValue"
+                        foreground = if (isSelected) table.selectionForeground
+                        else UIManager.getColor("Label.disabledForeground") ?: Color.GRAY
+                        font = font.deriveFont(Font.ITALIC)
+                        return this
+                    }
+                }
+                foreground = if (isSelected) table.selectionForeground else table.foreground
+                font = font.deriveFont(Font.PLAIN)
+                return this
+            }
+        }
 
     init {
         refresh()
