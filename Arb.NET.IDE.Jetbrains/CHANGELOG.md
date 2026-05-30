@@ -2,6 +2,10 @@
 
 All notable changes to the Arb.NET Rider plugin will be documented in this file.
 
+## 0.1.0
+- Add locale inheritance previews in the ARB editor
+- Fix Roslyn generator timestamps to stop unnecessary regeneration on `dotnet watch`
+
 ## 0.0.9
 - Add Generate ARB key C# context action: detects unresolved member access on `IArbLocale` types and adds the missing key to all `.arb` files
 - Cache ARB keys in the retrieval service to avoid blocking the EDT on repeated lookups; cache is invalidated on `arbKeysChanged`
