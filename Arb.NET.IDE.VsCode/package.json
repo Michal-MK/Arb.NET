@@ -1,0 +1,90 @@
+{
+	"name": "arb-net",
+	"displayName": "Arb.NET",
+	"description": "IDE support for Arb.NET .arb files",
+	"version": "0.0.1",
+	"publisher": "Michal-MK",
+	"repository": "https://github.com/Michal-MK/Arb.NET",
+	"engines": {
+		"vscode": "^1.100.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "arb-net.testWasm",
+				"title": "Arb.NET: Test WASM Round-Trip"
+			},
+			{
+				"command": "arb-net.openEditor",
+				"title": "Open Arb.NET Editor"
+			}
+		],
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "arb-net.openEditor",
+					"when": "resourceExtname == .arb || resourceFilename == l10n.yaml || explorerResourceIsFolder",
+					"group": "arbNet"
+				}
+			]
+		},
+		"configuration": {
+			"title": "Arb.NET",
+			"properties": {
+				"arbNet.translation.provider": {
+					"type": "string",
+					"enum": ["azureOpenAI", "google"],
+					"enumDescriptions": [
+						"Azure OpenAI chat completions - requires endpoint, deployment, and API key below.",
+						"Google Translate (free, unauthenticated endpoint) - no configuration required."
+					],
+					"default": "google",
+					"description": "Default translation provider used by the Translate dialog."
+				},
+				"arbNet.translation.azureEndpoint": {
+					"type": "string",
+					"default": "",
+					"description": "Azure OpenAI resource endpoint URL, e.g. https://my-resource.openai.azure.com."
+				},
+				"arbNet.translation.azureDeploymentName": {
+					"type": "string",
+					"default": "",
+					"description": "Azure OpenAI deployment name."
+				},
+				"arbNet.translation.customPrompt": {
+					"type": "string",
+					"default": "",
+					"description": "Extra instructions appended to the translation prompt sent to Azure OpenAI (optional)."
+				},
+				"arbNet.translation.temperature": {
+					"type": "number",
+					"default": 0.2,
+					"minimum": 0,
+					"maximum": 2,
+					"description": "Sampling temperature for Azure OpenAI translation requests."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run build-wasm && npm run compile",
+		"build-wasm": "node ./scripts/build-wasm.js",
+		"compile": "tsc -p ./",
+		"lint": "eslint",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.13.0",
+		"@stylistic/eslint-plugin": "^2.9.0",
+		"@types/node": "^22",
+		"@types/vscode": "^1.100.0",
+		"eslint": "^9.13.0",
+		"typescript": "^5.8.2",
+		"typescript-eslint": "^8.26.0"
+	}
+}

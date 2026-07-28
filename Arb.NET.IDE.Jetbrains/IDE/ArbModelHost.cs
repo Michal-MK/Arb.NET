@@ -6,6 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.Common.Services;
+using Arb.NET.Models;
+using Arb.NET.Translation;
+using Arb.NET.Translation.Models;
 using JetBrains.Application.Parts;
 using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
@@ -233,7 +236,7 @@ public class ArbModelHost {
         model.TranslateArbEntries.SetAsync(async (_, request) => {
             ITranslator provider = string.Equals(request.Provider, "Google", StringComparison.OrdinalIgnoreCase)
                 ? new GoogleTranslator()
-                : new AzureOpenAITranslator(new Arb.NET.IDE.Common.Models.AzureTranslationSettings {
+                : new AzureOpenAITranslator(new Arb.NET.Translation.Models.AzureTranslationSettings {
                     Endpoint = request.Settings.Endpoint,
                     DeploymentName = request.Settings.DeploymentName,
                     ApiKey = request.Settings.ApiKey,

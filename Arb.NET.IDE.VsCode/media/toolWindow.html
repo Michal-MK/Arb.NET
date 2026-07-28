@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}}; script-src {{cspSource}};">
+	<link rel="stylesheet" href="{{styleUri}}">
+	<title>Arb.NET Editor</title>
+</head>
+<body>
+	<div class="toolbar-row">
+		<label for="directory-select">Directory:</label>
+		<select id="directory-select"></select>
+		<label for="filter-input">Filter:</label>
+		<input type="text" id="filter-input" placeholder="Filter by key or value...">
+	</div>
+	<div class="toolbar-row">
+		<button data-action="addLocale" disabled>Add Locale</button>
+		<button data-action="addKey" disabled>Add Key</button>
+		<button data-action="removeKey" disabled>Remove Key</button>
+		<button data-action="importCsv" disabled>Import CSV...</button>
+		<button data-action="exportCsv" disabled>Export CSV...</button>
+		<button data-action="translate" disabled>Translate...</button>
+		<button data-action="aiSettings">AI Settings...</button>
+	</div>
+	<div id="empty-state" class="empty-state" style="display:none">No .arb files found in this workspace.</div>
+	<div id="error-banner" class="error-banner"></div>
+	<div id="table-container">
+		<table id="arb-table">
+			<thead><tr id="table-head-row"></tr></thead>
+			<tbody id="table-body"></tbody>
+		</table>
+		<div id="table-empty-state">No keys in this directory yet.</div>
+	</div>
+
+	<script src="{{scriptUri}}"></script>
+</body>
+</html>

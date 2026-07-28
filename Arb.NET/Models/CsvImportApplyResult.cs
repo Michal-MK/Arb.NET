@@ -1,4 +1,4 @@
-namespace Arb.NET.IDE.Common.Models;
+namespace Arb.NET.Models;
 
 public sealed class CsvImportApplyResult {
     public int ImportedKeyCount { get; set; }

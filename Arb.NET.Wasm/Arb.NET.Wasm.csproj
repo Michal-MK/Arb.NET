@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <OutputType>Exe</OutputType>
+    <WasmMainJSPath>main.mjs</WasmMainJSPath>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <WasmEnableSIMD>false</WasmEnableSIMD>
+    <RunAOTCompilation>false</RunAOTCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arb.NET\Arb.NET.csproj" />
+    <ProjectReference Include="..\Arb.NET.Translation\Arb.NET.Translation.csproj" />
+  </ItemGroup>
+
+  <!-- Copy the published AppBundle into the VSCode extension so it can be loaded from Node.
+       Only runs for Release publishes; the extension always ships the trimmed bundle.
+       WasmBuildApp generates the bundle via a nested MSBuild invocation, so $(WasmAppDir)
+       isn't visible here - the path is reconstructed from the well-known SDK convention instead. -->
+  <Target Name="CopyAppBundleToVsCodeExtension" AfterTargets="WasmNestedPublishApp" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <_WasmAppBundleDir>$(MSBuildThisFileDirectory)bin/$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/AppBundle/</_WasmAppBundleDir>
+      <_VsCodeWasmDir>$(MSBuildThisFileDirectory)../Arb.NET.IDE.VsCode/wasm</_VsCodeWasmDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <WasmAppBundleFiles Include="$(_WasmAppBundleDir)**/*" />
+    </ItemGroup>
+    <Error Text="AppBundle not found at $(_WasmAppBundleDir) - WasmBuildApp may not have run." Condition="!Exists('$(_WasmAppBundleDir)')" />
+    <RemoveDir Directories="$(_VsCodeWasmDir)" Condition="Exists('$(_VsCodeWasmDir)')" />
+    <Copy SourceFiles="@(WasmAppBundleFiles)" DestinationFolder="$(_VsCodeWasmDir)/%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

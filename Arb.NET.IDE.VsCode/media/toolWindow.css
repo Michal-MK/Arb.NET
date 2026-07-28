@@ -1,0 +1,205 @@
+body {
+	font-family: var(--vscode-font-family);
+	color: var(--vscode-foreground);
+	padding: 8px 12px;
+}
+
+.toolbar-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+	flex-wrap: wrap;
+}
+
+label {
+	font-size: 12px;
+	opacity: 0.85;
+}
+
+select, input[type="text"] {
+	background: var(--vscode-input-background);
+	color: var(--vscode-input-foreground);
+	border: 1px solid var(--vscode-input-border, transparent);
+	padding: 3px 6px;
+	border-radius: 2px;
+	font-size: 13px;
+}
+
+select {
+	min-width: 220px;
+}
+
+input[type="text"] {
+	min-width: 200px;
+	flex: 1;
+}
+
+button {
+	background: var(--vscode-button-secondaryBackground);
+	color: var(--vscode-button-secondaryForeground);
+	border: none;
+	padding: 4px 10px;
+	border-radius: 2px;
+	cursor: pointer;
+	font-size: 12px;
+}
+
+button:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+button:disabled:hover {
+	background: var(--vscode-button-secondaryBackground);
+}
+
+.empty-state {
+	opacity: 0.7;
+	font-size: 12px;
+	margin-top: 24px;
+}
+
+.error-banner {
+	display: none;
+	background: var(--vscode-inputValidation-errorBackground);
+	border: 1px solid var(--vscode-inputValidation-errorBorder);
+	color: var(--vscode-foreground);
+	padding: 6px 10px;
+	border-radius: 2px;
+	font-size: 12px;
+	margin-bottom: 8px;
+}
+
+#arb-table {
+	/* table-layout: fixed with every <th> given an explicit width (set in JS on render) -
+	   this is what makes resizing one column never redistribute width into its neighbors.
+	   width: max-content forces the table's own width to be the sum of its column widths
+	   (browsers otherwise tend to auto-size a fixed-layout table to its container even
+	   with no width:100%, which silently re-shrinks columns to fit instead of scrolling).
+	   #table-container provides the scrollbar once that sum exceeds the panel width. */
+	border-collapse: collapse;
+	table-layout: fixed;
+	width: max-content;
+	font-size: 13px;
+}
+
+#arb-table th, #arb-table td {
+	border: 1px solid var(--vscode-panel-border, #444);
+	padding: 4px 6px;
+	text-align: left;
+	vertical-align: top;
+	box-sizing: border-box;
+}
+
+#arb-table th {
+	background: var(--vscode-editorWidget-background);
+	position: sticky;
+	top: 0;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+#arb-table th .resize-handle {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 6px;
+	cursor: col-resize;
+	/* Own listeners, so dragging it must not also start a column-reorder drag or fire sort. */
+}
+
+#arb-table th .resize-handle:hover,
+#arb-table th .resize-handle.resizing {
+	background: var(--vscode-focusBorder);
+}
+
+#arb-table th.dragging {
+	opacity: 0.5;
+}
+
+#arb-table th.drag-over {
+	box-shadow: inset 2px 0 0 var(--vscode-focusBorder);
+}
+
+#arb-table th.sorted-asc::after {
+	content: " \25B2";
+}
+
+#arb-table th.sorted-desc::after {
+	content: " \25BC";
+}
+
+#arb-table td.key-cell {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+#arb-table td.value-cell {
+	cursor: text;
+	/* Floor so swapping text <-> input never shrinks the row; can still grow for long content. */
+	min-height: 20px;
+}
+
+#arb-table tr.selected-row > td {
+	background: var(--vscode-list-inactiveSelectionBackground, rgba(128, 128, 128, 0.15));
+}
+
+#arb-table td.value-cell .fallback-preview {
+	color: var(--vscode-descriptionForeground);
+	font-style: italic;
+}
+
+#arb-table td.value-cell textarea {
+	display: block;
+	/* Sits inside the td's existing padding/border (no negative-margin bleed, which
+	   previously mismatched the td's 1px border and caused a ~1px vertical shift).
+	   Zero padding of its own since the td already provides it; width/height are
+	   then a straight 100% of the content box JS measured them against. */
+	box-sizing: content-box;
+	margin: 0;
+	width: 100%;
+	background: var(--vscode-input-background);
+	color: var(--vscode-input-foreground);
+	border: none;
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 1px;
+	padding: 0;
+	font-size: 13px;
+	font-family: inherit;
+	resize: none;
+	overflow: hidden;
+	vertical-align: top;
+}
+
+#arb-table tr.hidden-row {
+	display: none;
+}
+
+.placeholder-badge {
+	display: inline-block;
+	margin-left: 4px;
+	font-size: 10px;
+	opacity: 0.6;
+}
+
+#table-container {
+	margin-top: 8px;
+	max-height: calc(100vh - 120px);
+	overflow: auto;
+}
+
+#table-empty-state {
+	display: none;
+	opacity: 0.7;
+	font-size: 12px;
+	margin-top: 16px;
+}

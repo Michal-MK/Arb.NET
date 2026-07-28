@@ -13,7 +13,9 @@
 ## IDE Support
 `Arb.NET.IDE.Jetbrains` - a plugin for Rider and Resharper
 `Arb.NET.IDE.VisualStudio` - a plugin for Visual Studio
+`Arb.NET.IDE.VsCode` - a VS Code extension (TypeScript)
 `Arb.NET.IDE.Common` - shared code for the IDE plugins
+`Arb.NET.Wasm` - compiles `Arb.NET` to a browser-wasm module (via `[JSExport]`) so the VS Code extension can call the real parser/serializer from Node without reimplementing it in TypeScript
 
 ## Hot files
 
@@ -29,6 +31,10 @@
 
 ### Visual Studio specifics
 - Visual Studio is using the VSIX extension format. It is in an NetFramework 4.7.x project.
+
+### VS Code specifics
+- Standard TypeScript extension, compiles CommonJS via `tsc`.
+- `Arb.NET` logic is not reimplemented in TypeScript; it's consumed from `Arb.NET.Wasm`'s browser-wasm build. JSON strings cross the boundary (`JSExport` methods take/return JSON, serialized via a source-generated `JsonSerializerContext` since trimmed publishes disable reflection-based `System.Text.Json`).
 
 ### IDE Common
 The IDEs have specific requirements w.r.t. dependency handling. the individual .csproj files tell more

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="10.0.3" />
+  </ItemGroup>
+
+  <!-- Same "copy transitive deps next to the DLL" pattern as Arb.NET's CopyNuGetDepsForIde,
+       so Arb.NET.IDE.Common (net472) can HintPath-reference this netstandard2.0 project's
+       output the same way it already does for Arb.NET.dll. -->
+  <Target Name="CopyNuGetDepsForIde" AfterTargets="Build" Condition="'$(Configuration)' == 'IDE'">
+    <Copy SourceFiles="@(RuntimeCopyLocalItems)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

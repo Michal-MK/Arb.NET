@@ -15,6 +15,7 @@ using System.Windows.Input;
 using Arb.NET;
 using Arb.NET.IDE.Common.Models;
 using Arb.NET.IDE.Common.Services;
+using Arb.NET.Models;
 using Arb.NET.IDE.VisualStudio.Tool.CodeCompletion;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Services;

@@ -1,4 +1,4 @@
-using Arb.NET.IDE.Common.Models;
+using Arb.NET.Translation.Models;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell.Settings;
 

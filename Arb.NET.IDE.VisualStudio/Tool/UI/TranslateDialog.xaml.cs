@@ -7,11 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
-using Arb.NET.IDE.Common.Models;
+using Arb.NET.Translation.Models;
+using Arb.NET.IDE.Common.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Services;
 using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;
-using Arb.NET.IDE.Common.Services;
 
 namespace Arb.NET.IDE.VisualStudio.Tool.UI;
 

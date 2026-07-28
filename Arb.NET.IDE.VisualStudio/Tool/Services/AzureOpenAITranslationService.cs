@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Arb.NET.IDE.Common.Models;
-using Arb.NET.IDE.Common.Services;
+using Arb.NET.Translation;
+using Arb.NET.Translation.Models;
 using Arb.NET.IDE.VisualStudio.Tool.Models;
 
 namespace Arb.NET.IDE.VisualStudio.Tool.Services;

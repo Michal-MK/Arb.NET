@@ -1,9 +1,9 @@
 using System.Text;
 using System.Net.Http;
 using System.Text.Json;
-using Arb.NET.IDE.Common.Models;
+using Arb.NET.Translation.Models;
 
-namespace Arb.NET.IDE.Common.Services;
+namespace Arb.NET.Translation;
 
 // ReSharper disable once InconsistentNaming
 public sealed class AzureOpenAITranslator(AzureTranslationSettings settings) : ITranslator {
@@ -175,9 +175,15 @@ public sealed class AzureOpenAITranslator(AzureTranslationSettings settings) : I
         }
 
         string fixedJson = FixJsonResponse(content);
-        List<string>? translations = JsonSerializer.Deserialize<List<string>>(fixedJson);
-        if (translations == null) {
+
+        using JsonDocument translationsDoc = JsonDocument.Parse(fixedJson);
+        if (translationsDoc.RootElement.ValueKind != JsonValueKind.Array) {
             throw new InvalidOperationException("Failed to parse translations from response.");
+        }
+
+        List<string> translations = [];
+        foreach (JsonElement element in translationsDoc.RootElement.EnumerateArray()) {
+            translations.Add(element.GetString() ?? string.Empty);
         }
 
         if (translations.Count != expectedCount) {

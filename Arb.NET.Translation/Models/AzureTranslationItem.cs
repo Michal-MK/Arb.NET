@@ -1,4 +1,4 @@
-namespace Arb.NET.IDE.Common.Models;
+namespace Arb.NET.Translation.Models;
 
 public class AzureTranslationItem {
     public string Key { get; set; } = string.Empty;

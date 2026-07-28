@@ -1,4 +1,5 @@
 using Arb.NET.IDE.Common.Models;
+using Arb.NET.Models;
 using Microsoft.VisualStudio.PlatformUI;
 using System.Collections.Generic;
 using System.Linq;

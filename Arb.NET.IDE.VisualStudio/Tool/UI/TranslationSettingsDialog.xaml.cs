@@ -1,4 +1,4 @@
-using Arb.NET.IDE.Common.Models;
+using Arb.NET.Translation.Models;
 using Microsoft.VisualStudio.PlatformUI;
 using System.Windows;
 using Arb.NET.IDE.VisualStudio.Tool.Services.Persistence;

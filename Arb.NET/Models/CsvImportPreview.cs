@@ -1,4 +1,4 @@
-namespace Arb.NET.IDE.Common.Models;
+namespace Arb.NET.Models;
 
 public sealed class CsvImportPreview {
     public List<string> Headers { get; } = [];

@@ -1,6 +1,6 @@
-using Arb.NET.IDE.Common.Models;
+using Arb.NET.Translation.Models;
 
-namespace Arb.NET.IDE.Common.Services;
+namespace Arb.NET.Translation;
 
 public interface ITranslator {
     (bool Valid, string? Error) ValidateSettings();

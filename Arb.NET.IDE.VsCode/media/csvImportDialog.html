@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}}; script-src {{cspSource}};">
+	<link rel="stylesheet" href="{{styleUri}}">
+	<title>Import CSV</title>
+</head>
+<body>
+	<p id="source-label" class="source-label"></p>
+
+	<div class="mode-row">
+		<label><input type="radio" name="mode" value="merge" checked> Add or update keys</label>
+		<label><input type="radio" name="mode" value="replaceAll"> Replace all keys</label>
+	</div>
+
+	<div id="error-banner" class="error-banner"></div>
+
+	<h3>Column Mapping</h3>
+	<table id="mapping-table">
+		<thead><tr><th>CSV Column</th><th>Maps To</th></tr></thead>
+		<tbody id="mapping-body"></tbody>
+	</table>
+
+	<h3>Preview</h3>
+	<div id="preview-container">
+		<table id="preview-table">
+			<thead><tr id="preview-head-row"></tr></thead>
+			<tbody id="preview-body"></tbody>
+		</table>
+	</div>
+
+	<div class="actions-row">
+		<button id="cancel-button" data-variant="secondary">Cancel</button>
+		<button id="import-button">Import</button>
+	</div>
+
+	<script src="{{scriptUri}}"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-namespace Arb.NET.IDE.Common.Models;
+namespace Arb.NET.Translation.Models;
 
 public class AzureTranslationSettings {
     public string Endpoint { get; set; } = string.Empty;

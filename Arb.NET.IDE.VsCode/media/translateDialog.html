@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}}; script-src {{cspSource}};">
+	<link rel="stylesheet" href="{{styleUri}}">
+	<title>Translate</title>
+</head>
+<body>
+	<div id="error-banner" class="error-banner"></div>
+	<div id="no-key-banner" class="info-banner" style="display:none">
+		No Azure OpenAI API key is stored. Use "AI Settings..." first, or switch to Google Translate below.
+	</div>
+
+	<div class="form-row">
+		<label for="source-locale">Source locale:</label>
+		<select id="source-locale"></select>
+	</div>
+
+	<div class="form-row">
+		<span class="form-label">Target locale(s):</span>
+		<div id="target-locales" class="checkbox-list"></div>
+	</div>
+
+	<div class="form-row">
+		<label><input type="checkbox" id="include-subcultures"> Include subculture locales (e.g. en_US, en_CS)</label>
+	</div>
+
+	<div class="form-row">
+		<span class="form-label">Translate:</span>
+		<label><input type="radio" name="mode" value="emptyOnly" checked> Empty cells only</label>
+		<label><input type="radio" name="mode" value="all"> All cells</label>
+	</div>
+
+	<div class="form-row">
+		<span class="form-label">Provider:</span>
+		<label><input type="radio" name="provider" value="google" checked> Google Translate (free)</label>
+		<label><input type="radio" name="provider" value="azureOpenAI"> Azure OpenAI</label>
+	</div>
+
+	<div class="actions-row">
+		<button id="cancel-button" data-variant="secondary">Close</button>
+		<button id="translate-button">Translate</button>
+	</div>
+
+	<div id="progress-row" class="progress-row" style="display:none">
+		<span id="progress-message"></span>
+	</div>
+
+	<h3 id="results-heading">Queued</h3>
+	<div id="status-message" class="progress-row"></div>
+	<div id="results-container">
+		<table id="results-table">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Key</th>
+					<th>Locale</th>
+					<th>Source</th>
+					<th>Existing</th>
+					<th>Translation</th>
+				</tr>
+			</thead>
+			<tbody id="results-body"></tbody>
+		</table>
+	</div>
+
+	<div id="apply-row" class="actions-row" style="display:none">
+		<button id="apply-button">Apply Selected</button>
+	</div>
+
+	<script src="{{scriptUri}}"></script>
+</body>
+</html>
