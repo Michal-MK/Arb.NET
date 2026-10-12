@@ -9,6 +9,15 @@ namespace Arb.NET;
 /// Generates C# code from parsed .arb documents
 /// </summary>
 public class ArbCodeGenerator {
+    private readonly string? newLine;
+
+    public ArbCodeGenerator() { }
+
+    // .editorconfig inferred new line, or <see cref="Environment.NewLine"/> fallback.
+    public ArbCodeGenerator(string? newLine) {
+        this.newLine = newLine;
+    }
+
     /// <summary>
     /// Generates a C# class from an ARB document
     /// </summary>
@@ -29,7 +38,7 @@ public class ArbCodeGenerator {
 
         sb.AppendLine("}");
 
-        return sb.ToString();
+        return NewLineHelper.Normalize(sb.ToString(), newLine);
     }
 
 #if !ARB_GENERATOR
@@ -84,8 +93,8 @@ public class ArbCodeGenerator {
         else {
             sb.AppendLine();
             BuildSummaryTag(sb, entry);
-            sb.AppendLine($"    public static string {StringHelper.ToPascalCase(entry.Key)}\n" +
-                          $"        => \"{StringHelper.JsonString(entry.Value)}\";");
+            sb.AppendLine($"    public static string {StringHelper.ToPascalCase(entry.Key)}");
+            sb.AppendLine($"        => \"{StringHelper.JsonString(entry.Value)}\";");
         }
     }
 
@@ -275,7 +284,7 @@ public class ArbCodeGenerator {
         }
 
         sb.AppendLine("}");
-        return sb.ToString();
+        return NewLineHelper.Normalize(sb.ToString(), newLine);
     }
 
     private static void GenerateDispatcherEntry(

@@ -8,7 +8,9 @@ namespace Arb.NET;
 /// Serializes an <see cref="ArbDocument"/> back to the ARB JSON format.
 /// </summary>
 public static class ArbSerializer {
-    public static string Serialize(ArbDocument doc) {
+    public static string Serialize(ArbDocument doc) => Serialize(doc, null);
+
+    public static string Serialize(ArbDocument doc, string? newLine) {
         MemoryStream buffer = new();
         JsonWriterOptions options = new() {
             Indented = true,
@@ -39,7 +41,7 @@ public static class ArbSerializer {
 
             writer.WriteEndObject();
         }
-        return Encoding.UTF8.GetString(buffer.ToArray());
+        return NewLineHelper.Normalize(Encoding.UTF8.GetString(buffer.ToArray()), newLine);
     }
 
     private static void WriteMetadata(Utf8JsonWriter writer, string key, ArbMetadata metadata) {

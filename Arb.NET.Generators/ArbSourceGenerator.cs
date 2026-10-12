@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -60,7 +61,11 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
         // the generator because AdditionalText identity is path-based only.
         var arbFiles = context.AdditionalTextsProvider
             .Where(file => file.Path.EndsWith(Constants.ARB_FILE_EXT, StringComparison.OrdinalIgnoreCase))
-            .Select(static (file, ct) => (file.Path, Content: file.GetText(ct)?.ToString() ?? string.Empty));
+            .Combine(context.AnalyzerConfigOptionsProvider)
+            .Select(static (pair, ct) => (
+                pair.Left.Path,
+                Content: pair.Left.GetText(ct)?.ToString() ?? string.Empty,
+                NewLine: GetEndOfLine(pair.Right.GetOptions(pair.Left))));
 
         var configFiles = context.AdditionalTextsProvider
             .Where(file => file.Path.EndsWith(Constants.LOCALIZATION_FILE, StringComparison.OrdinalIgnoreCase))
@@ -106,12 +111,31 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
             .Select(static (info, _) => info!)
             .Collect();
 
-        // Combine everything into a single output pass
-        var combined = allFilesAndConfig.Combine(enumsWithAttribute);
+        var sourceNewLine = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => node is CompilationUnitSyntax,
+                transform: static (genCtx, _) => genCtx.Node.SyntaxTree)
+            .Combine(context.AnalyzerConfigOptionsProvider)
+            .Select(static (pair, _) => (
+                Path: pair.Left.FilePath,
+                NewLine: GetEndOfLine(pair.Right.GetOptions(pair.Left))))
+            .Collect()
+            .Select(static (trees, _) => trees
+                .Where(t => t.NewLine != null)
+                .OrderBy(t => t.Path, StringComparer.Ordinal)
+                .Select(t => t.NewLine)
+                .FirstOrDefault());
 
-        context.RegisterSourceOutput(combined, (ctx, pair) => {
+        // Combine everything into a single output pass
+        var combined = allFilesAndConfig.Combine(enumsWithAttribute).Combine(sourceNewLine);
+
+        context.RegisterSourceOutput(combined, (ctx, triple) => {
+            var pair = triple.Left;
+            string? sourceEol = triple.Right;
             var ((arbPairs, configTuples), globalOptionsProvider) = pair.Left;
-            var enumInfos = pair.Right;
+            var enumInfos = pair.Right
+                .OrderBy(e => e.FullName, StringComparer.Ordinal)
+                .ToImmutableArray();
 
             if (configTuples.IsEmpty) return;
 
@@ -138,7 +162,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                                             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                                         + Path.DirectorySeparatorChar;
 
-                List<(string Path, string Content)> relevantArbs = arbPairs
+                List<(string Path, string Content, string? NewLine)> relevantArbs = arbPairs
                     .Where(f => f.Path.StartsWith(arbDirAbsolute, StringComparison.OrdinalIgnoreCase))
                     .GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase)
                     .Select(g => g.First())
@@ -148,8 +172,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                 string? defaultLangCode = ResolveDefaultLangCode(config, relevantArbs);
 
                 // ── Parse each ARB file once ─────────────────────────────────────────────
-                List<(string Path, ArbDocument Document)> parsedArbs = [];
-                foreach ((string s, string rawContent) in relevantArbs) {
+                List<(string Path, ArbDocument Document, string? NewLine)> parsedArbs = [];
+                foreach ((string s, string rawContent, string? configuredNewLine) in relevantArbs) {
                     if (string.IsNullOrWhiteSpace(rawContent)) continue;
 
                     ArbParseResult parseResult = new ArbParser().ParseContent(rawContent);
@@ -163,12 +187,14 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                         continue;
                     }
 
-                    parsedArbs.Add((s, parseResult.Document!));
+                    // .editorconfig wins; otherwise keep whatever the file already uses, then follow the C# sources.
+                    string? arbNewLine = configuredNewLine ?? NewLineHelper.Detect(rawContent) ?? sourceEol;
+                    parsedArbs.Add((s, parseResult.Document!, arbNewLine));
                 }
 
                 // ── Step 1: inject missing ARB keys for [ArbLocalize] enums ──────────────
                 if (!enumInfos.IsEmpty) {
-                    foreach ((string s, ArbDocument doc) in parsedArbs) {
+                    foreach ((string s, ArbDocument doc, string? arbNewLine) in parsedArbs) {
                         string? fileLangCode = StringHelper.FirstNonEmpty(
                             doc.Locale,
                             StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(s)),
@@ -212,7 +238,7 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                         }
 
                         if (modified) {
-                            WriteArbFileToDisk(s, ArbSerializer.Serialize(doc));
+                            WriteArbFileToDisk(s, ArbSerializer.Serialize(doc, arbNewLine));
                         }
                     }
                 }
@@ -238,7 +264,8 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
                              namespaceName,
                              baseClass,
                              defaultLangCode,
-                             enumForDispatcher)) {
+                             enumForDispatcher,
+                             sourceEol)) {
                     WriteGeneratedFile(outputDir, output.FileName, output.Content);
                 }
             }
@@ -285,12 +312,12 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
 
 #pragma warning restore RS1035
 
-    private static string? ResolveDefaultLangCode(L10nConfig config, IReadOnlyList<(string Path, string Content)> relevantArbs) {
+    private static string? ResolveDefaultLangCode(L10nConfig config, IReadOnlyList<(string Path, string Content, string? NewLine)> relevantArbs) {
         if (string.IsNullOrWhiteSpace(config.TemplateArbFile)) {
             return null;
         }
 
-        (string Path, string Content) templateFile = relevantArbs.FirstOrDefault(f =>
+        (string Path, string Content, string? NewLine) templateFile = relevantArbs.FirstOrDefault(f =>
             string.Equals(Path.GetFileName(f.Path), config.TemplateArbFile, StringComparison.OrdinalIgnoreCase));
 
         if (templateFile.Path is null) {
@@ -306,6 +333,11 @@ public sealed class ArbSourceGenerator : IIncrementalGenerator {
         }
 
         return StringHelper.InferLangCodeFromFilename(Path.GetFileNameWithoutExtension(templateFile.Path));
+    }
+
+    private static string? GetEndOfLine(AnalyzerConfigOptions options) {
+        options.TryGetValue("end_of_line", out string? value);
+        return NewLineHelper.FromEndOfLine(value);
     }
 
     private static string? GetGlobalProp(AnalyzerConfigOptions options, string key) {

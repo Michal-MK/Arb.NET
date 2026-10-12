@@ -77,7 +77,9 @@ public static class ArbProjectGenerator {
                      baseClass,
                      defaultLangCode,
                      enumLocalizations)) {
-            WriteFile(Path.Combine(outputDir, output.FileName), output.Content, result);
+            string outputPath = Path.Combine(outputDir, output.FileName);
+            string content = NewLineHelper.Normalize(output.Content, EditorConfigHelper.ResolveNewLine(outputPath));
+            WriteFile(outputPath, content, result);
         }
 
         return result;

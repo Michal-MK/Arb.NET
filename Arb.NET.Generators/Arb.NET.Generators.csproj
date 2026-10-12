@@ -73,6 +73,7 @@
         <Compile Include="..\Arb.NET\ArbCodeGenerator.cs"/>
         <Compile Include="..\Arb.NET\ArbGeneration.cs"/>
         <Compile Include="..\Arb.NET\Helpers\StringHelper.cs"/>
+        <Compile Include="..\Arb.NET\Helpers\NewLineHelper.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbDocument.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbEntry.cs"/>
         <Compile Include="..\Arb.NET\Models\ArbMetadata.cs"/>

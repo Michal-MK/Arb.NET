@@ -32,8 +32,17 @@ public static class ArbGeneration {
         string? baseClass,
         string? defaultLangCode,
         IReadOnlyList<EnumLocalizationInfo>? enumLocalizations = null
+    ) => GenerateFiles(inputs, namespaceName, baseClass, defaultLangCode, enumLocalizations, newLine: null);
+
+    public static IReadOnlyList<Output> GenerateFiles(
+        IEnumerable<Input> inputs,
+        string namespaceName,
+        string? baseClass,
+        string? defaultLangCode,
+        IReadOnlyList<EnumLocalizationInfo>? enumLocalizations,
+        string? newLine
     ) {
-        ArbCodeGenerator generator = new();
+        ArbCodeGenerator generator = new(newLine);
         List<Output> outputs = [];
         List<(ArbDocument Document, string ClassName)> localeList = [];
 

@@ -47,6 +47,10 @@ Or use the IDE integration to create the `l10n.yaml` (using the standard create/
 5. Profit!
 
 
+### Line endings
+
+Generated `.g.cs` files use the `end_of_line` setting from your `.editorconfig` (`lf`, `crlf` or `cr`), resolved for the project's C# files. `.arb` files that Arb.NET rewrites follow `end_of_line` for the `.arb` file, then the line ending the file already uses. Without a setting the host OS default is used.
+
 ## Projects:
 
 `Arb.NET` - shared lib for the lang code generation and the runtime support.
