@@ -149,7 +149,17 @@ dependencies {
         rider(ProductVersion, useInstaller = false)
         jetbrainsRuntime()
 
+        // Since Rider 2026.2 these are separate platform modules and no longer on the default compile classpath
+        bundledModule("intellij.rider.rdclient.dotnet")
+        bundledModule("intellij.rd.client")
+
     }
+}
+
+intellijPlatform {
+    // The plugin has no settings pages to index, and IntelliJ Platform Gradle Plugin 2.10.x cannot launch
+    // Rider 2026.2 for this task (com.intellij.idea.Main is gone). Newer plugin versions require Gradle 9.
+    buildSearchableOptions = false
 }
 
 tasks.runIde {
@@ -158,7 +168,7 @@ tasks.runIde {
 }
 
 tasks.patchPluginXml {
-    sinceBuild.set("253")
+    sinceBuild.set("262")
     untilBuild.set("262.*")
 
     val changelogText = file("${rootDir}/CHANGELOG.md").readText()

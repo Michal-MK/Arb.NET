@@ -49,13 +49,13 @@ tasks.withType<RdGenTask> {
     val classPath = sourceSets["main"].runtimeClasspath
     dependsOn(classPath)
     classpath(classPath)
-    // rider-model.jar requires Java 21+. Declare the toolchain requirement here;
+    // rider-model.jar (Rider 2026.2 SDK) requires Java 25+. Declare the toolchain requirement here;
     // Gradle resolves the actual JDK location from the machine's toolchain
     // configuration (auto-detection or org.gradle.java.installations.paths in
     // ~/.gradle/gradle.properties).
     javaLauncher.set(
         javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
+            languageVersion.set(JavaLanguageVersion.of(25))
         }
     )
 }

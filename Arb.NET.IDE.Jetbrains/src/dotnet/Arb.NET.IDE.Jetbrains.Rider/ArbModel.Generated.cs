@@ -36,7 +36,7 @@ namespace JetBrains.Rider.Model
   
   
   /// <summary>
-  /// <p>Generated from: ArbModel.kt:9</p>
+  /// <p>Generated from: ArbModel.kt:8</p>
   /// </summary>
   public class ArbModel : RdExtBase
   {

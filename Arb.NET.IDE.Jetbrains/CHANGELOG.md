@@ -2,8 +2,10 @@
 
 All notable changes to the Arb.NET Rider plugin will be documented in this file.
 
+## 0.1.2
+- Build against the Rider 2026.2 SDK; requires Rider 2026.2 (build 262)
+
 ## 0.1.1
-- Allow installation on Rider 2026.2 (build 262)
 - Generated C# files now use the `end_of_line` from `.editorconfig` and no longer mix LF and CRLF within a file
 - Deterministic order of `Localize(enum)` dispatcher overloads
 

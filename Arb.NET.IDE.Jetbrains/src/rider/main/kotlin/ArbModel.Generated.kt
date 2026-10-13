@@ -16,7 +16,7 @@ import kotlin.jvm.JvmStatic
 
 
 /**
- * #### Generated from [ArbModel.kt:9]
+ * #### Generated from [ArbModel.kt:8]
  */
 class ArbModel private constructor(
     private val _getArbData: RdCall<String, List<ArbLocaleData>>,
@@ -186,6 +186,12 @@ data class ArbCsvExportResponse (
     val errorMessage: String?,
     val csvContent: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeBool(success)
+        buffer.writeNullable(errorMessage) { buffer.writeString(it) }
+        buffer.writeString(csvContent)
+    }
     //companion
     
     companion object : IMarshaller<ArbCsvExportResponse> {
@@ -201,9 +207,7 @@ data class ArbCsvExportResponse (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvExportResponse)  {
-            buffer.writeBool(value.success)
-            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
-            buffer.writeString(value.csvContent)
+            value.write(ctx, buffer)
         }
         
         
@@ -258,6 +262,13 @@ data class ArbCsvImportRequest (
     val mappings: List<String>,
     val mode: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(csvContent)
+        buffer.writeList(mappings) { v -> buffer.writeString(v) }
+        buffer.writeString(mode)
+    }
     //companion
     
     companion object : IMarshaller<ArbCsvImportRequest> {
@@ -274,10 +285,7 @@ data class ArbCsvImportRequest (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvImportRequest)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.csvContent)
-            buffer.writeList(value.mappings) { v -> buffer.writeString(v) }
-            buffer.writeString(value.mode)
+            value.write(ctx, buffer)
         }
         
         
@@ -336,6 +344,14 @@ data class ArbCsvImportResponse (
     val affectedLocaleCount: Int,
     val createdLocaleCount: Int
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeBool(success)
+        buffer.writeNullable(errorMessage) { buffer.writeString(it) }
+        buffer.writeInt(importedKeyCount)
+        buffer.writeInt(affectedLocaleCount)
+        buffer.writeInt(createdLocaleCount)
+    }
     //companion
     
     companion object : IMarshaller<ArbCsvImportResponse> {
@@ -353,11 +369,7 @@ data class ArbCsvImportResponse (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvImportResponse)  {
-            buffer.writeBool(value.success)
-            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
-            buffer.writeInt(value.importedKeyCount)
-            buffer.writeInt(value.affectedLocaleCount)
-            buffer.writeInt(value.createdLocaleCount)
+            value.write(ctx, buffer)
         }
         
         
@@ -416,6 +428,11 @@ data class ArbCsvPreviewRequest (
     val directory: String,
     val csvContent: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(csvContent)
+    }
     //companion
     
     companion object : IMarshaller<ArbCsvPreviewRequest> {
@@ -430,8 +447,7 @@ data class ArbCsvPreviewRequest (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvPreviewRequest)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.csvContent)
+            value.write(ctx, buffer)
         }
         
         
@@ -486,6 +502,16 @@ data class ArbCsvPreviewResponse (
     val availableLocaleMappings: List<String>,
     val defaultLocale: String?
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeBool(success)
+        buffer.writeNullable(errorMessage) { buffer.writeString(it) }
+        buffer.writeList(headers) { v -> buffer.writeString(v) }
+        buffer.writeList(rows) { v -> ArbCsvRow.write(ctx, buffer, v) }
+        buffer.writeList(suggestedMappings) { v -> buffer.writeString(v) }
+        buffer.writeList(availableLocaleMappings) { v -> buffer.writeString(v) }
+        buffer.writeNullable(defaultLocale) { buffer.writeString(it) }
+    }
     //companion
     
     companion object : IMarshaller<ArbCsvPreviewResponse> {
@@ -505,13 +531,7 @@ data class ArbCsvPreviewResponse (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvPreviewResponse)  {
-            buffer.writeBool(value.success)
-            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
-            buffer.writeList(value.headers) { v -> buffer.writeString(v) }
-            buffer.writeList(value.rows) { v -> ArbCsvRow.write(ctx, buffer, v) }
-            buffer.writeList(value.suggestedMappings) { v -> buffer.writeString(v) }
-            buffer.writeList(value.availableLocaleMappings) { v -> buffer.writeString(v) }
-            buffer.writeNullable(value.defaultLocale) { buffer.writeString(it) }
+            value.write(ctx, buffer)
         }
         
         
@@ -575,6 +595,10 @@ data class ArbCsvPreviewResponse (
 data class ArbCsvRow (
     val cells: List<String>
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeList(cells) { v -> buffer.writeString(v) }
+    }
     //companion
     
     companion object : IMarshaller<ArbCsvRow> {
@@ -588,7 +612,7 @@ data class ArbCsvRow (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbCsvRow)  {
-            buffer.writeList(value.cells) { v -> buffer.writeString(v) }
+            value.write(ctx, buffer)
         }
         
         
@@ -635,6 +659,11 @@ data class ArbEntry (
     val key: String,
     val value: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(key)
+        buffer.writeString(value)
+    }
     //companion
     
     companion object : IMarshaller<ArbEntry> {
@@ -649,8 +678,7 @@ data class ArbEntry (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbEntry)  {
-            buffer.writeString(value.key)
-            buffer.writeString(value.value)
+            value.write(ctx, buffer)
         }
         
         
@@ -702,6 +730,13 @@ data class ArbEntryUpdate (
     val key: String,
     val value: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(locale)
+        buffer.writeString(key)
+        buffer.writeString(value)
+    }
     //companion
     
     companion object : IMarshaller<ArbEntryUpdate> {
@@ -718,10 +753,7 @@ data class ArbEntryUpdate (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbEntryUpdate)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.locale)
-            buffer.writeString(value.key)
-            buffer.writeString(value.value)
+            value.write(ctx, buffer)
         }
         
         
@@ -781,6 +813,15 @@ data class ArbKeyInfo (
     val lineNumber: Int,
     val xmlDoc: String?
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(key)
+        buffer.writeBool(isParametric)
+        buffer.writeNullable(description) { buffer.writeString(it) }
+        buffer.writeNullable(arbFilePath) { buffer.writeString(it) }
+        buffer.writeInt(lineNumber)
+        buffer.writeNullable(xmlDoc) { buffer.writeString(it) }
+    }
     //companion
     
     companion object : IMarshaller<ArbKeyInfo> {
@@ -799,12 +840,7 @@ data class ArbKeyInfo (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbKeyInfo)  {
-            buffer.writeString(value.key)
-            buffer.writeBool(value.isParametric)
-            buffer.writeNullable(value.description) { buffer.writeString(it) }
-            buffer.writeNullable(value.arbFilePath) { buffer.writeString(it) }
-            buffer.writeInt(value.lineNumber)
-            buffer.writeNullable(value.xmlDoc) { buffer.writeString(it) }
+            value.write(ctx, buffer)
         }
         
         
@@ -867,6 +903,12 @@ data class ArbKeyRename (
     val oldKey: String,
     val newKey: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(oldKey)
+        buffer.writeString(newKey)
+    }
     //companion
     
     companion object : IMarshaller<ArbKeyRename> {
@@ -882,9 +924,7 @@ data class ArbKeyRename (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbKeyRename)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.oldKey)
-            buffer.writeString(value.newKey)
+            value.write(ctx, buffer)
         }
         
         
@@ -939,6 +979,13 @@ data class ArbLocaleData (
     val filePath: String,
     val entries: List<ArbEntry>
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(locale)
+        buffer.writeString(directory)
+        buffer.writeString(filePath)
+        buffer.writeList(entries) { v -> ArbEntry.write(ctx, buffer, v) }
+    }
     //companion
     
     companion object : IMarshaller<ArbLocaleData> {
@@ -955,10 +1002,7 @@ data class ArbLocaleData (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbLocaleData)  {
-            buffer.writeString(value.locale)
-            buffer.writeString(value.directory)
-            buffer.writeString(value.filePath)
-            buffer.writeList(value.entries) { v -> ArbEntry.write(ctx, buffer, v) }
+            value.write(ctx, buffer)
         }
         
         
@@ -1014,6 +1058,11 @@ data class ArbNewKey (
     val directory: String,
     val key: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(key)
+    }
     //companion
     
     companion object : IMarshaller<ArbNewKey> {
@@ -1028,8 +1077,7 @@ data class ArbNewKey (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbNewKey)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.key)
+            value.write(ctx, buffer)
         }
         
         
@@ -1079,6 +1127,11 @@ data class ArbNewLocale (
     val directory: String,
     val locale: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(locale)
+    }
     //companion
     
     companion object : IMarshaller<ArbNewLocale> {
@@ -1093,8 +1146,7 @@ data class ArbNewLocale (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbNewLocale)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.locale)
+            value.write(ctx, buffer)
         }
         
         
@@ -1144,6 +1196,11 @@ data class ArbOpenEditor (
     val arbDir: String,
     val keyFilter: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(arbDir)
+        buffer.writeString(keyFilter)
+    }
     //companion
     
     companion object : IMarshaller<ArbOpenEditor> {
@@ -1158,8 +1215,7 @@ data class ArbOpenEditor (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbOpenEditor)  {
-            buffer.writeString(value.arbDir)
-            buffer.writeString(value.keyFilter)
+            value.write(ctx, buffer)
         }
         
         
@@ -1211,6 +1267,13 @@ data class ArbPlaceholderRename (
     val oldName: String,
     val newName: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(key)
+        buffer.writeString(oldName)
+        buffer.writeString(newName)
+    }
     //companion
     
     companion object : IMarshaller<ArbPlaceholderRename> {
@@ -1227,10 +1290,7 @@ data class ArbPlaceholderRename (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbPlaceholderRename)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.key)
-            buffer.writeString(value.oldName)
-            buffer.writeString(value.newName)
+            value.write(ctx, buffer)
         }
         
         
@@ -1286,6 +1346,11 @@ data class ArbRemoveKey (
     val directory: String,
     val key: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        buffer.writeString(key)
+    }
     //companion
     
     companion object : IMarshaller<ArbRemoveKey> {
@@ -1300,8 +1365,7 @@ data class ArbRemoveKey (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbRemoveKey)  {
-            buffer.writeString(value.directory)
-            buffer.writeString(value.key)
+            value.write(ctx, buffer)
         }
         
         
@@ -1355,6 +1419,15 @@ data class ArbTranslateRequest (
     val items: List<ArbTranslationItem>,
     val provider: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(directory)
+        AzureTranslationSettings.write(ctx, buffer, settings)
+        buffer.writeString(sourceLocale)
+        buffer.writeString(targetLocale)
+        buffer.writeList(items) { v -> ArbTranslationItem.write(ctx, buffer, v) }
+        buffer.writeString(provider)
+    }
     //companion
     
     companion object : IMarshaller<ArbTranslateRequest> {
@@ -1373,12 +1446,7 @@ data class ArbTranslateRequest (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslateRequest)  {
-            buffer.writeString(value.directory)
-            AzureTranslationSettings.write(ctx, buffer, value.settings)
-            buffer.writeString(value.sourceLocale)
-            buffer.writeString(value.targetLocale)
-            buffer.writeList(value.items) { v -> ArbTranslationItem.write(ctx, buffer, v) }
-            buffer.writeString(value.provider)
+            value.write(ctx, buffer)
         }
         
         
@@ -1441,6 +1509,12 @@ data class ArbTranslateResponse (
     val errorMessage: String?,
     val items: List<ArbTranslatedItem>
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeBool(success)
+        buffer.writeNullable(errorMessage) { buffer.writeString(it) }
+        buffer.writeList(items) { v -> ArbTranslatedItem.write(ctx, buffer, v) }
+    }
     //companion
     
     companion object : IMarshaller<ArbTranslateResponse> {
@@ -1456,9 +1530,7 @@ data class ArbTranslateResponse (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslateResponse)  {
-            buffer.writeBool(value.success)
-            buffer.writeNullable(value.errorMessage) { buffer.writeString(it) }
-            buffer.writeList(value.items) { v -> ArbTranslatedItem.write(ctx, buffer, v) }
+            value.write(ctx, buffer)
         }
         
         
@@ -1511,6 +1583,11 @@ data class ArbTranslatedItem (
     val key: String,
     val translatedText: String
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(key)
+        buffer.writeString(translatedText)
+    }
     //companion
     
     companion object : IMarshaller<ArbTranslatedItem> {
@@ -1525,8 +1602,7 @@ data class ArbTranslatedItem (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslatedItem)  {
-            buffer.writeString(value.key)
-            buffer.writeString(value.translatedText)
+            value.write(ctx, buffer)
         }
         
         
@@ -1577,6 +1653,12 @@ data class ArbTranslationItem (
     val sourceText: String,
     val description: String?
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(key)
+        buffer.writeString(sourceText)
+        buffer.writeNullable(description) { buffer.writeString(it) }
+    }
     //companion
     
     companion object : IMarshaller<ArbTranslationItem> {
@@ -1592,9 +1674,7 @@ data class ArbTranslationItem (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: ArbTranslationItem)  {
-            buffer.writeString(value.key)
-            buffer.writeString(value.sourceText)
-            buffer.writeNullable(value.description) { buffer.writeString(it) }
+            value.write(ctx, buffer)
         }
         
         
@@ -1650,6 +1730,14 @@ data class AzureTranslationSettings (
     val customPrompt: String,
     val temperature: Float
 ) : IPrintable {
+    //write-marshaller
+    private fun write(ctx: SerializationCtx, buffer: AbstractBuffer)  {
+        buffer.writeString(endpoint)
+        buffer.writeString(deploymentName)
+        buffer.writeString(apiKey)
+        buffer.writeString(customPrompt)
+        buffer.writeFloat(temperature)
+    }
     //companion
     
     companion object : IMarshaller<AzureTranslationSettings> {
@@ -1667,11 +1755,7 @@ data class AzureTranslationSettings (
         }
         
         override fun write(ctx: SerializationCtx, buffer: AbstractBuffer, value: AzureTranslationSettings)  {
-            buffer.writeString(value.endpoint)
-            buffer.writeString(value.deploymentName)
-            buffer.writeString(value.apiKey)
-            buffer.writeString(value.customPrompt)
-            buffer.writeFloat(value.temperature)
+            value.write(ctx, buffer)
         }
         
         
