@@ -449,8 +449,6 @@ public class ArbCodeGenerator {
             .Where(e => !e.IsParametric(out _))
             .ToList();
 
-        if (simpleEntries.Count == 0) return;
-
         sb.AppendLine();
         sb.AppendLine("    /// <summary>Returns the localized string for the given raw ARB key, or null if not found.</summary>");
         sb.AppendLine("    public string? this[string? key] => key switch {");

@@ -2,6 +2,9 @@
 
 All notable changes to the Arb.NET Rider plugin will be documented in this file.
 
+## 0.1.3
+- Fix generated code failing to compile (CS0535, missing `IArbLocale` indexer) when the template .arb has no keys
+
 ## 0.1.2
 - Build against the Rider 2026.2 SDK; requires Rider 2026.2 (build 262)
 

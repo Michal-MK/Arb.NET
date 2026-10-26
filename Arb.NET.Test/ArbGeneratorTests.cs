@@ -142,6 +142,17 @@ public class ArbGeneratorTests {
     }
 
     [Test]
+    public void GenerateDispatcherClass_EmptyTemplate_EmitsIndexerRequiredByInterface() {
+        ArbDocument en = new() { Locale = "en_US", Entries = new Dictionary<string, ArbEntry>() };
+        (ArbDocument, string)[] locales = [(en, "L_en_US")];
+
+        string source = new ArbCodeGenerator().GenerateDispatcherClass(locales, en, "L", "Test");
+
+        Assert.That(source, Does.Contain("IArbLocale"));
+        Assert.That(source, Does.Contain("public string? this[string? key]"));
+    }
+
+    [Test]
     public void GenerateDispatcherClass_PluralSummaryUsesCompactNotation() {
         ArbDocument en = new() {
             Locale = "en",
