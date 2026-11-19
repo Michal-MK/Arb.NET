@@ -38,9 +38,17 @@ Or use the IDE integration to create the `l10n.yaml` (using the standard create/
   "@@locale": "en", # [REQUIRED] the locale of this .arb file
   "KeyName": "Localized Value", # entries in this format
   "ParametricKey": "Value with {param} placeholder", # for parametric keys, use {<name>} syntax
-  "PluralKey": "{count, plural, =0{One item} other{{count} items}}" # for pluralization, use ICU syntax
+  "PluralKey": "{count, plural, =0{No items} one{One item} other{{count} items}}" # for pluralization, use ICU syntax
 }
 ```
+
+#### Plurals
+
+- Forms: exact matches `=N{...}` and the CLDR categories `zero`, `one`, `two`, `few`, `many`, `other`.
+- Selection follows Flutter's `Intl.plural`: `=N` first, then `zero`/`one`/`two` as exact matches for 0/1/2, then the
+  category given by the CLDR rules of the file's locale (e.g. Czech `few` for 2-4), then `other`.
+- Placeholders inside a form (`one{One item, owner {name}}`) become method parameters, the same as outside the plural.
+- Not supported yet: `select`, `#`, `offset:`. An invalid plural generates a `#warning` that names the problem.
 
 4. If using `Arb.NET.Generator`, the code will be generated automatically at build time. If using `Arb.NET.Tool`, run the tool to generate the code manually. The IDE extensions also generate the code when a change is detected.
 

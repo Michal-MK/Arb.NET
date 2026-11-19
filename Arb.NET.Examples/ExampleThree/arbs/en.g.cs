@@ -12,4 +12,86 @@ public static class AppLocale_en {
     /// <returns>Another string</returns>
     public static string AnotherString
         => "Another string";
+
+    /// <summary>Exact match (=0) combined with CLDR categories (one, other).</summary>
+    /// <returns>{count, 0 - "No items", one - "One item", else "{count} items"}</returns>
+    /// <example>0 - "No items", one - "One item", n - "n items"</example>
+    public static string ItemCount(int count) {
+        var @selectedContent_count = (count) switch {
+            0 => "No items",
+            1 => "One item",
+            _ => __ArbPluralCategory(count) switch {
+                "one" => "One item",
+                _ => "" + count.ToString() + " items"
+            }
+        };
+        return "" + @selectedContent_count + "";
+    }
+
+    /// <summary>'zero', 'one' and 'two' also match 0, 1 and 2 exactly, as in Flutter.</summary>
+    /// <returns>{days, zero - "Due today", one - "Due tomorrow", else "Due in {days} days"}</returns>
+    /// <example>zero - "Due today", one - "Due tomorrow", n - "Due in n days"</example>
+    public static string DueIn(int days) {
+        var @selectedContent_days = (days) switch {
+            0 => "Due today",
+            1 => "Due tomorrow",
+            _ => __ArbPluralCategory(days) switch {
+                "zero" => "Due today",
+                "one" => "Due tomorrow",
+                _ => "Due in " + days.ToString() + " days"
+            }
+        };
+        return "" + @selectedContent_days + "";
+    }
+
+    /// <summary>Placeholders inside plural forms become parameters.</summary>
+    /// <returns>{count, 0 - "{user}, your inbox is empty", one - "{user}, you have one new message", else "{user}, you have {count} new messages"}</returns>
+    /// <example>0 - "{user}, your inbox is empty", one - "{user}, you have one new message", n - "{user}, you have n new messages"</example>
+    public static string InboxSummary(int count, object user) {
+        var @selectedContent_count = (count) switch {
+            0 => "" + user?.ToString() + ", your inbox is empty",
+            1 => "" + user?.ToString() + ", you have one new message",
+            _ => __ArbPluralCategory(count) switch {
+                "one" => "" + user?.ToString() + ", you have one new message",
+                _ => "" + user?.ToString() + ", you have " + count.ToString() + " new messages"
+            }
+        };
+        return "" + @selectedContent_count + "";
+    }
+
+    /// <summary>A plural nested inside the forms of another plural.</summary>
+    /// <returns>{files, 0 - "No files", one - "One file in {folders, plural, one{one folder} other{{folders} folders}}", else "{files} files in {folders, plural, one{one folder} other{{folders} folders}}"}</returns>
+    /// <example>0 - "No files", one - "One file in {folders, plural, one{one folder} other{{folders} folders}}", n - "n files in {folders, plural, one{one folder} other{{folders} folders}}", one - "one folder", n - "n folders", one - "one folder", n - "n folders"</example>
+    public static string FilesInFolders(int files, int folders) {
+        var @selectedContent_files = (files) switch {
+            0 => "No files",
+            1 => "One file in " + ((folders) switch { 1 => "one folder", _ => __ArbPluralCategory(folders) switch { "one" => "one folder", _ => "" + folders.ToString() + " folders" } }) + "",
+            _ => __ArbPluralCategory(files) switch {
+                "one" => "One file in " + ((folders) switch { 1 => "one folder", _ => __ArbPluralCategory(folders) switch { "one" => "one folder", _ => "" + folders.ToString() + " folders" } }) + "",
+                _ => "" + files.ToString() + " files in " + ((folders) switch { 1 => "one folder", _ => __ArbPluralCategory(folders) switch { "one" => "one folder", _ => "" + folders.ToString() + " folders" } }) + ""
+            }
+        };
+        return "" + @selectedContent_files + "";
+    }
+
+    /// <summary>Text and placeholders around a plural.</summary>
+    /// <returns>Cart of {owner}: {count, one - "one product", else "{count} products"}, total {total}</returns>
+    /// <example>one - "one product", n - "n products"</example>
+    public static string CartSummary(object owner, int count, object total) {
+        var @selectedContent_count = (count) switch {
+            1 => "one product",
+            _ => __ArbPluralCategory(count) switch {
+                "one" => "one product",
+                _ => "" + count.ToString() + " products"
+            }
+        };
+        return "Cart of " + owner?.ToString() + ": " + @selectedContent_count + ", total " + total?.ToString() + "";
+    }
+
+    // CLDR cardinal plural rules for 'en' (integer values).
+    private static string __ArbPluralCategory(int count) {
+        long n = count < 0 ? -(long)count : count;
+        if (n == 1) return "one";
+        return "other";
+    }
 }

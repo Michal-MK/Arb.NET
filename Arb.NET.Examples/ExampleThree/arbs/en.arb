@@ -1,6 +1,35 @@
 {
     "@@locale": "en",
     "appTitle": "Arb.NET Example Three",
-    
+
     "anotherString": "Another string",
+
+    "itemCount": "{count, plural, =0{No items} one{One item} other{{count} items}}",
+    "@itemCount": {
+        "description": "Exact match (=0) combined with CLDR categories (one, other)."
+    },
+
+    "dueIn": "{days, plural, zero{Due today} one{Due tomorrow} other{Due in {days} days}}",
+    "@dueIn": {
+        "description": "'zero', 'one' and 'two' also match 0, 1 and 2 exactly, as in Flutter."
+    },
+
+    "inboxSummary": "{count, plural, =0{{user}, your inbox is empty} one{{user}, you have one new message} other{{user}, you have {count} new messages}}",
+    "@inboxSummary": {
+        "description": "Placeholders inside plural forms become parameters.",
+        "placeholders": {
+            "count": { "type": "int" },
+            "user": { "type": "String" }
+        }
+    },
+
+    "filesInFolders": "{files, plural, =0{No files} one{One file in {folders, plural, one{one folder} other{{folders} folders}}} other{{files} files in {folders, plural, one{one folder} other{{folders} folders}}}}",
+    "@filesInFolders": {
+        "description": "A plural nested inside the forms of another plural."
+    },
+
+    "cartSummary": "Cart of {owner}: {count, plural, one{one product} other{{count} products}}, total {total}",
+    "@cartSummary": {
+        "description": "Text and placeholders around a plural."
+    }
 }

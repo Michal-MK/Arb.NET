@@ -32,8 +32,13 @@ public class ArbCodeGenerator {
         sb.AppendLine();
         sb.AppendLine($"public static class {className} {{");
 
+        GenerationContext context = new();
         foreach (ArbEntry entry in document.Entries.Values) {
-            GenerateEntry(sb, entry, paramOverrides);
+            GenerateEntry(sb, entry, context, paramOverrides);
+        }
+
+        if (context.UsesPluralCategories) {
+            PluralRules.AppendCategoryMethod(sb, PLURAL_CATEGORY_METHOD, document.Locale);
         }
 
         sb.AppendLine("}");
@@ -57,7 +62,13 @@ public class ArbCodeGenerator {
     }
 #endif
 
-    private static void GenerateEntry(StringBuilder sb, ArbEntry entry,
+    private const string PLURAL_CATEGORY_METHOD = "__ArbPluralCategory";
+
+    private sealed class GenerationContext {
+        public bool UsesPluralCategories { get; set; }
+    }
+
+    private static void GenerateEntry(StringBuilder sb, ArbEntry entry, GenerationContext context,
         IReadOnlyDictionary<string, List<ArbParameterDefinition>>? paramOverrides = null) {
         // Issue 1: Detect malformed plurals before anything else
         if (entry.TryDetectMangledPlural(out string? diagnostic)) {
@@ -76,8 +87,9 @@ public class ArbCodeGenerator {
             sb.AppendLine();
             BuildSummaryTag(sb, entry, defs);
             sb.AppendLine($"    public static string {StringHelper.ToPascalCase(entry.Key)}({paramList}) {{");
-            BuildPluralizationDefs(sb, defs);
-            sb.AppendLine($"        return {BuildFormattedString(entry, defs)};");
+            HashSet<string> intNames = GetIntParameterNames(defs);
+            Dictionary<int, string> pluralVariables = BuildPluralizationDefs(sb, defs, intNames, context);
+            sb.AppendLine($"        return {BuildFormattedString(entry, defs, intNames, pluralVariables)};");
             sb.AppendLine($"    }}");
         }
         else if (paramOverrides != null &&
@@ -105,68 +117,87 @@ public class ArbCodeGenerator {
     private static string ToIdentifier(string name) =>
         char.IsDigit(name[0]) ? "_" + name : name;
 
-    private static string BuildParamList(List<ArbParameterDefinition> names) {
-        return string.Join(", ", names.Select(s => {
-            if (s is not ArbPluralizationParameterDefinition) {
-                return "object " + ToIdentifier(s.Name);
-            }
-            else {
-                return "int " + ToIdentifier(s.Name);
-            }
-        }));
+    /// <summary>
+    /// Distinct parameter names in order of first appearance. A name repeated in the value
+    /// (e.g. <c>"{a} and {a}"</c>, or <c>{name}</c> in several plural forms) becomes a single parameter.
+    /// </summary>
+    private static List<string> GetDistinctParameterNames(List<ArbParameterDefinition> defs) {
+        List<string> names = [];
+        HashSet<string> seen = new(StringComparer.Ordinal);
+        foreach (ArbParameterDefinition def in defs) {
+            if (seen.Add(def.Name)) names.Add(def.Name);
+        }
+        return names;
     }
 
-    private static string BuildFormattedString(ArbEntry entry, List<ArbParameterDefinition> defs) {
+    /// <summary>Names used as a plural selector anywhere in the value — these parameters are <c>int</c>.</summary>
+    private static HashSet<string> GetIntParameterNames(List<ArbParameterDefinition> defs) {
+        return new HashSet<string>(
+            defs.OfType<ArbPluralizationParameterDefinition>().Select(d => d.Name),
+            StringComparer.Ordinal
+        );
+    }
+
+    private static string BuildParamList(List<ArbParameterDefinition> defs) {
+        HashSet<string> intNames = GetIntParameterNames(defs);
+        return string.Join(", ", GetDistinctParameterNames(defs)
+                     .Select(name => (intNames.Contains(name) ? "int " : "object ") + ToIdentifier(name))
+               );
+    }
+
+    private static string BuildArgList(List<ArbParameterDefinition> defs) {
+        return string.Join(", ", GetDistinctParameterNames(defs).Select(ToIdentifier));
+    }
+
+    private static List<ArbParameterDefinition> GetTopLevelDefs(List<ArbParameterDefinition> defs) {
+        List<ArbPluralizationParameterDefinition> plurals = defs.OfType<ArbPluralizationParameterDefinition>().ToList();
+        return defs
+            .Where(d => !plurals.Exists(p => !ReferenceEquals(p, d) &&
+                                             d.StartIndex > p.StartIndex &&
+                                             d.EndIndex <= p.EndIndex))
+            .ToList();
+    }
+
+    private static string BuildFormattedString(ArbEntry entry, List<ArbParameterDefinition> defs,
+        HashSet<string> intNames, Dictionary<int, string> pluralVariables) {
+        return BuildStringExpression(entry.Value, GetTopLevelDefs(defs), intNames,
+                                     plural => pluralVariables[plural.StartIndex]);
+    }
+
+    private static string BuildStringExpression(string value, List<ArbParameterDefinition> defs,
+        HashSet<string> intNames, Func<ArbPluralizationParameterDefinition, string> pluralExpression) {
         StringBuilder sb = new();
         int index = 0;
 
         sb.Append('"');
 
-        while (index < entry.Value.Length) {
-            char current = entry.Value[index];
+        while (index < value.Length) {
+            char current = value[index];
 
             if (current == '\\') {
                 // Handle escaped characters
-                if (index + 1 < entry.Value.Length) {
-                    if (entry.Value[index + 1] == '\\') {
-                        // Append the escape char itself
-                        sb.Append(current);
-                    }
-                    sb.Append(entry.Value[index + 1]);
+                if (index + 1 < value.Length) {
+                    AppendEscapedChar(sb, value[index + 1]);
                     index += 2;
                     continue;
                 }
             }
 
             if (defs.Find(f => f.StartIndex == index) is { } def) {
-                if (def is not ArbPluralizationParameterDefinition) {
-                    sb.Append("\"");
-                    sb.Append(" + ");
-                    sb.Append(ToIdentifier(def.Name));
-                    sb.Append("?.ToString()");
-                    sb.Append(" + ");
-                    sb.Append("\"");
-                    index = def.EndIndex;
-                    continue;
+                sb.Append("\" + ");
+                if (def is ArbPluralizationParameterDefinition pluralDef) {
+                    sb.Append(pluralExpression(pluralDef));
                 }
                 else {
-                    sb.Append("\"");
-                    sb.Append(" + ");
-                    sb.Append($"@selectedContent_{ToIdentifier(def.Name)}");
-                    sb.Append(" + ");
-                    sb.Append("\"");
-                    index = def.EndIndex;
-                    continue;
+                    sb.Append(ToIdentifier(def.Name));
+                    sb.Append(intNames.Contains(def.Name) ? ".ToString()" : "?.ToString()");
                 }
+                sb.Append(" + \"");
+                index = def.EndIndex;
+                continue;
             }
 
-            if (current == '"') {
-                sb.Append("\\\"");
-            }
-            else {
-                sb.Append(current);
-            }
-
+            AppendEscapedChar(sb, current);
             index++;
         }
 
@@ -174,22 +205,110 @@ public class ArbCodeGenerator {
         return sb.ToString();
     }
 
-    private static void BuildPluralizationDefs(StringBuilder sb, List<ArbParameterDefinition> defs) {
-        foreach (ArbParameterDefinition? def in defs) {
+    private static void AppendEscapedChar(StringBuilder sb, char c) {
+        switch (c) {
+            case '"': sb.Append("\\\""); break;
+            case '\\': sb.Append("\\\\"); break;
+            case '\n': sb.Append("\\n"); break;
+            case '\r': sb.Append("\\r"); break;
+            case '\t': sb.Append("\\t"); break;
+            default: sb.Append(c); break;
+        }
+    }
+
+    private static Dictionary<int, string> BuildPluralizationDefs(StringBuilder sb, List<ArbParameterDefinition> defs,
+        HashSet<string> intNames, GenerationContext context) {
+        Dictionary<int, string> variables = [];
+        HashSet<string> usedVariables = new(StringComparer.Ordinal);
+
+        foreach (ArbParameterDefinition def in GetTopLevelDefs(defs)) {
             if (def is not ArbPluralizationParameterDefinition pluralDef) continue;
 
             string id = ToIdentifier(pluralDef.Name);
-            sb.AppendLine($"        var @selectedContent_{id} = ({id}) switch {{");
-            foreach (KeyValuePair<int, string> form in pluralDef.CountableParameters) {
-                string escapeString = StringHelper.JsonString(form.Value);
-                escapeString = escapeString.Replace($"{{{def.Name}}}", $"\" + {id}.ToString() + \"");
-                sb.AppendLine($"            {form.Key} => \"{escapeString}\",");
+            string variable = $"@selectedContent_{id}";
+            for (int suffix = 2; !usedVariables.Add(variable); suffix++) {
+                variable = $"@selectedContent_{id}_{suffix}";
             }
-            string escapeOtherString = StringHelper.JsonString(pluralDef.OtherParameter);
-            escapeOtherString = escapeOtherString.Replace($"{{{def.Name}}}", $"\" + {id}.ToString() + \"");
-            sb.AppendLine($"            _ => \"{escapeOtherString}\"");
+            variables[pluralDef.StartIndex] = variable;
+
+            List<(string Pattern, string Expression)> arms = BuildPluralArms(pluralDef, intNames, context,
+                out List<(string Pattern, string Expression)>? categoryArms);
+
+            sb.AppendLine($"        var {variable} = ({id}) switch {{");
+            foreach ((string pattern, string expression) in arms) {
+                sb.AppendLine($"            {pattern} => {expression},");
+            }
+            if (categoryArms != null) {
+                sb.AppendLine($"            _ => {PLURAL_CATEGORY_METHOD}({id}) switch {{");
+                foreach ((string pattern, string expression) in categoryArms) {
+                    sb.AppendLine($"                {pattern} => {expression},");
+                }
+                sb.AppendLine($"                _ => {BuildFormExpression(pluralDef.OtherParameter, intNames, context)}");
+                sb.AppendLine("            }");
+            }
+            else {
+                sb.AppendLine($"            _ => {BuildFormExpression(pluralDef.OtherParameter, intNames, context)}");
+            }
             sb.AppendLine("        };");
         }
+
+        return variables;
+    }
+
+    private static List<(string Pattern, string Expression)> BuildPluralArms(
+        ArbPluralizationParameterDefinition pluralDef,
+        HashSet<string> intNames,
+        GenerationContext context,
+        out List<(string Pattern, string Expression)>? categoryArms) {
+        List<(string, string)> arms = [];
+        foreach (KeyValuePair<int, string> form in pluralDef.CountableParameters) {
+            arms.Add((form.Key.ToString(), BuildFormExpression(form.Value, intNames, context)));
+        }
+
+        categoryArms = null;
+        if (pluralDef.CategoryParameters.Count == 0) return arms;
+
+        context.UsesPluralCategories = true;
+        (string Category, int Number)[] exactCategories = [(PluralRules.ZERO, 0), (PluralRules.ONE, 1), (PluralRules.TWO, 2)];
+        foreach ((string category, int number) in exactCategories) {
+            if (pluralDef.CategoryParameters.TryGetValue(category, out string? content) &&
+                !pluralDef.CountableParameters.ContainsKey(number)) {
+                arms.Add((number.ToString(), BuildFormExpression(content, intNames, context)));
+            }
+        }
+
+        categoryArms = [];
+        foreach (string category in PluralRules.Categories) {
+            if (pluralDef.CategoryParameters.TryGetValue(category, out string? content)) {
+                categoryArms.Add(($"\"{category}\"", BuildFormExpression(content, intNames, context)));
+            }
+        }
+        return arms;
+    }
+
+    private static string BuildInlinePluralExpression(ArbPluralizationParameterDefinition pluralDef,
+        HashSet<string> intNames, GenerationContext context) {
+        string id = ToIdentifier(pluralDef.Name);
+        List<(string Pattern, string Expression)> arms = BuildPluralArms(pluralDef, intNames, context,
+            out List<(string Pattern, string Expression)>? categoryArms);
+        string other = BuildFormExpression(pluralDef.OtherParameter, intNames, context);
+        string fallback = categoryArms == null
+            ? other
+            : $"{PLURAL_CATEGORY_METHOD}({id}) switch {{ " +
+              string.Concat(categoryArms.Select(a => $"{a.Pattern} => {a.Expression}, ")) +
+              $"_ => {other} }}";
+        return $"(({id}) switch {{ " +
+               string.Concat(arms.Select(a => $"{a.Pattern} => {a.Expression}, ")) +
+               $"_ => {fallback} }})";
+    }
+
+    private static string BuildFormExpression(string content, HashSet<string> intNames, GenerationContext context) {
+        List<ArbParameterDefinition> innerDefs = ArbEntry.ParseParameters(content);
+        foreach (ArbPluralizationParameterDefinition nested in innerDefs.OfType<ArbPluralizationParameterDefinition>()) {
+            intNames.Add(nested.Name);
+        }
+        return BuildStringExpression(content, GetTopLevelDefs(innerDefs), intNames,
+                                     nested => BuildInlinePluralExpression(nested, intNames, context));
     }
 
     private static void BuildSummaryTag(StringBuilder sb, ArbEntry entry, List<ArbParameterDefinition>? defs = null) {
@@ -320,7 +439,7 @@ public class ArbCodeGenerator {
 
         if (isParametric) {
             string paramList = BuildParamList(defs);
-            string argList = string.Join(", ", defs.Select(d => ToIdentifier(d.Name)));
+            string argList = BuildArgList(defs);
             sb.AppendLine($"    public string {pascalKey}({paramList}) {{");
             sb.AppendLine($"        return ResolveLocale(_culture) switch {{");
             foreach ((ArbDocument doc, string _) in locales) {
@@ -519,6 +638,14 @@ public class ArbCodeGenerator {
                         sb.Append(kv.Value);
                         sb.Append('"');
                     }
+                    foreach (string category in PluralRules.Categories) {
+                        if (!pluralDef.CategoryParameters.TryGetValue(category, out string? content)) continue;
+                        sb.Append(", ");
+                        sb.Append(category);
+                        sb.Append(" - \"");
+                        sb.Append(content);
+                        sb.Append('"');
+                    }
                     sb.Append(", else \"");
                     sb.Append(pluralDef.OtherParameter);
                     sb.Append("\"}");
@@ -562,6 +689,11 @@ public class ArbCodeGenerator {
                 if (sb.Length > 0) sb.Append(", ");
                 string resolved = kv.Value.Replace($"{{{pluralDef.Name}}}", kv.Key.ToString());
                 sb.Append($"{kv.Key} - \"{resolved}\"");
+            }
+            foreach (string category in PluralRules.Categories) {
+                if (!pluralDef.CategoryParameters.TryGetValue(category, out string? content)) continue;
+                if (sb.Length > 0) sb.Append(", ");
+                sb.Append($"{category} - \"{content}\"");
             }
             if (!string.IsNullOrEmpty(pluralDef.OtherParameter)) {
                 if (sb.Length > 0) sb.Append(", ");

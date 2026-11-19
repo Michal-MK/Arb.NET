@@ -15,6 +15,11 @@ public record ArbEntry {
 
     public bool IsParametric(out List<ArbParameterDefinition> defs) => _IsParametricByValue(Value, out defs);
 
+    internal static List<ArbParameterDefinition> ParseParameters(string value) {
+        _IsParametricByValue(value, out List<ArbParameterDefinition> defs);
+        return defs;
+    }
+
     public IReadOnlyList<string> GetPlaceholderNames() {
         List<string> names = [];
         HashSet<string> seen = new(StringComparer.Ordinal);
@@ -79,19 +84,31 @@ public record ArbEntry {
         }
 
         string name = match.Groups[1].Value;
-        diagnostic = $"Key '{Key}': Value looks like a plural for '{name}' but the syntax is invalid. " +
-                     "Ensure forms are separated by spaces (not commas) and use '=N{{...}}' syntax (not 'N={{...}}').";
+        int commaIndex = match.Index + 1 + name.Length;
+        TryParsePlural(Value, match.Index, commaIndex, 0, out _, out _, out _, out string? reason);
+
+        diagnostic = $"Key '{Key}': Value looks like a plural for '{name}' but the syntax is invalid: " +
+                     (reason ?? "unrecognized plural syntax") + ". " +
+                     "Example: '{" + name + ", plural, one{...} other{...}}'.";
         return true;
     }
 
-    private bool _IsParametricByValue(string value, out List<ArbParameterDefinition> defs) {
+    private const int MAX_NESTING_DEPTH = 8;
+
+    private static bool _IsParametricByValue(string value, out List<ArbParameterDefinition> defs) {
         defs = [];
+        ScanParameters(value, defs, 0);
+        return defs.Count > 0;
+    }
+
+
+    private static void ScanParameters(string value, List<ArbParameterDefinition> defs, int depth) {
         int index = 0;
         int latestOpenBraceIndex = -1;
         bool isEscaping = false;
         bool? isParameterNumeric = null;
 
-        int maxIterations = 1000; // Prevent infinite loops
+        int maxIterations = value.Length * 2 + 16; // Prevent infinite loops
         int iterations = 0;
         while (index < value.Length) {
             if (iterations++ > maxIterations) {
@@ -140,12 +157,20 @@ public record ArbEntry {
                     continue;
                 }
                 if (current == ',') {
-                    if (HandlePluralizationParameter(value, latestOpenBraceIndex, ref index, out ArbPluralizationParameterDefinition? pluralDef)) {
+                    if (TryParsePlural(value, latestOpenBraceIndex, index, depth,
+                                       out ArbPluralizationParameterDefinition pluralDef,
+                                       out int closeIndex,
+                                       out List<ArbParameterDefinition> nested,
+                                       out _)) {
                         defs.Add(pluralDef);
-                        index++;
+                        defs.AddRange(nested);
+                        index = closeIndex + 1;
+                        latestOpenBraceIndex = -1;
+                        isParameterNumeric = null;
                         continue;
                     }
                     latestOpenBraceIndex = -1;
+                    isParameterNumeric = null;
                     index++;
                     continue;
                 }
@@ -160,7 +185,7 @@ public record ArbEntry {
                     isParameterNumeric = null;
                     continue;
                 }
-                
+
                 // Something unexpected, reset state
                 latestOpenBraceIndex = -1;
                 isParameterNumeric = null;
@@ -168,93 +193,148 @@ public record ArbEntry {
 
             index++;
         }
-        return defs.Count > 0;
     }
 
-    // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
-    //       ^
-    // Here we are
-    private bool HandlePluralizationParameter(string value, int start, ref int index, out ArbPluralizationParameterDefinition def) {
-        const string PLURAL_INDICATOR = ", plural, ";
+    // {count, plural, =0{No items} one{{count} item} other{{count} items}}
+    // ^     ^
+    // |     commaIndex
+    // openBraceIndex
+    private static bool TryParsePlural(string value, int openBraceIndex, int commaIndex, int depth,
+                                       out ArbPluralizationParameterDefinition def,
+                                       out int closeIndex,
+                                       out List<ArbParameterDefinition> nested,
+                                       out string? error) {
+        const string PLURAL_KEYWORD = "plural";
         def = new ArbPluralizationParameterDefinition {
-            StartIndex = start,
-            Name = value.Substring(start + 1, index - 1 - start),
+            StartIndex = openBraceIndex,
+            Name = value.Substring(openBraceIndex + 1, commaIndex - openBraceIndex - 1),
         };
-        if (!value.Substring(index).StartsWith(PLURAL_INDICATOR)) {
+        closeIndex = -1;
+        nested = [];
+        error = null;
+
+        int i = commaIndex + 1;
+        SkipWhitespace(value, ref i);
+        if (string.CompareOrdinal(value, i, PLURAL_KEYWORD, 0, PLURAL_KEYWORD.Length) != 0) return false;
+        i += PLURAL_KEYWORD.Length;
+        if (i < value.Length && value[i] != ',' && !char.IsWhiteSpace(value[i])) return false; // e.g. "pluralize"
+
+        SkipWhitespace(value, ref i);
+        if (i >= value.Length || value[i] != ',') {
+            error = "expected ',' after 'plural'";
             return false;
         }
-        index += PLURAL_INDICATOR.Length;
+        i++;
 
-        // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
-        //                 ^
-        // Here we are
-
-        bool foundClosingBrace = false;
-        int maxIterations = 1000; // Prevent infinite loops
-        int iterations = 0;
-        while (!foundClosingBrace) {
-            if (iterations++ > maxIterations) {
-                return false; // Too many iterations, likely malformed input
+        List<(int Start, string Content)> forms = [];
+        HashSet<string> seenSelectors = new(StringComparer.Ordinal);
+        while (true) {
+            SkipWhitespace(value, ref i);
+            if (i >= value.Length) {
+                error = "missing the closing '}' of the plural";
+                return false;
             }
 
-            // expect '=' or 'other{'
-            if (value[index] == '=') {
-                // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
-                //                 ^
-                // Here we are
-                index += 1; // skip '='
-                bool success1 = ReadInteger(value, ref index, out int number);
-                if (!success1) {
-                    return false;
-                }
-
-                // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
-                //                   ^
-                // Here we are
-
-                bool success2 = ReadContent(value, ref index, out string content);
-
-                // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
-                //                             ^                ^
-                // Here we are
-                if (!success2) {
-                    return false;
-                }
-
-                def.CountableParameters.Add(number, content);
-
-                index++;
-
-                // {count, plural, =0{No items} =1{{count} item} other{{count} items}}
-                //                              ^                ^
-                // Here we are
+            char c = value[i];
+            if (c == '}') {
+                closeIndex = i;
+                def.EndIndex = i + 1;
+                break;
             }
-            else if (value[index] == 'o') {
-                // {count, plural, =0{No items} =1{One item} other{{count} items}}
-                //                                           ^
-                // Here we are
-                const string OTHER_INDICATOR = "other";
-                if (!value.Substring(index).StartsWith(OTHER_INDICATOR)) {
+
+            string selector;
+            int? exactNumber = null;
+            if (c == '=') {
+                i++;
+                if (i >= value.Length || !ReadInteger(value, ref i, out int number)) {
+                    error = "expected a number after '='";
                     return false;
                 }
-                index += OTHER_INDICATOR.Length;
-                bool success = ReadContent(value, ref index, out string content);
-                if (!success) {
+                exactNumber = number;
+                selector = "=" + number;
+            }
+            else if (char.IsDigit(c)) {
+                int digitsStart = i;
+                while (i < value.Length && char.IsDigit(value[i])) i++;
+                string digits = value.Substring(digitsStart, i - digitsStart);
+                error = i < value.Length && value[i] == '='
+                    ? $"'{digits}=' is not valid, exact matches are written as '={digits}{{...}}'"
+                    : $"unexpected '{digits}', exact matches are written as '={digits}{{...}}'";
+                return false;
+            }
+            else if (char.IsLetter(c)) {
+                int wordStart = i;
+                while (i < value.Length && (char.IsLetterOrDigit(value[i]) || value[i] == '_')) i++;
+                selector = value.Substring(wordStart, i - wordStart);
+                if (selector == "offset" && i < value.Length && value[i] == ':') {
+                    error = "'offset:' is not supported";
                     return false;
                 }
+                if (!PluralRules.IsCategory(selector)) {
+                    error = $"'{selector}' is not a plural category, use '=N' or one of: " +
+                            string.Join(", ", PluralRules.Categories);
+                    return false;
+                }
+            }
+            else if (c == ',') {
+                error = "plural forms must be separated by spaces, not commas";
+                return false;
+            }
+            else {
+                error = $"unexpected '{c}' where a plural form ('=N{{...}}' or a category such as 'one{{...}}') was expected";
+                return false;
+            }
 
-                // {count, plural, =0{No items} =1{One item} other{{count} items}}
-                //                                                               ^
-                // Here we are
+            SkipWhitespace(value, ref i);
+            if (i >= value.Length || value[i] != '{') {
+                error = $"expected '{{' after '{selector}'";
+                return false;
+            }
 
+            int contentStart = i + 1;
+            if (!ReadContent(value, ref i, out string content)) {
+                error = $"form '{selector}' is missing its closing '}}'";
+                return false;
+            }
+
+            if (!seenSelectors.Add(selector)) {
+                error = $"form '{selector}' is defined more than once";
+                return false;
+            }
+
+            if (exactNumber.HasValue) {
+                def.CountableParameters.Add(exactNumber.Value, content);
+            }
+            else if (selector == PluralRules.OTHER) {
                 def.OtherParameter = content;
             }
-            if (value[index] == '}') {
-                foundClosingBrace = true;
-                def.EndIndex = index + 1;
+            else {
+                def.CategoryParameters.Add(selector, content);
+            }
+            forms.Add((contentStart, content));
+        }
+
+        // Placeholders used inside the forms become parameters too, e.g. "=1{One item, owner {name}}".
+        // References to the plural variable itself are not added, it is already a parameter.
+        if (depth < MAX_NESTING_DEPTH) {
+            foreach ((int start, string content) in forms) {
+                List<ArbParameterDefinition> inner = [];
+                ScanParameters(content, inner, depth + 1);
+                foreach (ArbParameterDefinition innerDef in inner) {
+                    if (innerDef is not ArbPluralizationParameterDefinition && innerDef.Name == def.Name) continue;
+                    nested.Add(innerDef with {
+                        StartIndex = innerDef.StartIndex + start,
+                        EndIndex = innerDef.EndIndex + start,
+                    });
+                }
             }
         }
+
         return true;
+    }
+
+    private static void SkipWhitespace(string value, ref int index) {
+        while (index < value.Length && char.IsWhiteSpace(value[index])) index++;
     }
 
     private static bool ReadInteger(string value, ref int index, out int number) {

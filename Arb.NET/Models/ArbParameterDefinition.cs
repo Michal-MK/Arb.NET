@@ -5,12 +5,12 @@ public record ArbParameterDefinition {
     /// Content of the brackets
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Points to the opening '{' in the original string
     /// </summary>
     public int StartIndex { get; set; }
-    
+
     /// <summary>
     /// Points to the character after the closing '}' in the original string
     /// </summary>
@@ -19,5 +19,7 @@ public record ArbParameterDefinition {
 
 public record ArbPluralizationParameterDefinition : ArbParameterDefinition {
     public Dictionary<int, string> CountableParameters { get; } = [];
+    public Dictionary<string, string> CategoryParameters { get; } = new(StringComparer.Ordinal);
+
     public string OtherParameter { get; set; } = string.Empty;
 }

@@ -1,0 +1,16 @@
+{
+    "@@locale": "cs",
+    "appTitle": "Arb.NET Příklad tři",
+
+    "anotherString": "Další text",
+
+    "itemCount": "{count, plural, =0{Žádné položky} one{Jedna položka} few{{count} položky} other{{count} položek}}",
+
+    "dueIn": "{days, plural, zero{Splatné dnes} one{Splatné zítra} few{Splatné za {days} dny} other{Splatné za {days} dní}}",
+
+    "inboxSummary": "{count, plural, =0{{user}, nemáte žádné nové zprávy} one{{user}, máte jednu novou zprávu} few{{user}, máte {count} nové zprávy} other{{user}, máte {count} nových zpráv}}",
+
+    "filesInFolders": "{files, plural, =0{Žádné soubory} one{Jeden soubor v {folders, plural, one{jedné složce} other{{folders} složkách}}} few{{files} soubory v {folders, plural, one{jedné složce} other{{folders} složkách}}} other{{files} souborů v {folders, plural, one{jedné složce} other{{folders} složkách}}}}",
+
+    "cartSummary": "Košík uživatele {owner}: {count, plural, one{jeden produkt} few{{count} produkty} other{{count} produktů}}, celkem {total}"
+}

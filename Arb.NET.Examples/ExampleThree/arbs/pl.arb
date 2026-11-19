@@ -1,0 +1,16 @@
+{
+    "@@locale": "pl",
+    "appTitle": "Arb.NET Przykład trzeci",
+
+    "anotherString": "Inny tekst",
+
+    "itemCount": "{count, plural, =0{Brak elementów} one{Jeden element} few{{count} elementy} many{{count} elementów} other{{count} elementu}}",
+
+    "dueIn": "{days, plural, zero{Termin dzisiaj} one{Termin jutro} other{Termin za {days} dni}}",
+
+    "inboxSummary": "{count, plural, =0{{user}, brak nowych wiadomości} one{{user}, masz jedną nową wiadomość} few{{user}, masz {count} nowe wiadomości} many{{user}, masz {count} nowych wiadomości} other{{user}, masz {count} nowej wiadomości}}",
+
+    "filesInFolders": "{files, plural, =0{Brak plików} one{Jeden plik w {folders, plural, one{jednym folderze} other{{folders} folderach}}} few{{files} pliki w {folders, plural, one{jednym folderze} other{{folders} folderach}}} many{{files} plików w {folders, plural, one{jednym folderze} other{{folders} folderach}}} other{{files} pliku w {folders, plural, one{jednym folderze} other{{folders} folderach}}}}",
+
+    "cartSummary": "Koszyk użytkownika {owner}: {count, plural, one{jeden produkt} few{{count} produkty} many{{count} produktów} other{{count} produktu}}, razem {total}"
+}
