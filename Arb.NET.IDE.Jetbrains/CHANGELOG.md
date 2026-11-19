@@ -2,6 +2,9 @@
 
 All notable changes to the Arb.NET Rider plugin will be documented in this file.
 
+## 0.2.0
+- Bundle Arb.NET 0.6.0: ICU plural category support (zero/one/two/few/many/other) in ARB plural messages, generated per locale
+
 ## 0.1.3
 - Fix generated code failing to compile (CS0535, missing `IArbLocale` indexer) when the template .arb has no keys
 
